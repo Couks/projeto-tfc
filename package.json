@@ -1,0 +1,29 @@
+{
+  "name": "realty-analytics-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "workspaces": [
+    "insighthouse",
+    "scripts"
+  ],
+  "scripts": {
+    "dev": "pnpm --recursive run dev",
+    "build": "pnpm --recursive run build",
+    "start": "pnpm --recursive run start",
+    "build:posthog": "node scripts/build-posthog.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "esbuild": "^0.23.0",
+    "posthog-js": "^1.165.0",
+    "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.0.0",
+      "@types/react-dom": "19.0.0"
+    }
+  }
+}
+
+

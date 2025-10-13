@@ -1,0 +1,11 @@
+{
+  "name": "scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "esbuild": "^0.23.0",
+    "posthog-js": "^1.165.0"
+  }
+}
+
+
