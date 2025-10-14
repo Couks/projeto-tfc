@@ -17,10 +17,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'site not found or inactive' }, { status: 404 });
   }
 
-  const allowedDomains = site.domains.map((d) => d.host.toLowerCase());
+  const allowedDomains = site.domains.map((d: { host: string }) =>
+    d.host.toLowerCase()
+  );
   const groupEnabled = true;
   const options: Record<string, unknown> = {};
-  const consentDefault = site.settings.find((s) => s.key === 'consent_default')?.value ?? 'opt_in';
+  const consentDefault =
+    site.settings.find(
+      (s: { key: string; value: string }) => s.key === "consent_default"
+    )?.value ?? "opt_in";
 
   return NextResponse.json({
     phKey: process.env.POSTHOG_PROJECT_API_KEY,
