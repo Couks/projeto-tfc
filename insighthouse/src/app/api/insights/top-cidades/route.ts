@@ -13,25 +13,47 @@ export async function GET(req: Request) {
     return NextResponse.json(cached.data, { headers: { 'x-cache': 'hit' } });
   }
 
-  const apiHost = process.env.POSTHOG_API_HOST || 'https://app.posthog.com';
-  const personalKey = process.env.POSTHOG_PERSONAL_API_KEY ?? '';
-  const projectId = process.env.POSTHOG_PROJECT_ID ?? 'DEFAULT';
+  const apiHost =
+    process.env.POSTHOG_PRIVATE_API_HOST ||
+    process.env.POSTHOG_API_HOST ||
+    "https://us.posthog.com";
+  const personalKey = process.env.POSTHOG_PERSONAL_API_KEY ?? "";
+  const projectId = process.env.POSTHOG_PROJECT_ID ?? "";
+  if (!personalKey || !projectId) {
+    return NextResponse.json(
+      { error: "server misconfigured" },
+      { status: 500 }
+    );
+  }
 
-  const query = {
-    kind: 'HogQLQuery',
-    query: `SELECT properties["cidade"] AS cidade, count() AS total FROM events WHERE event = 'search_filter_city' AND properties["site"] = $site GROUP BY cidade ORDER BY total DESC LIMIT 10`,
-    params: { site: siteKey }
+  const escapedSite = (siteKey || "").replace(/'/g, "''");
+  const payload = {
+    query: {
+      kind: "HogQLQuery",
+      query: `SELECT properties.cidade AS cidade, count() AS total FROM events WHERE event = 'search_filter_city' AND properties.site = '${escapedSite}' GROUP BY properties.cidade ORDER BY total DESC LIMIT 10`,
+    },
+    name: "top cidades",
   };
 
   const r = await fetch(`${apiHost}/api/projects/${projectId}/query/`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${personalKey}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${personalKey}`,
+      "X-Project-ID": projectId,
     },
-    body: JSON.stringify(query)
+    body: JSON.stringify(payload),
   });
-  if (!r.ok) return NextResponse.json({ error: 'posthog error' }, { status: 502 });
+  if (!r.ok) {
+    let details: unknown = undefined;
+    try {
+      details = await r.text();
+    } catch {}
+    return NextResponse.json(
+      { error: "posthog error", status: r.status, details },
+      { status: 502 }
+    );
+  }
   const data = await r.json();
 
   MEMO[cacheKey] = { data, ts: Date.now() };
