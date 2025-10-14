@@ -1,5 +1,5 @@
 {
-  "name": "realty-analytics-monorepo",
+  "name": "insighthouse-monorepo",
   "private": true,
   "packageManager": "pnpm@9.11.0",
   "workspaces": [
