@@ -344,7 +344,7 @@ export default async function DashboardPage() {
               </Table>
             </CardContent>
           </Card>
-        </div>
+      </div>
       )}
     </div>
   );

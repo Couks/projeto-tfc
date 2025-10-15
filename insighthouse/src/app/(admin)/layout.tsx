@@ -16,6 +16,13 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from "@/lib/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/lib/components/ui/dropdown-menu";
+import { User2, ChevronUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +60,44 @@ export default async function AdminLayout({
           <SidebarSeparator />
         </SidebarContent>
         <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 /> ID: {session.userId}
+                    <ChevronUp className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  className="w-[--radix-popper-anchor-width]"
+                >
+                  <DropdownMenuItem>
+                    <span>Conta</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <span>Pagamento</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <form
+                      action="/api/auth/logout"
+                      method="post"
+                      className="w-full"
+                    >
+                      <button
+                        type="submit"
+                        className="w-full text-left"
+                        onClick={redirect("/login")}
+                      >
+                        Sair
+                      </button>
+                    </form>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
           <div className="px-2 text-xs text-sidebar-foreground/70">v1</div>
         </SidebarFooter>
         <SidebarRail />
