@@ -85,11 +85,7 @@ export default async function AdminLayout({
                       method="post"
                       className="w-full"
                     >
-                      <button
-                        type="submit"
-                        className="w-full text-left"
-                        onClick={redirect("/login")}
-                      >
+                      <button type="submit" className="w-full text-left">
                         Sair
                       </button>
                     </form>
