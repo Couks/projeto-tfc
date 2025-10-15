@@ -45,6 +45,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -871,6 +874,9 @@ packages:
   baseline-browser-mapping@2.8.16:
     resolution: {integrity: sha512-OMu3BGQ4E7P1ErFsIPpbJh0qvDudM/UuJeHgkAvfWe+0HFJCXh+t/l8L6fVLR55RI/UbKrVLnAXZSVwd9ysWYw==}
     hasBin: true
+
+  bcryptjs@2.4.3:
+    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
@@ -2183,6 +2189,8 @@ snapshots:
   balanced-match@1.0.2: {}
 
   baseline-browser-mapping@2.8.16: {}
+
+  bcryptjs@2.4.3: {}
 
   binary-extensions@2.3.0: {}
 
