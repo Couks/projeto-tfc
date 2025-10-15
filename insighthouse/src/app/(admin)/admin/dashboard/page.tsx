@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/lib/components/ui/card";
+import { RefreshButton } from "./_components/RefreshButton";
 import {
   Table,
   TableBody,
@@ -33,7 +34,10 @@ export default async function DashboardPage() {
   const data = site ? await fetchOverview(site.siteKey) : null;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Insights</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Insights</h1>
+        <RefreshButton />
+      </div>
       {!data && (
         <div className="text-sm text-muted-foreground">Sem dados ainda.</div>
       )}
@@ -344,7 +348,7 @@ export default async function DashboardPage() {
               </Table>
             </CardContent>
           </Card>
-      </div>
+        </div>
       )}
     </div>
   );
