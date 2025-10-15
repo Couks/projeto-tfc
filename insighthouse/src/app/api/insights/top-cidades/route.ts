@@ -14,9 +14,7 @@ export async function GET(req: Request) {
   }
 
   const apiHost =
-    process.env.POSTHOG_PRIVATE_API_HOST ||
-    process.env.POSTHOG_API_HOST ||
-    "https://us.posthog.com";
+    process.env.POSTHOG_PRIVATE_API_HOST || "https://us.posthog.com";
   const personalKey = process.env.POSTHOG_PERSONAL_API_KEY ?? "";
   const projectId = process.env.POSTHOG_PROJECT_ID ?? "";
   if (!personalKey || !projectId) {

@@ -26,7 +26,8 @@ export async function GET(req: Request) {
   const siteKey = searchParams.get('site')?.trim();
   if (!siteKey) return NextResponse.json({ error: 'missing site' }, { status: 400 });
 
-  const apiHost = process.env.POSTHOG_PRIVATE_API_HOST || process.env.POSTHOG_API_HOST || 'https://us.posthog.com';
+  const apiHost =
+    process.env.POSTHOG_PRIVATE_API_HOST || "https://us.posthog.com";
   const personalKey = process.env.POSTHOG_PERSONAL_API_KEY ?? '';
   const projectId = process.env.POSTHOG_PROJECT_ID ?? '';
   if (!personalKey || !projectId) return NextResponse.json({ error: 'server misconfigured' }, { status: 500 });

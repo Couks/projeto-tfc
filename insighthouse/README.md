@@ -200,7 +200,6 @@ Observações:
 
 ## Notas
 
-- Garanta que a CSP inclui esta origem e seu `POSTHOG_API_HOST`
 - Arquivos estáticos em `public/static` podem ser cacheados e versionados
 - Nenhum dado PII capturado; apenas sinais estruturais de busca/filtro e conversão
 

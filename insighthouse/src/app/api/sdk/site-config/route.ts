@@ -29,8 +29,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     phKey: process.env.POSTHOG_PROJECT_API_KEY,
-    apiHost:
-      process.env.POSTHOG_PUBLIC_API_HOST || process.env.POSTHOG_API_HOST,
+    apiHost: process.env.POSTHOG_PUBLIC_API_HOST || "",
     allowedDomains,
     groupEnabled,
     options,
