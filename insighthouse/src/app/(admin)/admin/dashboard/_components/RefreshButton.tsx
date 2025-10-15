@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/lib/components/ui/button';
+import { Button } from "@ui/button";
 
 export function RefreshButton() {
   const router = useRouter();

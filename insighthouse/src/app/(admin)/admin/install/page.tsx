@@ -1,5 +1,14 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { Alert, AlertDescription } from "@ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
+import { Button } from "@ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ui/tooltip";
 
 export default async function InstallPage() {
   const session = await getSession();
@@ -20,21 +29,46 @@ export default async function InstallPage() {
   return (
     <div className="space-y-4">
       {!dbAvailable && (
-        <div className="text-sm text-red-600">
-          Banco de dados indisponível. Verifique DATABASE_URL/DIRECT_URL e rode
-          as migrações.
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            Banco de dados indisponível. Verifique DATABASE_URL/DIRECT_URL e
+            rode as migrações.
+          </AlertDescription>
+        </Alert>
       )}
       <h1 className="text-xl font-semibold">Instalação</h1>
       {site ? (
-        <div className="space-y-2">
-          <div className="text-sm text-gray-600">
-            Cole este snippet no seu site (GTM ou HTML):
-          </div>
-          <pre className="p-3 bg-gray-50 border rounded text-sm overflow-auto">{`<script async src="${loaderUrl}"></script>`}</pre>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Snippet</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground mb-2">
+              Cole este snippet no seu site (GTM ou HTML):
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <pre className="p-3 bg-muted border rounded text-sm overflow-auto">{`<script async src="${loaderUrl}"></script>`}</pre>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copie e cole no seu site</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="mt-3">
+              <Button asChild size="sm">
+                <a href={loaderUrl} target="_blank" rel="noreferrer">
+                  Abrir Loader
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="text-sm text-gray-600">Crie um Site primeiro.</div>
+        <Alert>
+          <AlertDescription>Crie um Site primeiro.</AlertDescription>
+        </Alert>
       )}
     </div>
   );

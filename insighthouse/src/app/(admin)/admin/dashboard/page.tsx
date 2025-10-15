@@ -1,18 +1,9 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/lib/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { RefreshButton } from "./_components/RefreshButton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/lib/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@ui/table";
+import { ChartBarDefault } from "./_components/ChartBarDefault";
 
 async function fetchOverview(siteKey: string) {
   const res = await fetch(
@@ -42,7 +33,9 @@ export default async function DashboardPage() {
         <div className="text-sm text-muted-foreground">Sem dados ainda.</div>
       )}
       {data && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <ChartBarDefault />
+
           <Card>
             <CardHeader>
               <CardTitle>Cidades</CardTitle>
