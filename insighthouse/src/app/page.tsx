@@ -34,7 +34,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
@@ -138,7 +138,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <MapPin className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -151,7 +151,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -164,7 +164,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Target className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -190,7 +190,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Activity className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -203,7 +203,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -232,7 +232,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Zap className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -242,7 +242,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Shield className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -254,7 +254,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <TrendingUp className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -266,7 +266,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>

@@ -220,7 +220,7 @@ export default async function AdminLayout({
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset className="rounded-lg m-2 border border-sidebar-border shadow overflow-hidden">
+      <SidebarInset className="rounded-lg m-2 border border-sidebar-border shadow-layer-1 overflow-hidden">
         <div className="flex h-12 items-center justify-between border-b px-4 bg-foreground/5">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
