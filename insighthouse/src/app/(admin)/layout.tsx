@@ -79,7 +79,7 @@ export default async function AdminLayout({
     <SidebarProvider>
       <Sidebar side="left" variant="inset" collapsible="icon">
         <SidebarHeader>
-          <div className="bg-foreground/5 rounded-md">
+          <div className="rounded-md">
             <SidebarMenuButton asChild tooltip="Home">
               <Link href="/admin">
                 <Home className="w-6 h-6" />
