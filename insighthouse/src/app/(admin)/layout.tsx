@@ -23,7 +23,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarInput,
 } from "@ui/sidebar";
 import {
   DropdownMenu,
@@ -40,20 +39,22 @@ import {
 } from "@ui/tooltip";
 import {
   ChevronUp,
-  Gauge,
-  BarChart2,
-  Activity,
-  MapPin,
+  LayoutGrid,
   Building2,
-  CircleDollarSign,
-  Target,
   Settings,
   Home,
   ExternalLink,
   Globe,
   HelpCircle,
+  Gauge,
+  GaugeCircle,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/lib/components/ui/collapsible";
 
 export const dynamic = "force-dynamic";
 
@@ -98,43 +99,54 @@ export default async function AdminLayout({
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Visão geral">
                     <Link href="/admin/">
-                      <Gauge /> <span>Visão geral</span>
+                      <LayoutGrid /> <span>Visão geral</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard">
-                    <BarChart2 /> <span>Métricas principais</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard/funnel">
-                    <Activity /> <span>Funil de conversão</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard/cities">
-                    <MapPin /> <span>Top cidades</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard/types">
-                    <Building2 /> <span>Tipos de imóveis</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard/purposes">
-                    <Target /> <span>Finalidades</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/admin/dashboard/prices">
-                    <CircleDollarSign /> <span>Faixas de preço</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
+              <Collapsible open={true}>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton asChild tooltip="Relatórios">
+                    <Link href="/admin/">
+                      <GaugeCircle /> <span>Relatórios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard">
+                        <span>Métricas principais</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard/funnel">
+                        <span>Funil de conversão</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard/cities">
+                        <span>Top cidades</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard/types">
+                        <span>Tipos de imóveis</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard/purposes">
+                        <span>Finalidades</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton href="/admin/dashboard/prices">
+                        <span>Faixas de preço</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
             </SidebarGroupContent>
           </SidebarGroup>
 
@@ -174,7 +186,7 @@ export default async function AdminLayout({
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton size="lg">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src="" />
+                      <AvatarImage src="https://github.com/shadcn.png" />
                       <AvatarFallback className="text-xs">
                         {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                       </AvatarFallback>
@@ -220,8 +232,8 @@ export default async function AdminLayout({
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset className="rounded-lg m-2 border border-sidebar-border shadow-layer-1 overflow-hidden">
-        <div className="flex h-12 items-center justify-between border-b px-4 bg-foreground/5">
+      <SidebarInset className="rounded-lg m-2 border border-sidebar-border shadow-layer-4 overflow-hidden">
+        <div className="flex h-12 items-center justify-between border-b px-4 bg-primary/5">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
           </div>

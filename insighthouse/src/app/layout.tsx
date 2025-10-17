@@ -2,8 +2,8 @@ import './globals.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'Realty Analytics',
-  description: 'SaaS analytics for real estate websites'
+  title: 'Insight House',
+  description: 'Analytics for real estate websites'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

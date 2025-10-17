@@ -57,7 +57,7 @@ export default function AdminHome() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
             <CardTitle className="text-sm font-medium">Sites Ativos</CardTitle>
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -70,7 +70,7 @@ export default function AdminHome() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
             <CardTitle className="text-sm font-medium">
               Taxa de Conversão
             </CardTitle>
@@ -85,7 +85,7 @@ export default function AdminHome() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
             <CardTitle className="text-sm font-medium">Cidade Líder</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>

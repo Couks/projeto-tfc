@@ -72,7 +72,7 @@ export function EditSiteForm({
         <Button type="submit" size="sm">
           Salvar
         </Button>
-        <Button asChild variant="secondary" size="sm">
+        <Button asChild variant="ghost" size="sm">
           <Link href="/admin/sites">Cancelar</Link>
         </Button>
       </div>

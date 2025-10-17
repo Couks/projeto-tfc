@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@ui/tooltip";
+import { CopySnippetButton } from "./_components/CopySnippetButton";
 
 export default async function InstallPage() {
   const session = await getSession();
@@ -49,20 +50,20 @@ export default async function InstallPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <pre className="p-3 bg-muted border rounded text-sm overflow-auto">{`<script async src="${loaderUrl}"></script>`}</pre>
+                  <div className="relative">
+                    <pre className="p-3 bg-muted border rounded text-sm overflow-auto">{`<script async src="${loaderUrl}"></script>`}</pre>
+                    <div className="absolute top-2 right-2">
+                      <CopySnippetButton
+                        snippet={`<script async src="${loaderUrl}"></script>`}
+                      />
+                    </div>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Copie e cole no seu site</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <div className="mt-3">
-              <Button asChild size="sm">
-                <a href={loaderUrl} target="_blank" rel="noreferrer">
-                  Abrir Loader
-                </a>
-              </Button>
-            </div>
           </CardContent>
         </Card>
       ) : (

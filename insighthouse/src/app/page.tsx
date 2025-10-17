@@ -70,12 +70,12 @@ export default function HomePage() {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="outline" size="default">
                 <Link href="/login">Entrar</Link>
               </Button>
               <Button
                 asChild
-                size="sm"
+                size="default"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Link href="/login">Começar Grátis</Link>
@@ -138,7 +138,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-1">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <MapPin className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -151,7 +151,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-2">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -164,7 +164,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-3">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Target className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-1">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -190,7 +190,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-2">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <Activity className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -203,7 +203,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center space-y-4 p-6 bg-background rounded-2xl">
+            <div className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-layer-3">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto">
                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
               </div>
