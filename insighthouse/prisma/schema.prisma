@@ -9,13 +9,28 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
   passwordHash String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sites     Site[]
+
+  // Account settings
+  plan         String   @default("free") // free, pro, enterprise
+  avatarUrl    String?
+
+  // Security and preferences
+  twoFactorEnabled      Boolean  @default(false)
+  notificationsEnabled  Boolean  @default(true)
+
+  // Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+
+  // Relations
+  sites        Site[]
+
+  @@index([email])
 }
 
 model Site {
@@ -23,32 +38,55 @@ model Site {
   userId    String
   name      String
   siteKey   String    @unique
-  status    String    @default("active")
+  status    String    @default("active") // active, inactive, suspended
+
+  // Timestamps
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
   domains   Domain[]
   settings  Setting[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id])
+  @@index([userId])
+  @@index([siteKey])
+  @@index([userId, status])
 }
 
 model Domain {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   siteId    String
   host      String
-  isPrimary Boolean @default(false)
+  isPrimary Boolean  @default(false)
 
-  site Site @relation(fields: [siteId], references: [id])
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([host])
+  @@index([siteId])
+  @@unique([siteId, host]) // Prevent duplicate domains per site
 }
 
 model Setting {
-  id     String @id @default(cuid())
-  siteId String
-  key    String
-  value  String
+  id        String   @id @default(cuid())
+  siteId    String
+  key       String
+  value     String
 
-  site Site @relation(fields: [siteId], references: [id])
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@unique([siteId, key]) // One key per site
 }
 
 
