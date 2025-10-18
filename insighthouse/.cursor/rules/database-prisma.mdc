@@ -1,0 +1,722 @@
+---
+description: Database and Prisma ORM standards
+globs:
+  - prisma/**/*.prisma
+  - src/lib/db.ts
+alwaysApply: false
+---
+
+# Database & Prisma Standards
+
+## Schema Design Principles
+
+### Naming Conventions
+- **Models**: PascalCase, singular (e.g., `User`, `Site`, `Domain`)
+- **Fields**: camelCase (e.g., `userId`, `createdAt`, `passwordHash`)
+- **Relations**: camelCase, plural for one-to-many (e.g., `sites`, `domains`)
+- **Enums**: PascalCase for enum name, UPPER_SNAKE_CASE for values
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     Site[]   // Plural for one-to-many
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  GUEST
+}
+```
+
+### ID Strategy
+Use `cuid()` for primary keys:
+
+```prisma
+model Site {
+  id String @id @default(cuid())
+}
+```
+
+### Timestamps
+Include audit timestamps on all models:
+
+```prisma
+model Entity {
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### Optional Fields
+Mark optional fields with `?`:
+
+```prisma
+model User {
+  name      String?  // Optional
+  email     String   // Required
+}
+```
+
+## Relationships
+
+### One-to-Many
+```prisma
+model User {
+  id    String @id @default(cuid())
+  sites Site[]
+}
+
+model Site {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+```
+
+### One-to-One
+```prisma
+model User {
+  id      String   @id @default(cuid())
+  profile Profile?
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+```
+
+### Many-to-Many
+```prisma
+model Post {
+  id         String     @id @default(cuid())
+  categories Category[] @relation("PostCategories")
+}
+
+model Category {
+  id    String @id @default(cuid())
+  posts Post[] @relation("PostCategories")
+}
+```
+
+### Cascade Deletion
+Set appropriate cascade behavior:
+
+```prisma
+model User {
+  id    String @id @default(cuid())
+  sites Site[]
+}
+
+model Site {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domains Domain[]
+}
+
+model Domain {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}
+```
+
+## Indexes
+
+### Single Column Index
+Add indexes for frequently queried fields:
+
+```prisma
+model Domain {
+  id   String @id @default(cuid())
+  host String
+
+  @@index([host])
+}
+```
+
+### Composite Index
+Create composite indexes for multi-column queries:
+
+```prisma
+model Event {
+  id        String   @id @default(cuid())
+  siteId    String
+  eventName String
+  timestamp DateTime
+
+  @@index([siteId, timestamp])
+  @@index([siteId, eventName])
+}
+```
+
+### Unique Constraints
+Use `@unique` or `@@unique` for uniqueness:
+
+```prisma
+model User {
+  email String @unique
+}
+
+// Composite unique constraint
+model SiteDomain {
+  siteId String
+  domain String
+
+  @@unique([siteId, domain])
+}
+```
+
+## Prisma Client Usage
+
+### Client Initialization
+Use a singleton pattern to avoid multiple instances:
+
+```typescript
+// src/lib/db.ts
+import { PrismaClient } from '@prisma/client';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var prismaGlobal: PrismaClient | undefined;
+}
+
+export const prisma: PrismaClient =
+  global.prismaGlobal ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'warn']
+      : ['error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  global.prismaGlobal = prisma;
+}
+```
+
+### Import Pattern
+Always import from the centralized client:
+
+```typescript
+import { prisma } from '@/lib/db';
+```
+
+## CRUD Operations
+
+### Create
+```typescript
+// Simple create
+const user = await prisma.user.create({
+  data: {
+    email: 'user@example.com',
+    name: 'John Doe',
+  },
+});
+
+// Create with relations
+const site = await prisma.site.create({
+  data: {
+    name: 'My Site',
+    userId: user.id,
+    domains: {
+      create: [
+        { host: 'example.com', isPrimary: true },
+        { host: 'www.example.com', isPrimary: false },
+      ],
+    },
+    settings: {
+      create: { key: 'theme', value: 'dark' },
+    },
+  },
+  include: {
+    domains: true,
+    settings: true,
+  },
+});
+```
+
+### Read
+```typescript
+// Find unique
+const user = await prisma.user.findUnique({
+  where: { id: userId },
+  select: {
+    id: true,
+    name: true,
+    email: true,
+    // Only select needed fields
+  },
+});
+
+// Find first
+const site = await prisma.site.findFirst({
+  where: { userId: session.userId },
+  orderBy: { createdAt: 'desc' },
+});
+
+// Find many
+const users = await prisma.user.findMany({
+  where: {
+    email: { contains: '@example.com' },
+    createdAt: { gte: new Date('2024-01-01') },
+  },
+  include: {
+    sites: {
+      select: { id: true, name: true },
+    },
+  },
+  orderBy: { createdAt: 'desc' },
+  take: 20,
+  skip: 0,
+});
+
+// Count
+const userCount = await prisma.user.count({
+  where: { email: { endsWith: '@example.com' } },
+});
+```
+
+### Update
+```typescript
+// Simple update
+const user = await prisma.user.update({
+  where: { id: userId },
+  data: { name: 'Jane Doe' },
+});
+
+// Update with relations
+const site = await prisma.site.update({
+  where: { id: siteId },
+  data: {
+    name: 'Updated Name',
+    domains: {
+      create: { host: 'new.example.com' },
+      deleteMany: { isPrimary: false },
+    },
+  },
+});
+
+// Update many
+await prisma.site.updateMany({
+  where: { userId: session.userId },
+  data: { status: 'active' },
+});
+
+// Upsert
+const setting = await prisma.setting.upsert({
+  where: {
+    siteId_key: { siteId, key: 'theme' }
+  },
+  update: { value: 'dark' },
+  create: {
+    siteId,
+    key: 'theme',
+    value: 'dark',
+  },
+});
+```
+
+### Delete
+```typescript
+// Delete one
+await prisma.site.delete({
+  where: { id: siteId },
+});
+
+// Delete many
+await prisma.domain.deleteMany({
+  where: {
+    siteId,
+    isPrimary: false,
+  },
+});
+```
+
+## Advanced Queries
+
+### Filtering
+```typescript
+// Multiple conditions (AND)
+const results = await prisma.site.findMany({
+  where: {
+    userId: session.userId,
+    status: 'active',
+    createdAt: { gte: startDate },
+  },
+});
+
+// OR conditions
+const results = await prisma.user.findMany({
+  where: {
+    OR: [
+      { email: { contains: '@gmail.com' } },
+      { email: { contains: '@yahoo.com' } },
+    ],
+  },
+});
+
+// Complex conditions
+const results = await prisma.site.findMany({
+  where: {
+    AND: [
+      { userId: session.userId },
+      {
+        OR: [
+          { status: 'active' },
+          { status: 'pending' },
+        ],
+      },
+    ],
+  },
+});
+
+// Relation filters
+const users = await prisma.user.findMany({
+  where: {
+    sites: {
+      some: { status: 'active' },
+    },
+  },
+});
+```
+
+### Sorting
+```typescript
+// Single field
+const users = await prisma.user.findMany({
+  orderBy: { createdAt: 'desc' },
+});
+
+// Multiple fields
+const users = await prisma.user.findMany({
+  orderBy: [
+    { name: 'asc' },
+    { createdAt: 'desc' },
+  ],
+});
+
+// Sort by relation count
+const users = await prisma.user.findMany({
+  orderBy: {
+    sites: {
+      _count: 'desc',
+    },
+  },
+});
+```
+
+### Pagination
+```typescript
+// Offset pagination
+const page = 1;
+const limit = 20;
+
+const [items, total] = await prisma.$transaction([
+  prisma.site.findMany({
+    where: { userId: session.userId },
+    orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * limit,
+    take: limit,
+  }),
+  prisma.site.count({
+    where: { userId: session.userId },
+  }),
+]);
+
+// Cursor pagination
+const sites = await prisma.site.findMany({
+  take: 20,
+  skip: 1, // Skip the cursor
+  cursor: {
+    id: lastId,
+  },
+  orderBy: { id: 'asc' },
+});
+```
+
+### Aggregations
+```typescript
+// Count, sum, avg, min, max
+const stats = await prisma.event.aggregate({
+  where: { siteId },
+  _count: { id: true },
+  _avg: { duration: true },
+  _max: { timestamp: true },
+});
+
+// Group by
+const results = await prisma.event.groupBy({
+  by: ['eventName', 'siteId'],
+  _count: { id: true },
+  where: {
+    timestamp: { gte: startDate },
+  },
+  orderBy: {
+    _count: { id: 'desc' },
+  },
+});
+```
+
+## Transactions
+
+### Sequential Operations
+```typescript
+const result = await prisma.$transaction(async (tx) => {
+  const user = await tx.user.create({
+    data: { email, name },
+  });
+
+  const site = await tx.site.create({
+    data: {
+      userId: user.id,
+      name: 'Default Site',
+      siteKey: generateSiteKey(),
+    },
+  });
+
+  await tx.setting.create({
+    data: {
+      siteId: site.id,
+      key: 'theme',
+      value: 'light',
+    },
+  });
+
+  return { user, site };
+});
+```
+
+### Batch Operations
+```typescript
+await prisma.$transaction([
+  prisma.user.update({ where: { id: userId }, data: { name } }),
+  prisma.site.updateMany({ where: { userId }, data: { status: 'active' } }),
+]);
+```
+
+## Raw SQL
+
+### Raw Queries
+Use typed raw queries when needed:
+
+```typescript
+import { Prisma } from '@prisma/client';
+
+// Type-safe raw query
+const users = await prisma.$queryRaw<User[]>`
+  SELECT * FROM "User"
+  WHERE email LIKE ${`%${domain}%`}
+  LIMIT 10
+`;
+
+// Raw execute (for mutations)
+await prisma.$executeRaw`
+  UPDATE "Site"
+  SET status = 'inactive'
+  WHERE "userId" = ${userId}
+`;
+```
+
+### SQL Injection Prevention
+Always use parameterized queries:
+
+```typescript
+// Good: Parameterized
+const result = await prisma.$queryRaw`
+  SELECT * FROM "User"
+  WHERE email = ${email}
+`;
+
+// Bad: String interpolation (vulnerable to SQL injection)
+const result = await prisma.$queryRawUnsafe(
+  `SELECT * FROM "User" WHERE email = '${email}'`
+);
+```
+
+## Migrations
+
+### Creating Migrations
+```bash
+# Create migration
+pnpm prisma migrate dev --name add_user_role
+
+# Deploy to production
+pnpm prisma migrate deploy
+
+# Reset database (development only)
+pnpm prisma migrate reset
+```
+
+### Migration Best Practices
+- Create descriptive migration names
+- Review generated SQL before applying
+- Test migrations in development first
+- Never edit migration files manually
+- Keep migrations atomic (one change per migration when possible)
+- Add data migrations when schema changes require it
+
+## Performance Optimization
+
+### Select Only Needed Fields
+```typescript
+// Good: Select specific fields
+const users = await prisma.user.findMany({
+  select: {
+    id: true,
+    name: true,
+    email: true,
+  },
+});
+
+// Avoid: Select all fields
+const users = await prisma.user.findMany();
+```
+
+### Limit Included Relations
+```typescript
+// Good: Include only necessary relations
+const site = await prisma.site.findUnique({
+  where: { id: siteId },
+  include: {
+    domains: {
+      select: { id: true, host: true },
+      where: { isPrimary: true },
+    },
+  },
+});
+
+// Avoid: Deep nesting
+const site = await prisma.site.findUnique({
+  where: { id: siteId },
+  include: {
+    user: {
+      include: {
+        sites: {
+          include: {
+            domains: true,
+            settings: true,
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+### Use Count Instead of Length
+```typescript
+// Good: Use _count
+const user = await prisma.user.findUnique({
+  where: { id: userId },
+  include: {
+    _count: {
+      select: { sites: true },
+    },
+  },
+});
+const siteCount = user._count.sites;
+
+// Avoid: Fetching all records
+const sites = await prisma.site.findMany({
+  where: { userId },
+});
+const siteCount = sites.length;
+```
+
+### Connection Pooling
+Configure connection pool in DATABASE_URL:
+
+```env
+# With connection pooling
+DATABASE_URL="postgresql://user:password@host:5432/db?connection_limit=10&pool_timeout=20"
+
+# For serverless (connection pooler)
+DATABASE_URL="postgresql://user:password@pooler.host:5432/db"
+DIRECT_URL="postgresql://user:password@direct.host:5432/db"
+```
+
+## Error Handling
+
+### Prisma Errors
+```typescript
+import { Prisma } from '@prisma/client';
+
+try {
+  await prisma.user.create({ data: { email } });
+} catch (error) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    // Unique constraint violation
+    if (error.code === 'P2002') {
+      return { error: 'email_already_exists' };
+    }
+
+    // Foreign key constraint violation
+    if (error.code === 'P2003') {
+      return { error: 'invalid_reference' };
+    }
+
+    // Record not found
+    if (error.code === 'P2025') {
+      return { error: 'not_found' };
+    }
+  }
+
+  throw error;
+}
+```
+
+### Common Prisma Error Codes
+- `P2002`: Unique constraint violation
+- `P2003`: Foreign key constraint violation
+- `P2025`: Record not found
+- `P2014`: Required relation violation
+- `P2034`: Transaction failed
+
+## Security
+
+### Sensitive Data
+Never expose sensitive fields:
+
+```typescript
+// Good: Exclude sensitive fields
+const user = await prisma.user.findUnique({
+  where: { id: userId },
+  select: {
+    id: true,
+    email: true,
+    name: true,
+    // passwordHash excluded
+  },
+});
+
+// Or use omit utility
+function omitPassword(user: User) {
+  const { passwordHash, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+}
+```
+
+### Row-Level Security
+Always filter by user ownership:
+
+```typescript
+// Good: Filter by userId
+const sites = await prisma.site.findMany({
+  where: {
+    userId: session.userId,
+    id: requestedSiteId,
+  },
+});
+
+// Bad: Missing ownership check
+const sites = await prisma.site.findMany({
+  where: { id: requestedSiteId },
+});
+```

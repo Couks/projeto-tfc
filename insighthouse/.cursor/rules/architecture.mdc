@@ -1,0 +1,126 @@
+---
+description: Project architecture and code standards
+globs:
+alwaysApply: true
+---
+
+# Project Architecture Standards
+
+## Technology Stack
+- **Framework**: Next.js 15.1+ with App Router (React Server Components)
+- **Language**: TypeScript with strict mode enabled
+- **Database**: PostgreSQL with Prisma ORM
+- **Styling**: Tailwind CSS + Radix UI components
+- **Validation**: Zod for runtime type validation
+- **Package Manager**: pnpm with workspace configuration
+
+## Project Structure
+```
+insighthouse/
+  src/
+    app/          # Next.js App Router pages and API routes
+    lib/          # Shared utilities, components, and business logic
+    middleware.ts # Global middleware (auth, routing)
+    utils/        # Pure utility functions
+  prisma/         # Database schema and migrations
+  public/         # Static assets
+```
+
+## Code Organization Principles
+
+### 1. Separation of Concerns
+- **Server Components**: Default for pages, handle data fetching
+- **Client Components**: Use `'use client'` only when necessary (interactivity, hooks)
+- **API Routes**: Business logic, database operations, external integrations
+- **Utilities**: Pure functions, no side effects
+
+### 2. Modularization
+- Each feature should be self-contained when possible
+- Group related components in feature directories
+- Use `_components` folders for private components
+- Export public APIs from index files or named exports
+
+### 3. Clean Code Principles
+- **Single Responsibility**: Each function/component does one thing well
+- **DRY (Don't Repeat Yourself)**: Extract common logic into reusable functions
+- **KISS (Keep It Simple)**: Prefer simple solutions over complex ones
+- **Meaningful Names**: Use descriptive, intention-revealing names
+- **Small Functions**: Aim for functions under 30 lines
+- **Explicit over Implicit**: Be clear about intentions
+
+## Naming Conventions
+
+### Files and Folders
+- **Components**: PascalCase (e.g., `UserProfile.tsx`)
+- **Pages**: lowercase with hyphens (e.g., `user-settings/page.tsx`)
+- **Utilities**: camelCase (e.g., `formatDate.ts`)
+- **Constants**: UPPER_SNAKE_CASE files (e.g., `API_ROUTES.ts`)
+- **Types/Interfaces**: PascalCase (e.g., `UserTypes.ts`)
+- **Private folders**: Prefix with underscore (e.g., `_components/`)
+
+### Code
+- **Variables & Functions**: camelCase (e.g., `getUserById`, `isValid`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`, `API_URL`)
+- **Types & Interfaces**: PascalCase (e.g., `UserProfile`, `ApiResponse`)
+- **Components**: PascalCase (e.g., `Button`, `UserCard`)
+- **React Hooks**: camelCase with `use` prefix (e.g., `useAuth`, `useMobile`)
+- **Event Handlers**: camelCase with `handle` prefix (e.g., `handleClick`, `handleSubmit`)
+- **Boolean Variables**: Prefix with `is`, `has`, `should` (e.g., `isLoading`, `hasAccess`)
+
+### Database (Prisma)
+- **Models**: PascalCase singular (e.g., `User`, `Site`)
+- **Fields**: camelCase (e.g., `userId`, `createdAt`)
+- **Relations**: camelCase plural for one-to-many (e.g., `sites`, `domains`)
+
+## Path Aliases
+- `@/lib/*` → `src/lib/*` for library code
+- `@ui/*` → `src/lib/components/ui/*` for UI components
+
+## Performance Best Practices
+- Prefer Server Components for data fetching
+- Use `cache: 'no-store'` or `revalidate` for dynamic data
+- Implement proper loading states
+- Lazy load components when appropriate
+- Optimize images using Next.js Image component
+
+## Security Best Practices
+- Never expose secrets in client-side code
+- Validate all user inputs with Zod
+- Use environment variables for configuration
+- Implement proper authentication checks
+- Sanitize database queries (Prisma handles this)
+- Use CSRF protection for forms
+- Set proper HTTP headers (CORS, CSP, etc.)
+
+## Error Handling Strategy
+- Use try-catch blocks for async operations
+- Return proper HTTP status codes in API routes
+- Provide meaningful error messages
+- Log errors for debugging (use console.error)
+- Handle edge cases explicitly
+- Never expose internal errors to users
+
+## Code Comments
+- Comment the "why", not the "what"
+- Use JSDoc for public APIs and complex functions
+- Keep comments up-to-date with code changes
+- Remove commented-out code before committing
+- Use TODO comments sparingly with issue references
+
+## Import Order
+1. React and Next.js imports
+2. Third-party libraries
+3. Internal components and utilities (using path aliases)
+4. Types and interfaces
+5. Relative imports
+
+Example:
+```typescript
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { z } from 'zod';
+import { Button } from '@ui/button';
+import { prisma } from '@/lib/db';
+import type { User } from '@prisma/client';
+import { formatDate } from '../utils';
+```

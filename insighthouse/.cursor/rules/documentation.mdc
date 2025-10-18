@@ -1,0 +1,513 @@
+---
+description: Documentation standards and guidelines
+globs:
+  - README.md
+  - CONTRIBUTING.md
+  - docs/**/*.md
+alwaysApply: false
+---
+
+# Documentation Standards
+
+## README.md Structure
+
+Every project should have a comprehensive README:
+
+```markdown
+# Project Name
+
+Brief description of what the project does.
+
+## Features
+
+- Feature 1: Description
+- Feature 2: Description
+- Feature 3: Description
+
+## Tech Stack
+
+- **Framework**: Next.js 15+
+- **Language**: TypeScript
+- **Database**: PostgreSQL with Prisma
+- **Styling**: Tailwind CSS + Radix UI
+- **Validation**: Zod
+
+## Prerequisites
+
+- Node.js 18+
+- pnpm 9+
+- PostgreSQL 15+
+
+## Getting Started
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/username/project.git
+cd project
+```
+
+2. Install dependencies
+```bash
+pnpm install
+```
+
+3. Set up environment variables
+```bash
+cp .env.example .env
+```
+
+Configure the following variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `NEXTAUTH_SECRET`: Random secret for session signing
+- `SITE_URL`: Base URL of your application
+
+4. Initialize database
+```bash
+pnpm prisma migrate dev
+```
+
+5. Start development server
+```bash
+pnpm dev
+```
+
+Visit `http://localhost:3000` to see the application.
+
+## Project Structure
+
+```
+project/
+  ├── src/
+  │   ├── app/          # Next.js App Router pages and API routes
+  │   ├── lib/          # Shared utilities and components
+  │   ├── middleware.ts # Global middleware
+  │   └── utils/        # Utility functions
+  ├── prisma/           # Database schema and migrations
+  └── public/           # Static assets
+```
+
+## Available Scripts
+
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm prisma:migrate` - Run database migrations
+- `pnpm test` - Run tests
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `DIRECT_URL` | Direct database connection (for migrations) | No |
+| `NEXTAUTH_SECRET` | Secret for session signing | Yes |
+| `SITE_URL` | Base URL of the application | Yes |
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and development process.
+
+## License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+```
+
+## Code Documentation
+
+### File Headers
+Add brief descriptions to complex files:
+
+```typescript
+/**
+ * @file Authentication utilities
+ *
+ * Provides session management, password hashing, and verification
+ * using HMAC for session cookies and scrypt for password hashing.
+ */
+
+import crypto from 'crypto';
+```
+
+### Function Documentation (JSDoc)
+
+Document public APIs and complex functions:
+
+```typescript
+/**
+ * Formats a date according to the specified format
+ *
+ * @param date - The date to format
+ * @param format - The desired format ('short', 'long', or 'iso')
+ * @returns The formatted date string
+ *
+ * @example
+ * ```typescript
+ * formatDate(new Date(), 'short'); // "1/15/2024"
+ * formatDate(new Date(), 'long');  // "January 15, 2024"
+ * formatDate(new Date(), 'iso');   // "2024-01-15T00:00:00.000Z"
+ * ```
+ */
+export function formatDate(
+  date: Date,
+  format: 'short' | 'long' | 'iso' = 'short'
+): string {
+  // Implementation
+}
+```
+
+### Complex Logic Comments
+
+Explain the "why" not the "what":
+
+```typescript
+// Good: Explains reasoning
+// Use scrypt instead of bcrypt for better resistance to GPU attacks
+// N=16384 provides a good balance between security and performance
+const derived = await crypto.scrypt(plain, salt, keylen, { N: 16384, r: 8, p: 1 });
+
+// Bad: States the obvious
+// Hash the password
+const derived = await crypto.scrypt(plain, salt, keylen, { N: 16384, r: 8, p: 1 });
+```
+
+### TODOs and FIXMEs
+
+Use standardized tags with context:
+
+```typescript
+// TODO(username): Add pagination support for large datasets
+// FIXME: Race condition when multiple users update simultaneously
+// HACK: Temporary workaround until API v2 is available
+// NOTE: This must match the format expected by the external service
+```
+
+## API Documentation
+
+### Endpoint Documentation
+
+Document API routes with clear examples:
+
+```markdown
+## POST /api/users
+
+Creates a new user.
+
+### Authentication
+Requires valid session cookie.
+
+### Request Body
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+### Validation Rules
+- `name`: 2-100 characters
+- `email`: Valid email format
+
+### Response
+
+**Success (201 Created)**
+```json
+{
+  "id": "clx123abc",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+**Error (400 Bad Request)**
+```json
+{
+  "error": "invalid_body",
+  "details": [
+    {
+      "path": ["email"],
+      "message": "Invalid email"
+    }
+  ]
+}
+```
+
+**Error (401 Unauthorized)**
+```json
+{
+  "error": "unauthorized"
+}
+```
+
+### Example
+
+```bash
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com"}'
+```
+```
+
+## Component Documentation
+
+### Component README Pattern
+
+For complex feature components, add a README:
+
+```markdown
+# UserManagement Component
+
+Complex user management interface with CRUD operations.
+
+## Usage
+
+```tsx
+import { UserManagement } from '@/components/UserManagement';
+
+export default function AdminPage() {
+  return <UserManagement />;
+}
+```
+
+## Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `userId` | string | Yes | ID of the user to manage |
+| `onUpdate` | function | No | Callback when user is updated |
+| `readonly` | boolean | No | Disable editing (default: false) |
+
+## Features
+
+- User profile editing
+- Role management
+- Activity history
+- Audit logging
+
+## Permissions Required
+
+- `users.read` - View user details
+- `users.write` - Edit user information
+- `users.delete` - Delete users
+
+## Architecture
+
+Uses the following components:
+- `UserProfile` - Display user information
+- `RoleSelector` - Manage user roles
+- `ActivityLog` - Show user activity
+
+## State Management
+
+Component state:
+- `user` - Current user data
+- `isEditing` - Edit mode flag
+- `isSaving` - Save operation status
+```
+
+## Database Schema Documentation
+
+### Prisma Schema Comments
+
+Document models and fields:
+
+```prisma
+/// Represents a registered user in the system
+model User {
+  id        String   @id @default(cuid())
+
+  /// User's email address (used for login)
+  email     String   @unique
+
+  /// Optional display name
+  name      String?
+
+  /// Scrypt-hashed password (format: scrypt$N$r$p$salt$hash)
+  passwordHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Sites owned by this user
+  sites     Site[]
+}
+
+/// Represents a website being tracked
+model Site {
+  id        String   @id @default(cuid())
+  userId    String
+
+  /// Unique identifier for JavaScript SDK
+  siteKey   String   @unique
+
+  /// Site status: active, inactive, or suspended
+  status    String   @default("active")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domains   Domain[]
+  settings  Setting[]
+
+  @@index([userId])
+}
+```
+
+## Changelog
+
+Keep a CHANGELOG.md following [Keep a Changelog](https://keepachangelog.com/):
+
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New feature description
+
+### Changed
+- Changed feature description
+
+### Fixed
+- Bug fix description
+
+## [1.2.0] - 2024-01-15
+
+### Added
+- User role management
+- Activity logging
+- Export functionality
+
+### Changed
+- Improved dashboard performance
+- Updated UI components to Radix UI v2
+
+### Fixed
+- Fixed session timeout issue
+- Resolved database connection pooling bug
+
+## [1.1.0] - 2024-01-01
+
+### Added
+- User authentication
+- Site management
+- Basic analytics
+
+[Unreleased]: https://github.com/username/project/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/username/project/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/username/project/releases/tag/v1.1.0
+```
+
+## Architecture Decision Records (ADR)
+
+Document significant architectural decisions:
+
+```markdown
+# ADR 001: Use Prisma ORM for Database Access
+
+## Status
+Accepted
+
+## Context
+We need a type-safe database access layer that works well with TypeScript and supports migrations.
+
+## Decision
+Use Prisma ORM instead of raw SQL or other ORMs (TypeORM, Sequelize).
+
+## Consequences
+
+### Positive
+- Full TypeScript type safety
+- Automatic migration generation
+- Excellent developer experience
+- Built-in connection pooling
+- Query optimization
+
+### Negative
+- Limited to PostgreSQL (current setup)
+- Learning curve for team members unfamiliar with Prisma
+- Some advanced SQL features require raw queries
+
+## Alternatives Considered
+- TypeORM: More flexible but less type-safe
+- Raw SQL: Maximum control but no type safety
+- Drizzle ORM: Newer, smaller community
+
+## Date
+2024-01-15
+
+## Participants
+- Development Team
+- Technical Lead
+```
+
+## Inline Documentation Best Practices
+
+### Do's
+- Explain complex business logic
+- Document edge cases and gotchas
+- Link to relevant resources or RFCs
+- Provide examples for public APIs
+- Keep comments up-to-date with code
+
+### Don'ts
+- Don't comment obvious code
+- Don't leave commented-out code
+- Don't write long essay comments (extract to docs)
+- Don't duplicate what the code clearly shows
+- Don't add comments as version control
+
+```typescript
+// Good: Explains why
+// We batch updates to avoid rate limiting (max 100 req/min)
+const batches = chunk(updates, 100);
+
+// Bad: States the obvious
+// Loop through batches
+for (const batch of batches) {
+  // Process batch
+  await processBatch(batch);
+}
+
+// Good: Links to context
+// See: https://github.com/org/repo/issues/123
+// Using polling instead of webhooks due to firewall restrictions
+
+// Good: Documents edge case
+// Note: Returns null for invalid dates instead of throwing
+// to match legacy API behavior
+export function parseDate(str: string): Date | null {
+  const date = new Date(str);
+  return isNaN(date.getTime()) ? null : date;
+}
+```
+
+## Documentation Maintenance
+
+### When to Update Documentation
+
+Update documentation when:
+- Adding new features or APIs
+- Changing existing behavior
+- Fixing bugs that affect usage
+- Deprecating features
+- Updating dependencies with breaking changes
+- Discovering undocumented gotchas
+
+### Documentation Review Checklist
+
+Before merging code, verify:
+- [ ] README is updated (if public APIs changed)
+- [ ] JSDoc comments are added for new functions
+- [ ] API documentation reflects changes
+- [ ] Examples still work
+- [ ] CHANGELOG is updated
+- [ ] Migration guides provided (for breaking changes)
+- [ ] Environment variables documented
+- [ ] Inline comments explain complex logic

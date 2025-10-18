@@ -198,10 +198,80 @@ Observações:
 - Para embedding local em sites HTTPS, use um túnel (ngrok/Cloudflare Tunnel) ou faça deploy na Vercel.
 - Garanta que a CSP do site cliente permite a origem do Insighthouse (script-src) e o host de captura do PostHog (connect-src).
 
+## Desenvolvimento e Padrões de Código
+
+Este projeto segue padrões rigorosos de código e arquitetura usando **Cursor AI Rules**. As regras estão localizadas em `.cursor/rules/` e garantem consistência, manutenibilidade e qualidade do código.
+
+### Regras Principais
+
+- **Arquitetura** (`architecture.mdc`) - Estrutura do projeto, convenções de nomenclatura, princípios Clean Code
+- **Componentes React** (`react-components.mdc`) - Padrões para Server e Client Components
+- **API Routes** (`api-routes.mdc`) - Convenções para endpoints, validação, autenticação
+- **Database/Prisma** (`database-prisma.mdc`) - Schema design, queries, performance
+- **Autenticação** (`authentication-security.mdc`) - Segurança, sessões, proteção de rotas
+- **TypeScript** (`typescript-utilities.mdc`) - Type safety, utilities, padrões
+- **Testing** (`testing.mdc`) - Testes unitários, integração e E2E
+- **Templates** - Templates reutilizáveis para componentes e APIs
+
+### Convenções de Nomenclatura
+
+- **Componentes**: `PascalCase.tsx` (ex: `UserCard.tsx`)
+- **Páginas**: `page.tsx` no diretório apropriado
+- **API Routes**: `route.ts` no diretório apropriado
+- **Utilities**: `camelCase.ts` (ex: `formatDate.ts`)
+- **Constantes**: `UPPER_SNAKE_CASE`
+
+### Estrutura de Código
+
+**Ordem de Imports**:
+1. React/Next.js
+2. Bibliotecas de terceiros
+3. Componentes/utilitários internos (`@ui/`, `@/lib/`)
+4. Types
+5. Imports relativos
+
+**Estrutura de Componentes**:
+1. Imports
+2. Definições de tipos
+3. Constantes
+4. Função do componente
+5. Display name (Client Components)
+6. Exports
+
+### Validação e Type Safety
+
+- Sempre use **Zod** para validação de inputs
+- **TypeScript strict mode** habilitado
+- Sem tipos `any` (use `unknown` se necessário)
+- Interfaces para todas as props de componentes
+
+### Segurança
+
+- Sempre verificar sessão em rotas protegidas
+- Filtrar queries do banco por `userId`
+- Usar `select` para limitar campos retornados
+- Nunca expor dados sensíveis (senhas, tokens)
+- Validar todos os inputs do usuário
+
+### Como Contribuir
+
+1. Leia `CONTRIBUTING.md` para diretrizes completas
+2. Consulte `.cursor/rules/` para padrões específicos
+3. Use templates em `@template-component` e `@template-api-route`
+4. Siga as convenções de commit (Conventional Commits)
+5. Teste suas alterações antes de fazer commit
+
+Para mais detalhes, consulte:
+- `AGENTS.md` - Visão geral do projeto e arquitetura
+- `CONTRIBUTING.md` - Guia de contribuição
+- `.cursor/rules/README.md` - Documentação completa das regras
+
 ## Notas
 
 - Arquivos estáticos em `public/static` podem ser cacheados e versionados
 - Nenhum dado PII capturado; apenas sinais estruturais de busca/filtro e conversão
+- Projeto usa **pnpm workspaces** para gerenciamento de dependências
+- **Next.js 15** com App Router e React Server Components
 
 ## Troubleshooting
 

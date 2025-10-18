@@ -1,0 +1,690 @@
+---
+description: TypeScript and utility functions standards
+globs:
+  - src/utils/**/*.ts
+  - src/lib/**/*.ts
+alwaysApply: false
+---
+
+# TypeScript & Utilities Standards
+
+## TypeScript Configuration
+
+### Strict Mode
+Always use strict TypeScript configuration:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+### Type Safety
+Avoid `any` and prefer proper typing:
+
+```typescript
+// Good: Proper typing
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+function getUser(id: string): Promise<User | null> {
+  return prisma.user.findUnique({ where: { id } });
+}
+
+// Avoid: Using any
+function getUser(id: any): Promise<any> {
+  return prisma.user.findUnique({ where: { id } });
+}
+```
+
+## Type Definitions
+
+### Interface vs Type
+- Use `interface` for object shapes (can be extended)
+- Use `type` for unions, intersections, primitives, or tuples
+
+```typescript
+// Interface: For object shapes
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+// Extending interfaces
+interface AdminUser extends User {
+  role: 'admin';
+  permissions: string[];
+}
+
+// Type: For unions and complex types
+type UserRole = 'admin' | 'user' | 'guest';
+type ApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+// Type: For intersections
+type UserWithSites = User & { sites: Site[] };
+```
+
+### Generic Types
+Use generics for reusable type-safe code:
+
+```typescript
+// Generic function
+function findById<T>(
+  items: T[],
+  id: string,
+  idKey: keyof T
+): T | undefined {
+  return items.find((item) => item[idKey] === id);
+}
+
+// Generic type
+interface ApiResult<T> {
+  data: T;
+  status: number;
+  message?: string;
+}
+
+// Usage
+const result: ApiResult<User> = {
+  data: user,
+  status: 200,
+};
+
+// Generic constraint
+function processRecord<T extends { id: string }>(record: T): string {
+  return record.id;
+}
+```
+
+### Utility Types
+Leverage TypeScript utility types:
+
+```typescript
+// Partial: All properties optional
+function updateUser(id: string, updates: Partial<User>) {
+  // updates can have any subset of User properties
+}
+
+// Required: All properties required
+type RequiredUser = Required<User>;
+
+// Pick: Select specific properties
+type UserPreview = Pick<User, 'id' | 'name' | 'email'>;
+
+// Omit: Exclude specific properties
+type UserWithoutPassword = Omit<User, 'passwordHash'>;
+
+// Record: Object with specific key-value types
+type UserMap = Record<string, User>;
+
+// ReturnType: Extract function return type
+function getUser() { return { id: '1', name: 'John' }; }
+type UserType = ReturnType<typeof getUser>; // { id: string; name: string }
+
+// Parameters: Extract function parameters
+function createUser(name: string, email: string) {}
+type CreateUserParams = Parameters<typeof createUser>; // [string, string]
+```
+
+### Type Guards
+Create type guards for runtime type checking:
+
+```typescript
+// Type predicate
+function isUser(value: unknown): value is User {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'email' in value &&
+    typeof value.id === 'string' &&
+    typeof value.email === 'string'
+  );
+}
+
+// Usage
+const data = await fetchData();
+if (isUser(data)) {
+  // TypeScript knows data is User here
+  console.log(data.email);
+}
+
+// Discriminated unions
+type ApiResponse =
+  | { status: 'success'; data: User }
+  | { status: 'error'; error: string };
+
+function handleResponse(response: ApiResponse) {
+  if (response.status === 'success') {
+    // TypeScript knows response.data exists
+    console.log(response.data);
+  } else {
+    // TypeScript knows response.error exists
+    console.error(response.error);
+  }
+}
+```
+
+## Utility Functions
+
+### Pure Functions
+Utility functions should be pure (no side effects):
+
+```typescript
+// Good: Pure function
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+export function calculateTotal(items: { price: number }[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+// Avoid: Impure function (modifies input)
+function sortUsers(users: User[]): User[] {
+  return users.sort((a, b) => a.name.localeCompare(b.name));
+  // Mutates original array!
+}
+
+// Better: Pure function
+function sortUsers(users: User[]): User[] {
+  return [...users].sort((a, b) => a.name.localeCompare(b.name));
+}
+```
+
+### Function Signatures
+Write clear function signatures with proper types:
+
+```typescript
+// Clear signature
+export function formatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  locale: string = 'en-US'
+): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+  }).format(amount);
+}
+
+// With options object for many parameters
+interface FormatOptions {
+  currency?: string;
+  locale?: string;
+  decimals?: number;
+}
+
+export function formatCurrency(
+  amount: number,
+  options: FormatOptions = {}
+): string {
+  const { currency = 'USD', locale = 'en-US', decimals = 2 } = options;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(amount);
+}
+```
+
+### Error Handling in Utilities
+```typescript
+// Return Result type
+type Result<T, E = Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+export function parseJSON<T>(json: string): Result<T> {
+  try {
+    const value = JSON.parse(json) as T;
+    return { ok: true, value };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error : new Error('Parse failed'),
+    };
+  }
+}
+
+// Usage
+const result = parseJSON<User>(jsonString);
+if (result.ok) {
+  console.log(result.value);
+} else {
+  console.error(result.error);
+}
+```
+
+## Common Utility Patterns
+
+### String Utilities
+```typescript
+// Truncate string
+export function truncate(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  return `${str.slice(0, maxLength)}...`;
+}
+
+// Slugify
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Capitalize
+export function capitalize(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+// Title case
+export function titleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => capitalize(word))
+    .join(' ');
+}
+```
+
+### Array Utilities
+```typescript
+// Unique values
+export function unique<T>(array: T[]): T[] {
+  return [...new Set(array)];
+}
+
+// Group by property
+export function groupBy<T, K extends keyof T>(
+  array: T[],
+  key: K
+): Record<string, T[]> {
+  return array.reduce((groups, item) => {
+    const groupKey = String(item[key]);
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    groups[groupKey].push(item);
+    return groups;
+  }, {} as Record<string, T[]>);
+}
+
+// Chunk array
+export function chunk<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// Shuffle (Fisher-Yates)
+export function shuffle<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+```
+
+### Object Utilities
+```typescript
+// Pick properties
+export function pick<T extends object, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Pick<T, K> {
+  const result = {} as Pick<T, K>;
+  keys.forEach((key) => {
+    if (key in obj) {
+      result[key] = obj[key];
+    }
+  });
+  return result;
+}
+
+// Omit properties
+export function omit<T extends object, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Omit<T, K> {
+  const result = { ...obj };
+  keys.forEach((key) => {
+    delete result[key];
+  });
+  return result;
+}
+
+// Deep clone
+export function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (obj instanceof Date) return new Date(obj.getTime()) as T;
+  if (obj instanceof Array) return obj.map(item => deepClone(item)) as T;
+
+  const cloned = {} as T;
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      cloned[key] = deepClone(obj[key]);
+    }
+  }
+  return cloned;
+}
+```
+
+### Date Utilities
+```typescript
+// Format date
+export function formatDate(
+  date: Date,
+  format: 'short' | 'long' | 'iso' = 'short'
+): string {
+  switch (format) {
+    case 'short':
+      return date.toLocaleDateString();
+    case 'long':
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    case 'iso':
+      return date.toISOString();
+  }
+}
+
+// Relative time
+export function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+    second: 1,
+  };
+
+  for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+    const interval = Math.floor(seconds / secondsInUnit);
+    if (interval >= 1) {
+      return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+    }
+  }
+
+  return 'just now';
+}
+
+// Add days
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+// Is same day
+export function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+```
+
+### Async Utilities
+```typescript
+// Sleep
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Retry with exponential backoff
+export async function retry<T>(
+  fn: () => Promise<T>,
+  options: {
+    retries?: number;
+    delay?: number;
+    backoff?: number;
+  } = {}
+): Promise<T> {
+  const { retries = 3, delay = 1000, backoff = 2 } = options;
+
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+
+    await sleep(delay);
+    return retry(fn, {
+      retries: retries - 1,
+      delay: delay * backoff,
+      backoff,
+    });
+  }
+}
+
+// Timeout
+export function timeout<T>(
+  promise: Promise<T>,
+  ms: number
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    ),
+  ]);
+}
+
+// Debounce
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// Throttle
+export function throttle<T extends (...args: any[]) => any>(
+  fn: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      fn(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+```
+
+### Validation Utilities
+```typescript
+// Email validation
+export function isValidEmail(email: string): boolean {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+// URL validation
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// UUID validation
+export function isValidUuid(uuid: string): boolean {
+  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return regex.test(uuid);
+}
+
+// CUID validation
+export function isValidCuid(cuid: string): boolean {
+  const regex = /^c[a-z0-9]{24}$/;
+  return regex.test(cuid);
+}
+```
+
+### Class Utilities (Tailwind)
+```typescript
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+// Combine and merge Tailwind classes
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
+
+// Usage
+const className = cn(
+  'base-class',
+  condition && 'conditional-class',
+  { 'dynamic-class': isDynamic },
+  props.className
+);
+```
+
+## Type-Safe Constants
+
+### Const Assertions
+```typescript
+// Use const assertion for literal types
+export const USER_ROLES = ['admin', 'user', 'guest'] as const;
+export type UserRole = typeof USER_ROLES[number]; // 'admin' | 'user' | 'guest'
+
+// Object with const assertion
+export const API_ROUTES = {
+  LOGIN: '/api/auth/login',
+  LOGOUT: '/api/auth/logout',
+  SITES: '/api/sites',
+} as const;
+
+export type ApiRoute = typeof API_ROUTES[keyof typeof API_ROUTES];
+```
+
+### Enums vs Const Objects
+Prefer const objects with `as const` over enums:
+
+```typescript
+// Good: Const object
+export const Status = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  PENDING: 'pending',
+} as const;
+
+export type Status = typeof Status[keyof typeof Status];
+
+// Acceptable: String enum (if needed)
+export enum StatusEnum {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING = 'pending',
+}
+```
+
+## Documentation
+
+### JSDoc Comments
+Document public APIs and complex functions:
+
+```typescript
+/**
+ * Formats a number as currency
+ *
+ * @param amount - The numeric amount to format
+ * @param currency - The currency code (default: 'USD')
+ * @param locale - The locale for formatting (default: 'en-US')
+ * @returns The formatted currency string
+ *
+ * @example
+ * ```typescript
+ * formatCurrency(1234.56); // "$1,234.56"
+ * formatCurrency(1234.56, 'EUR', 'de-DE'); // "1.234,56 €"
+ * ```
+ */
+export function formatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  locale: string = 'en-US'
+): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+  }).format(amount);
+}
+```
+
+## Testing Considerations
+
+### Testable Utilities
+Write utilities that are easy to test:
+
+```typescript
+// Good: Pure function, easy to test
+export function calculateDiscount(
+  price: number,
+  discountPercent: number
+): number {
+  return price * (1 - discountPercent / 100);
+}
+
+// Avoid: Side effects, hard to test
+let totalDiscount = 0;
+export function calculateDiscount(price: number, discountPercent: number): number {
+  const discount = price * (discountPercent / 100);
+  totalDiscount += discount;
+  return price - discount;
+}
+```
+
+### Export for Testing
+Consider exporting internal helpers for testing:
+
+```typescript
+// Internal helper (prefixed with underscore)
+export function _parseValue(value: string): number {
+  return parseInt(value, 10);
+}
+
+// Public API
+export function processValues(values: string[]): number[] {
+  return values.map(_parseValue);
+}
+```

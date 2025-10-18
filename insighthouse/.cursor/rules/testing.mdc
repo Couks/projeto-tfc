@@ -1,0 +1,640 @@
+---
+description: Testing standards and best practices
+globs:
+  - src/**/*.test.ts
+  - src/**/*.test.tsx
+  - src/**/*.spec.ts
+  - src/**/*.spec.tsx
+alwaysApply: false
+---
+
+# Testing Standards
+
+## Testing Philosophy
+
+### Test Pyramid
+Follow the testing pyramid:
+1. **Unit Tests** (70%): Test individual functions and components
+2. **Integration Tests** (20%): Test component interactions and API routes
+3. **E2E Tests** (10%): Test critical user flows
+
+### What to Test
+- **Do Test**:
+  - Business logic and utility functions
+  - Component behavior and state changes
+  - API endpoints and data validation
+  - Error handling and edge cases
+  - User interactions and form submissions
+
+- **Don't Test**:
+  - Implementation details
+  - Third-party library internals
+  - Trivial code (getters, setters)
+  - Framework code
+
+## Test Structure
+
+### File Organization
+```
+src/
+  components/
+    UserCard.tsx
+    UserCard.test.tsx
+  lib/
+    utils/
+      formatDate.ts
+      formatDate.test.ts
+  app/
+    api/
+      users/
+        route.ts
+        route.test.ts
+```
+
+### Test Naming
+```typescript
+// File naming
+UserCard.test.tsx
+formatDate.test.ts
+
+// Describe blocks: Component/function name
+describe('UserCard', () => {
+  // Test blocks: "should" + expected behavior
+  it('should render user name and email', () => {});
+  it('should call onDelete when delete button is clicked', () => {});
+  it('should handle loading state correctly', () => {});
+});
+
+// Or use "it" with descriptive names
+describe('formatDate', () => {
+  it('formats date in ISO format', () => {});
+  it('handles invalid dates gracefully', () => {});
+  it('returns null for null input', () => {});
+});
+```
+
+## Unit Tests
+
+### Testing Utility Functions
+```typescript
+// formatDate.test.ts
+import { formatDate, timeAgo } from './formatDate';
+
+describe('formatDate', () => {
+  it('formats date in ISO format', () => {
+    const date = new Date('2024-01-15T12:00:00Z');
+    expect(formatDate(date, 'iso')).toBe('2024-01-15T12:00:00.000Z');
+  });
+
+  it('formats date in short format', () => {
+    const date = new Date('2024-01-15');
+    const result = formatDate(date, 'short');
+    expect(result).toMatch(/1\/15\/2024|15\/1\/2024/); // Different locales
+  });
+
+  it('handles invalid dates', () => {
+    const date = new Date('invalid');
+    expect(() => formatDate(date)).toThrow();
+  });
+});
+
+describe('timeAgo', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2024-01-15T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns "just now" for recent dates', () => {
+    const date = new Date('2024-01-15T11:59:50Z');
+    expect(timeAgo(date)).toBe('just now');
+  });
+
+  it('returns correct format for minutes ago', () => {
+    const date = new Date('2024-01-15T11:55:00Z');
+    expect(timeAgo(date)).toBe('5 minutes ago');
+  });
+
+  it('returns correct format for days ago', () => {
+    const date = new Date('2024-01-13T12:00:00Z');
+    expect(timeAgo(date)).toBe('2 days ago');
+  });
+});
+```
+
+### Testing with Zod Validation
+```typescript
+// validation.test.ts
+import { z } from 'zod';
+
+const userSchema = z.object({
+  email: z.string().email(),
+  age: z.number().min(0).max(120),
+});
+
+describe('User validation', () => {
+  it('validates correct user data', () => {
+    const result = userSchema.safeParse({
+      email: 'test@example.com',
+      age: 25,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid email', () => {
+    const result = userSchema.safeParse({
+      email: 'invalid-email',
+      age: 25,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].path).toEqual(['email']);
+    }
+  });
+
+  it('rejects age out of range', () => {
+    const result = userSchema.safeParse({
+      email: 'test@example.com',
+      age: 150,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+```
+
+## Component Tests
+
+### Testing React Components
+```typescript
+// UserCard.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { UserCard } from './UserCard';
+
+describe('UserCard', () => {
+  const mockUser = {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+  };
+
+  it('renders user information', () => {
+    render(<UserCard user={mockUser} />);
+
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+
+  it('calls onDelete when delete button clicked', () => {
+    const onDelete = jest.fn();
+    render(<UserCard user={mockUser} onDelete={onDelete} />);
+
+    const deleteButton = screen.getByRole('button', { name: /delete/i });
+    fireEvent.click(deleteButton);
+
+    expect(onDelete).toHaveBeenCalledWith(mockUser.id);
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render delete button when onDelete is not provided', () => {
+    render(<UserCard user={mockUser} />);
+
+    const deleteButton = screen.queryByRole('button', { name: /delete/i });
+    expect(deleteButton).not.toBeInTheDocument();
+  });
+
+  it('handles null user name', () => {
+    const userWithoutName = { ...mockUser, name: null };
+    render(<UserCard user={userWithoutName} />);
+
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+  });
+});
+```
+
+### Testing Forms
+```typescript
+// LoginForm.test.tsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { LoginForm } from './LoginForm';
+
+describe('LoginForm', () => {
+  it('submits form with valid data', async () => {
+    const onSubmit = jest.fn();
+    render(<LoginForm onSubmit={onSubmit} />);
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+
+    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+    });
+  });
+
+  it('shows validation errors for invalid email', async () => {
+    render(<LoginForm onSubmit={jest.fn()} />);
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'invalid-email');
+    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+    });
+  });
+
+  it('disables submit button during submission', async () => {
+    const onSubmit = jest.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
+    render(<LoginForm onSubmit={onSubmit} />);
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+
+    const submitButton = screen.getByRole('button', { name: /login/i });
+    fireEvent.click(submitButton);
+
+    expect(submitButton).toBeDisabled();
+  });
+});
+```
+
+### Testing Hooks
+```typescript
+// useAuth.test.ts
+import { renderHook, act } from '@testing-library/react';
+import { useAuth } from './useAuth';
+
+describe('useAuth', () => {
+  it('initializes with null user', () => {
+    const { result } = renderHook(() => useAuth());
+    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  it('sets user on login', async () => {
+    const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      await result.current.login('test@example.com', 'password');
+    });
+
+    expect(result.current.user).not.toBeNull();
+    expect(result.current.isAuthenticated).toBe(true);
+  });
+
+  it('clears user on logout', async () => {
+    const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      await result.current.login('test@example.com', 'password');
+    });
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+});
+```
+
+## API Route Tests
+
+### Testing Next.js API Routes
+```typescript
+// route.test.ts
+import { NextRequest } from 'next/server';
+import { POST } from './route';
+
+// Mock Prisma
+jest.mock('@/lib/db', () => ({
+  prisma: {
+    user: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+    },
+  },
+}));
+
+// Mock auth
+jest.mock('@/lib/auth', () => ({
+  getSession: jest.fn(),
+}));
+
+describe('POST /api/users', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('creates user with valid data', async () => {
+    const { getSession } = require('@/lib/auth');
+    const { prisma } = require('@/lib/db');
+
+    getSession.mockResolvedValue({ userId: 'admin-id' });
+    prisma.user.create.mockResolvedValue({
+      id: 'new-user-id',
+      email: 'test@example.com',
+      name: 'Test User',
+    });
+
+    const request = new NextRequest('http://localhost/api/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'test@example.com',
+        name: 'Test User',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.id).toBe('new-user-id');
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: {
+        email: 'test@example.com',
+        name: 'Test User',
+      },
+    });
+  });
+
+  it('returns 401 when not authenticated', async () => {
+    const { getSession } = require('@/lib/auth');
+    getSession.mockResolvedValue(null);
+
+    const request = new NextRequest('http://localhost/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'test@example.com' }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('unauthorized');
+  });
+
+  it('returns 400 for invalid email', async () => {
+    const { getSession } = require('@/lib/auth');
+    getSession.mockResolvedValue({ userId: 'admin-id' });
+
+    const request = new NextRequest('http://localhost/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'invalid-email' }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('invalid_body');
+  });
+});
+```
+
+## Mocking
+
+### Mocking Modules
+```typescript
+// Mock entire module
+jest.mock('@/lib/db');
+
+// Mock specific functions
+jest.mock('@/lib/auth', () => ({
+  getSession: jest.fn(),
+  hashPassword: jest.fn(),
+}));
+
+// Partial mock (keep some real implementations)
+jest.mock('@/lib/utils', () => ({
+  ...jest.requireActual('@/lib/utils'),
+  formatDate: jest.fn(),
+}));
+```
+
+### Mocking Prisma
+```typescript
+// __mocks__/@/lib/db.ts
+export const prisma = {
+  user: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  site: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+};
+```
+
+### Mocking fetch
+```typescript
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ data: 'mocked' }),
+  })
+) as jest.Mock;
+
+// Reset between tests
+beforeEach(() => {
+  (global.fetch as jest.Mock).mockClear();
+});
+```
+
+## Test Helpers
+
+### Custom Render with Providers
+```typescript
+// test-utils.tsx
+import { render } from '@testing-library/react';
+import { ThemeProvider } from 'next-themes';
+
+export function renderWithProviders(ui: React.ReactElement) {
+  return render(
+    <ThemeProvider attribute="class">
+      {ui}
+    </ThemeProvider>
+  );
+}
+
+// Usage
+import { renderWithProviders } from '@/test-utils';
+
+test('component with theme', () => {
+  renderWithProviders(<MyComponent />);
+});
+```
+
+### Test Fixtures
+```typescript
+// fixtures/users.ts
+export const mockUser = {
+  id: 'user-1',
+  email: 'test@example.com',
+  name: 'Test User',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+};
+
+export const mockAdmin = {
+  id: 'admin-1',
+  email: 'admin@example.com',
+  name: 'Admin User',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+};
+
+export function createMockUser(overrides = {}) {
+  return {
+    ...mockUser,
+    ...overrides,
+  };
+}
+```
+
+## Best Practices
+
+### 1. AAA Pattern
+Arrange-Act-Assert:
+
+```typescript
+it('adds two numbers', () => {
+  // Arrange
+  const a = 5;
+  const b = 3;
+
+  // Act
+  const result = add(a, b);
+
+  // Assert
+  expect(result).toBe(8);
+});
+```
+
+### 2. One Assertion Per Test
+```typescript
+// Good: Single focused test
+it('validates email format', () => {
+  const result = validateEmail('test@example.com');
+  expect(result.isValid).toBe(true);
+});
+
+it('returns error for invalid email', () => {
+  const result = validateEmail('invalid');
+  expect(result.error).toBe('Invalid email format');
+});
+
+// Avoid: Multiple unrelated assertions
+it('validates email', () => {
+  expect(validateEmail('test@example.com').isValid).toBe(true);
+  expect(validateEmail('invalid').error).toBe('Invalid email format');
+  expect(validateEmail('').error).toBe('Email required');
+});
+```
+
+### 3. Test Edge Cases
+```typescript
+describe('divide', () => {
+  it('divides two positive numbers', () => {
+    expect(divide(10, 2)).toBe(5);
+  });
+
+  it('handles division by zero', () => {
+    expect(() => divide(10, 0)).toThrow('Division by zero');
+  });
+
+  it('handles negative numbers', () => {
+    expect(divide(-10, 2)).toBe(-5);
+  });
+
+  it('handles decimals', () => {
+    expect(divide(5, 2)).toBe(2.5);
+  });
+});
+```
+
+### 4. Avoid Test Interdependence
+```typescript
+// Bad: Tests depend on each other
+let user;
+
+it('creates user', () => {
+  user = createUser();
+  expect(user).toBeDefined();
+});
+
+it('updates user', () => {
+  updateUser(user); // Depends on previous test
+});
+
+// Good: Each test is independent
+it('creates user', () => {
+  const user = createUser();
+  expect(user).toBeDefined();
+});
+
+it('updates user', () => {
+  const user = createUser();
+  updateUser(user);
+  expect(user.updated).toBe(true);
+});
+```
+
+### 5. Clean Up After Tests
+```typescript
+describe('Component with side effects', () => {
+  let cleanup: () => void;
+
+  afterEach(() => {
+    cleanup?.();
+    jest.clearAllMocks();
+  });
+
+  it('test with cleanup', () => {
+    const { unmount } = render(<Component />);
+    cleanup = unmount;
+    // Test logic
+  });
+});
+```
+
+## Code Coverage
+
+### Coverage Goals
+- **Statements**: > 80%
+- **Branches**: > 75%
+- **Functions**: > 80%
+- **Lines**: > 80%
+
+### Run Coverage
+```bash
+# Run tests with coverage
+pnpm test --coverage
+
+# View coverage report
+open coverage/lcov-report/index.html
+```
+
+### Focus on Critical Paths
+Prioritize testing:
+1. Business logic
+2. User-facing features
+3. Security-critical code
+4. Complex algorithms
+5. Error handling

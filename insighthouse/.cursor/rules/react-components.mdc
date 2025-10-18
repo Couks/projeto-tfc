@@ -1,0 +1,450 @@
+---
+description: React component patterns and best practices
+globs:
+  - src/**/*.tsx
+  - src/**/*.jsx
+alwaysApply: false
+---
+
+# React Component Standards
+
+## Component Structure
+
+### Server Components (Default)
+Use Server Components by default for better performance. They should:
+- Handle data fetching directly
+- Not use React hooks (useState, useEffect, etc.)
+- Not use browser APIs
+- Return JSX directly
+
+Example:
+```typescript
+import { prisma } from '@/lib/db';
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+
+export default async function UserList() {
+  const users = await prisma.user.findMany();
+
+  return (
+    <div className="space-y-4">
+      {users.map((user) => (
+        <Card key={user.id}>
+          <CardHeader>
+            <CardTitle>{user.name}</CardTitle>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  );
+}
+```
+
+### Client Components
+Use `'use client'` directive only when needed for:
+- Interactive features (onClick, onChange, etc.)
+- React hooks (useState, useEffect, useContext, etc.)
+- Browser APIs (localStorage, navigator, etc.)
+- Third-party libraries that use hooks
+
+Example:
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@ui/button';
+
+export function InteractiveButton() {
+  const [count, setCount] = useState(0);
+  const router = useRouter();
+
+  const handleClick = () => {
+    setCount(count + 1);
+    router.refresh();
+  };
+
+  return (
+    <Button onClick={handleClick}>
+      Clicked {count} times
+    </Button>
+  );
+}
+```
+
+## Component Anatomy
+Follow this order for component elements:
+
+1. **Imports** (organized by type)
+2. **Type Definitions** (Props interfaces, local types)
+3. **Constants** (component-level constants)
+4. **Component Function**
+   - Props destructuring
+   - Hooks (in order: state, refs, context, effects)
+   - Event handlers
+   - Derived values
+   - Conditional early returns
+   - Main JSX return
+5. **Display Name** (for debugging)
+6. **Exports**
+
+Example:
+```typescript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@ui/button';
+import type { User } from '@prisma/client';
+
+interface UserCardProps {
+  user: User;
+  onUpdate?: (user: User) => void;
+}
+
+const MAX_NAME_LENGTH = 50;
+
+export function UserCard({ user, onUpdate }: UserCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(user.name);
+
+  useEffect(() => {
+    setName(user.name);
+  }, [user.name]);
+
+  const handleSave = () => {
+    setIsEditing(false);
+    onUpdate?.({ ...user, name });
+  };
+
+  const truncatedName = name.length > MAX_NAME_LENGTH
+    ? `${name.slice(0, MAX_NAME_LENGTH)}...`
+    : name;
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-lg font-semibold">{truncatedName}</h3>
+      <Button onClick={handleSave}>Save</Button>
+    </div>
+  );
+}
+
+UserCard.displayName = 'UserCard';
+```
+
+## Props Best Practices
+
+### Props Interface
+- Always define TypeScript interfaces for props
+- Use descriptive names
+- Mark optional props with `?`
+- Provide default values when appropriate
+- Use `children` for composition
+
+```typescript
+interface ComponentProps {
+  // Required props first
+  id: string;
+  title: string;
+
+  // Optional props
+  description?: string;
+  variant?: 'default' | 'outlined' | 'ghost';
+
+  // Event handlers
+  onClick?: () => void;
+  onSubmit?: (data: FormData) => Promise<void>;
+
+  // Children and composition
+  children?: React.ReactNode;
+
+  // Style overrides
+  className?: string;
+}
+```
+
+### Props Destructuring
+Destructure props in the function signature with defaults:
+
+```typescript
+export function Component({
+  title,
+  variant = 'default',
+  onClick,
+  className,
+  children,
+}: ComponentProps) {
+  // Component logic
+}
+```
+
+## State Management
+
+### Local State
+Use `useState` for component-specific state:
+
+```typescript
+const [isOpen, setIsOpen] = useState(false);
+const [data, setData] = useState<User | null>(null);
+```
+
+### Derived State
+Compute values from props or state instead of storing them:
+
+```typescript
+// Good: Derived value
+const isValid = email.includes('@') && password.length >= 8;
+
+// Bad: Redundant state
+const [isValid, setIsValid] = useState(false);
+useEffect(() => {
+  setIsValid(email.includes('@') && password.length >= 8);
+}, [email, password]);
+```
+
+### Form State
+For forms, use controlled components:
+
+```typescript
+const [formData, setFormData] = useState({
+  email: '',
+  password: '',
+});
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setFormData(prev => ({
+    ...prev,
+    [e.target.name]: e.target.value,
+  }));
+};
+```
+
+## Event Handlers
+
+### Naming
+- Use `handle` prefix: `handleClick`, `handleSubmit`, `handleChange`
+- For passed callbacks, use `on` prefix: `onClick`, `onSubmit`, `onChange`
+
+### Implementation
+```typescript
+// Simple handlers
+const handleClick = () => {
+  console.log('Clicked');
+};
+
+// Handlers with parameters
+const handleDelete = (id: string) => {
+  // Delete logic
+};
+
+// Async handlers
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    await submitForm(formData);
+  } catch (error) {
+    console.error('Submit failed:', error);
+  }
+};
+
+// Handler with inline callback
+<Button onClick={() => handleDelete(item.id)}>Delete</Button>
+```
+
+## Styling with Tailwind
+
+### Class Organization
+Use this order for Tailwind classes:
+1. Layout (flex, grid, block, etc.)
+2. Positioning (relative, absolute, etc.)
+3. Sizing (w-, h-, min-, max-)
+4. Spacing (m-, p-, gap-)
+5. Typography (text-, font-, leading-)
+6. Colors (bg-, text-, border-)
+7. Effects (shadow-, opacity-, etc.)
+8. States (hover:, focus:, etc.)
+
+```typescript
+<div className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md shadow-layer-1 hover:shadow-layer-2 transition-shadow">
+```
+
+### Dynamic Classes
+Use the `cn()` utility for conditional classes:
+
+```typescript
+import { cn } from 'src/utils/utils';
+
+<Button
+  className={cn(
+    "base-styles",
+    isActive && "active-styles",
+    variant === "outline" && "outline-styles",
+    className
+  )}
+>
+```
+
+## Conditional Rendering
+
+### Prefer Early Returns
+```typescript
+// Good: Early return
+if (!data) {
+  return <Spinner />;
+}
+
+return <DataDisplay data={data} />;
+
+// Avoid: Nested ternaries
+return data ? <DataDisplay data={data} /> : <Spinner />;
+```
+
+### Conditional JSX
+```typescript
+// Boolean conditions
+{isLoading && <Spinner />}
+
+// With fallback
+{error ? <ErrorMessage error={error} /> : <SuccessView />}
+
+// Multiple conditions
+{!isLoading && !error && data && <DataDisplay data={data} />}
+```
+
+## Lists and Keys
+
+### Mapping Arrays
+Always provide unique, stable keys:
+
+```typescript
+// Good: Stable ID
+{users.map((user) => (
+  <UserCard key={user.id} user={user} />
+))}
+
+// Acceptable: Unique combination
+{items.map((item, index) => (
+  <div key={`${item.id}-${index}`}>
+))}
+
+// Avoid: Index as key (if items can reorder)
+{items.map((item, index) => (
+  <div key={index}>
+))}
+```
+
+## Component Composition
+
+### Children Pattern
+```typescript
+interface CardProps {
+  children: React.ReactNode;
+  title?: string;
+}
+
+export function Card({ title, children }: CardProps) {
+  return (
+    <div className="card">
+      {title && <h2>{title}</h2>}
+      {children}
+    </div>
+  );
+}
+
+// Usage
+<Card title="User Info">
+  <UserProfile />
+  <UserActions />
+</Card>
+```
+
+### Compound Components
+```typescript
+export function Table({ children }: { children: React.ReactNode }) {
+  return <table>{children}</table>;
+}
+
+Table.Header = function TableHeader({ children }: { children: React.ReactNode }) {
+  return <thead>{children}</thead>;
+};
+
+Table.Body = function TableBody({ children }: { children: React.ReactNode }) {
+  return <tbody>{children}</tbody>;
+};
+
+// Usage
+<Table>
+  <Table.Header>...</Table.Header>
+  <Table.Body>...</Table.Body>
+</Table>
+```
+
+## Performance Optimization
+
+### When to Use React.memo
+Only for expensive components that re-render frequently:
+
+```typescript
+export const ExpensiveComponent = React.memo(function ExpensiveComponent({ data }: Props) {
+  // Complex rendering logic
+  return <div>...</div>;
+});
+```
+
+### Callback Optimization
+Use `useCallback` for handlers passed to memoized children:
+
+```typescript
+const handleUpdate = useCallback((id: string) => {
+  updateItem(id);
+}, [updateItem]);
+```
+
+## Accessibility
+
+### Semantic HTML
+Use appropriate HTML elements:
+
+```typescript
+// Good
+<button onClick={handleClick}>Click me</button>
+<nav><a href="/about">About</a></nav>
+
+// Avoid
+<div onClick={handleClick}>Click me</div>
+```
+
+### ARIA Attributes
+Add ARIA labels when needed:
+
+```typescript
+<button
+  aria-label="Close dialog"
+  onClick={handleClose}
+>
+  <X size={16} />
+</button>
+```
+
+## Testing Considerations
+
+### Testable Components
+- Keep components pure when possible
+- Extract complex logic to separate functions
+- Avoid tight coupling to external dependencies
+- Use dependency injection for services
+
+```typescript
+// Good: Testable
+export function UserDisplay({ user }: { user: User }) {
+  const displayName = formatUserName(user);
+  return <div>{displayName}</div>;
+}
+
+// Helper function can be tested independently
+export function formatUserName(user: User): string {
+  return user.name || user.email;
+}
+```

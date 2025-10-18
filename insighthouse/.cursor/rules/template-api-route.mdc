@@ -1,0 +1,687 @@
+---
+description: Template for creating new API routes
+globs:
+alwaysApply: false
+---
+
+# API Route Template
+
+Use this template when creating new API routes in Next.js App Router.
+
+## Basic CRUD Route Template
+
+### Collection Route (GET, POST)
+
+```typescript
+// app/api/resources/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+
+export const runtime = 'nodejs';
+
+// GET /api/resources
+export async function GET(req: Request) {
+  try {
+    // Authentication
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Query parameters
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') ?? '1', 10);
+    const limit = parseInt(searchParams.get('limit') ?? '20', 10);
+    const search = searchParams.get('search');
+
+    // Validate pagination
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json(
+        { error: 'invalid_pagination' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch data
+    const [items, total] = await prisma.$transaction([
+      prisma.resource.findMany({
+        where: {
+          userId: session.userId,
+          ...(search && {
+            name: { contains: search, mode: 'insensitive' },
+          }),
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.resource.count({
+        where: {
+          userId: session.userId,
+          ...(search && {
+            name: { contains: search, mode: 'insensitive' },
+          }),
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      data: items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+
+  } catch (error) {
+    console.error('[API][GET /api/resources]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/resources
+const createSchema = z.object({
+  name: z.string().min(2).max(100),
+  description: z.string().max(500).optional(),
+  metadata: z.record(z.string()).optional(),
+});
+
+export async function POST(req: Request) {
+  try {
+    // Authentication
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Parse and validate body
+    const body = await req.json().catch(() => ({}));
+    const parsed = createSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'invalid_body',
+          details: parsed.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const { name, description, metadata } = parsed.data;
+
+    // Check for duplicates (if needed)
+    const existing = await prisma.resource.findFirst({
+      where: {
+        userId: session.userId,
+        name,
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'resource_already_exists' },
+        { status: 409 }
+      );
+    }
+
+    // Create resource
+    const resource = await prisma.resource.create({
+      data: {
+        userId: session.userId,
+        name,
+        description,
+        metadata: metadata ?? {},
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(resource, { status: 201 });
+
+  } catch (error) {
+    console.error('[API][POST /api/resources]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Item Route (GET, PUT, DELETE)
+
+```typescript
+// app/api/resources/[id]/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+
+export const runtime = 'nodejs';
+
+// GET /api/resources/:id
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const resource = await prisma.resource.findUnique({
+      where: { id: params.id },
+      include: {
+        relatedItems: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!resource) {
+      return NextResponse.json(
+        { error: 'not_found' },
+        { status: 404 }
+      );
+    }
+
+    // Authorization: Check ownership
+    if (resource.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'forbidden' },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(resource);
+
+  } catch (error) {
+    console.error('[API][GET /api/resources/:id]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/resources/:id
+const updateSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  description: z.string().max(500).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+});
+
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Validate body
+    const body = await req.json().catch(() => ({}));
+    const parsed = updateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'invalid_body',
+          details: parsed.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check existence and ownership
+    const existing = await prisma.resource.findUnique({
+      where: { id: params.id },
+      select: { id: true, userId: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'not_found' },
+        { status: 404 }
+      );
+    }
+
+    if (existing.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'forbidden' },
+        { status: 403 }
+      );
+    }
+
+    // Update
+    const updated = await prisma.resource.update({
+      where: { id: params.id },
+      data: parsed.data,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json(updated);
+
+  } catch (error) {
+    console.error('[API][PUT /api/resources/:id]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/resources/:id
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Check existence and ownership
+    const existing = await prisma.resource.findUnique({
+      where: { id: params.id },
+      select: { id: true, userId: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'not_found' },
+        { status: 404 }
+      );
+    }
+
+    if (existing.userId !== session.userId) {
+      return NextResponse.json(
+        { error: 'forbidden' },
+        { status: 403 }
+      );
+    }
+
+    // Delete
+    await prisma.resource.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+
+  } catch (error) {
+    console.error('[API][DELETE /api/resources/:id]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Public API Route Template
+
+```typescript
+// app/api/public/data/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+export const runtime = 'nodejs';
+
+// No authentication required
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const key = searchParams.get('key');
+
+    // Validate required params
+    if (!key) {
+      return NextResponse.json(
+        { error: 'missing_key_parameter' },
+        { status: 400 }
+      );
+    }
+
+    // Verify API key (for public APIs)
+    const validKeys = (process.env.PUBLIC_API_KEYS ?? '').split(',');
+    if (!validKeys.includes(key)) {
+      return NextResponse.json(
+        { error: 'invalid_api_key' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch public data
+    const data = await fetchPublicData();
+
+    // Set CORS headers
+    const response = NextResponse.json({ data });
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Cache-Control', 'public, max-age=300');
+
+    return response;
+
+  } catch (error) {
+    console.error('[API][GET /api/public/data]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+
+// CORS preflight
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+```
+
+## File Upload Route Template
+
+```typescript
+// app/api/upload/route.ts
+import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+
+export const runtime = 'nodejs';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export async function POST(req: Request) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const formData = await req.formData();
+    const file = formData.get('file') as File | null;
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'no_file_provided' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'file_too_large', maxSize: MAX_FILE_SIZE },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'invalid_file_type', allowedTypes: ALLOWED_TYPES },
+        { status: 400 }
+      );
+    }
+
+    // Process file
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Upload to storage service (S3, Cloudinary, etc.)
+    const url = await uploadToStorage(buffer, file.name, file.type);
+
+    // Save to database
+    const upload = await prisma.upload.create({
+      data: {
+        userId: session.userId,
+        filename: file.name,
+        mimetype: file.type,
+        size: file.size,
+        url,
+      },
+    });
+
+    return NextResponse.json({
+      id: upload.id,
+      url: upload.url,
+      filename: upload.filename,
+    });
+
+  } catch (error) {
+    console.error('[API][POST /api/upload]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Webhook Route Template
+
+```typescript
+// app/api/webhooks/service/route.ts
+import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+
+export const runtime = 'nodejs';
+
+// Verify webhook signature
+function verifySignature(payload: string, signature: string): boolean {
+  const secret = process.env.WEBHOOK_SECRET ?? '';
+  const hmac = crypto.createHmac('sha256', secret);
+  const digest = hmac.update(payload).digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(digest)
+  );
+}
+
+export async function POST(req: Request) {
+  try {
+    const payload = await req.text();
+    const signature = req.headers.get('x-signature') ?? '';
+
+    // Verify signature
+    if (!verifySignature(payload, signature)) {
+      console.warn('[Webhook] Invalid signature');
+      return NextResponse.json(
+        { error: 'invalid_signature' },
+        { status: 401 }
+      );
+    }
+
+    // Parse payload
+    const data = JSON.parse(payload);
+
+    // Process webhook event
+    console.log('[Webhook] Event received:', data.type);
+
+    switch (data.type) {
+      case 'user.created':
+        await handleUserCreated(data);
+        break;
+      case 'user.updated':
+        await handleUserUpdated(data);
+        break;
+      default:
+        console.warn('[Webhook] Unknown event type:', data.type);
+    }
+
+    return NextResponse.json({ received: true });
+
+  } catch (error) {
+    console.error('[Webhook] Error processing webhook:', error);
+    return NextResponse.json(
+      { error: 'webhook_processing_failed' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleUserCreated(data: any) {
+  // Implementation
+}
+
+async function handleUserUpdated(data: any) {
+  // Implementation
+}
+```
+
+## Batch Operation Route Template
+
+```typescript
+// app/api/resources/batch/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+
+const batchSchema = z.object({
+  action: z.enum(['delete', 'update', 'archive']),
+  ids: z.array(z.string().cuid()).min(1).max(100),
+  data: z.record(z.any()).optional(),
+});
+
+export async function POST(req: Request) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const parsed = batchSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'invalid_body', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { action, ids, data } = parsed.data;
+
+    // Verify all resources belong to user
+    const resources = await prisma.resource.findMany({
+      where: {
+        id: { in: ids },
+        userId: session.userId,
+      },
+      select: { id: true },
+    });
+
+    if (resources.length !== ids.length) {
+      return NextResponse.json(
+        { error: 'some_resources_not_found_or_forbidden' },
+        { status: 403 }
+      );
+    }
+
+    // Perform batch action
+    let result;
+    switch (action) {
+      case 'delete':
+        result = await prisma.resource.deleteMany({
+          where: { id: { in: ids } },
+        });
+        break;
+      case 'update':
+        result = await prisma.resource.updateMany({
+          where: { id: { in: ids } },
+          data: data ?? {},
+        });
+        break;
+      case 'archive':
+        result = await prisma.resource.updateMany({
+          where: { id: { in: ids } },
+          data: { status: 'archived' },
+        });
+        break;
+    }
+
+    return NextResponse.json({
+      success: true,
+      affected: result.count,
+    });
+
+  } catch (error) {
+    console.error('[API][POST /api/resources/batch]', error);
+    return NextResponse.json(
+      { error: 'internal_server_error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Checklist for New API Routes
+
+When creating a new API route, ensure:
+
+- [ ] Runtime is specified (`nodejs` or `edge`)
+- [ ] Authentication is checked for protected routes
+- [ ] Request body is validated with Zod
+- [ ] Query parameters are validated
+- [ ] Appropriate HTTP status codes are used
+- [ ] Errors are caught and logged with context
+- [ ] User owns resources being accessed (authorization)
+- [ ] Response format is consistent
+- [ ] CORS headers are set (if needed)
+- [ ] Rate limiting is considered (if public)
+- [ ] Database queries use `select` to limit fields
+- [ ] Sensitive data is not exposed in responses

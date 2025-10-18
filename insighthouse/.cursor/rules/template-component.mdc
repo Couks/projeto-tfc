@@ -1,0 +1,466 @@
+---
+description: Template for creating new React components
+globs:
+alwaysApply: false
+---
+
+# React Component Template
+
+Use this template when creating new React components.
+
+## Server Component Template
+
+```typescript
+// ComponentName.tsx
+import { prisma } from '@/lib/db';
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+
+interface ComponentNameProps {
+  id: string;
+  className?: string;
+}
+
+export default async function ComponentName({
+  id,
+  className
+}: ComponentNameProps) {
+  // Data fetching
+  const data = await prisma.model.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      // Select only needed fields
+    },
+  });
+
+  // Early return for null/error states
+  if (!data) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        No data available
+      </div>
+    );
+  }
+
+  // Main render
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{data.name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Component content */}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## Client Component Template
+
+```typescript
+// ComponentName.tsx
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@ui/button';
+import { cn } from 'src/utils/utils';
+
+interface ComponentNameProps {
+  initialData?: DataType;
+  onSubmit?: (data: DataType) => void;
+  className?: string;
+}
+
+export function ComponentName({
+  initialData,
+  onSubmit,
+  className,
+}: ComponentNameProps) {
+  // State
+  const [data, setData] = useState(initialData ?? defaultValue);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Hooks
+  const router = useRouter();
+
+  // Event handlers
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await onSubmit?.(data);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Derived values
+  const isValid = data !== null;
+
+  // Conditional renders
+  if (error) {
+    return (
+      <div className="text-sm text-destructive">
+        Error: {error}
+      </div>
+    );
+  }
+
+  // Main render
+  return (
+    <div className={cn('space-y-4', className)}>
+      {/* Component content */}
+      <Button
+        onClick={handleSubmit}
+        disabled={isLoading || !isValid}
+      >
+        {isLoading ? 'Loading...' : 'Submit'}
+      </Button>
+    </div>
+  );
+}
+
+ComponentName.displayName = 'ComponentName';
+```
+
+## Feature Component with Sub-components
+
+```typescript
+// FeatureName/FeatureName.tsx
+'use client';
+
+import { useState } from 'react';
+import { Card } from '@ui/card';
+import { FeatureHeader } from './FeatureHeader';
+import { FeatureContent } from './FeatureContent';
+import { FeatureFooter } from './FeatureFooter';
+
+interface FeatureNameProps {
+  data: DataType;
+  onUpdate?: (data: DataType) => Promise<void>;
+}
+
+export function FeatureName({ data, onUpdate }: FeatureNameProps) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleSave = async (updates: Partial<DataType>) => {
+    await onUpdate?.({ ...data, ...updates });
+    setIsEditing(false);
+  };
+
+  return (
+    <Card>
+      <FeatureHeader
+        title={data.title}
+        isEditing={isEditing}
+        onToggleEdit={() => setIsEditing(!isEditing)}
+      />
+      <FeatureContent
+        data={data}
+        isEditing={isEditing}
+        onSave={handleSave}
+      />
+      <FeatureFooter data={data} />
+    </Card>
+  );
+}
+
+// FeatureName/FeatureHeader.tsx
+interface FeatureHeaderProps {
+  title: string;
+  isEditing: boolean;
+  onToggleEdit: () => void;
+}
+
+export function FeatureHeader({
+  title,
+  isEditing,
+  onToggleEdit
+}: FeatureHeaderProps) {
+  return (
+    <div className="flex items-center justify-between p-4">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <Button variant="ghost" onClick={onToggleEdit}>
+        {isEditing ? 'Cancel' : 'Edit'}
+      </Button>
+    </div>
+  );
+}
+```
+
+## Form Component Template
+
+```typescript
+// ComponentForm.tsx
+'use client';
+
+import { useState } from 'react';
+import { z } from 'zod';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Label } from '@ui/label';
+
+// Validation schema
+const formSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  description: z.string().max(500).optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface ComponentFormProps {
+  initialData?: Partial<FormData>;
+  onSubmit: (data: FormData) => Promise<void>;
+  onCancel?: () => void;
+}
+
+export function ComponentForm({
+  initialData,
+  onSubmit,
+  onCancel
+}: ComponentFormProps) {
+  const [formData, setFormData] = useState<Partial<FormData>>(
+    initialData ?? {}
+  );
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (field: keyof FormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    // Clear error for this field
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    // Validate
+    const result = formSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof FormData, string>> = {};
+      result.error.errors.forEach(err => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as keyof FormData] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    // Submit
+    setIsSubmitting(true);
+    try {
+      await onSubmit(result.data);
+    } catch (error) {
+      console.error('Form submission error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          value={formData.name ?? ''}
+          onChange={handleChange('name')}
+          placeholder="Enter name"
+          aria-invalid={!!errors.name}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email ?? ''}
+          onChange={handleChange('email')}
+          placeholder="Enter email"
+          aria-invalid={!!errors.email}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email}</p>
+        )}
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+```
+
+## List Component Template
+
+```typescript
+// ComponentList.tsx
+import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+import { ComponentCard } from './ComponentCard';
+import { EmptyState } from '@/lib/components/EmptyState';
+
+interface ComponentListProps {
+  searchQuery?: string;
+  filter?: string;
+}
+
+export default async function ComponentList({
+  searchQuery,
+  filter
+}: ComponentListProps) {
+  const session = await getSession();
+
+  if (!session) {
+    return <div>Please log in</div>;
+  }
+
+  const items = await prisma.item.findMany({
+    where: {
+      userId: session.userId,
+      ...(searchQuery && {
+        name: { contains: searchQuery, mode: 'insensitive' },
+      }),
+      ...(filter && { status: filter }),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        title="No items found"
+        description="Get started by creating your first item"
+        action={{ label: 'Create Item', href: '/items/new' }}
+      />
+    );
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <ComponentCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+}
+```
+
+## Modal/Dialog Component Template
+
+```typescript
+// ComponentDialog.tsx
+'use client';
+
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@ui/dialog';
+import { Button } from '@ui/button';
+
+interface ComponentDialogProps {
+  trigger?: React.ReactNode;
+  data?: DataType;
+  onConfirm?: (data: DataType) => Promise<void>;
+}
+
+export function ComponentDialog({
+  trigger,
+  data,
+  onConfirm
+}: ComponentDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    try {
+      await onConfirm?.(data);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Dialog action failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {trigger ?? <Button>Open Dialog</Button>}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Dialog Title</DialogTitle>
+          <DialogDescription>
+            Dialog description goes here
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Dialog content */}
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? 'Loading...' : 'Confirm'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+## Checklist for New Components
+
+When creating a new component, ensure:
+
+- [ ] Props interface is defined with TypeScript
+- [ ] Component uses appropriate directive (`'use client'` if needed)
+- [ ] Props are properly destructured with defaults
+- [ ] Loading and error states are handled
+- [ ] Null/empty states have clear UX
+- [ ] Event handlers use `handle` prefix
+- [ ] Tailwind classes are organized logically
+- [ ] Component has a `displayName` (for Client Components)
+- [ ] Accessibility attributes are added where needed
+- [ ] Component is exported correctly

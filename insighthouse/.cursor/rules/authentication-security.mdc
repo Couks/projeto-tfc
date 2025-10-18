@@ -1,0 +1,669 @@
+---
+description: Authentication and security patterns
+globs:
+  - src/lib/auth.ts
+  - src/middleware.ts
+  - src/app/api/auth/**/*.ts
+alwaysApply: false
+---
+
+# Authentication & Security Standards
+
+## Session Management
+
+### Session Cookie Pattern
+Use signed cookies with HMAC verification:
+
+```typescript
+import crypto from 'crypto';
+
+// Session type
+export type Session = { userId: string } | null;
+
+// Get secret from environment
+function getSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET || '';
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('NEXTAUTH_SECRET is required in production');
+    }
+    return 'dev-secret-do-not-use-in-prod';
+  }
+  return secret;
+}
+
+// Sign a value with HMAC
+function sign(value: string): string {
+  const hmac = crypto
+    .createHmac('sha256', getSecret())
+    .update(value)
+    .digest('hex');
+  return `${value}.${hmac}`;
+}
+
+// Verify signed value
+function verify(signed: string | undefined): string | null {
+  if (!signed) return null;
+
+  const lastDot = signed.lastIndexOf('.');
+  if (lastDot <= 0) return null;
+
+  const raw = signed.slice(0, lastDot);
+  const sig = signed.slice(lastDot + 1);
+
+  const check = crypto
+    .createHmac('sha256', getSecret())
+    .update(raw)
+    .digest('hex');
+
+  // Constant-time comparison
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(check))
+    ? raw
+    : null;
+}
+```
+
+### Session Cookie Creation
+```typescript
+export function createSignedSessionCookie(value: { userId: string }): string {
+  return sign(JSON.stringify(value));
+}
+
+// Usage in login route
+const signed = createSignedSessionCookie({ userId: user.id });
+const response = NextResponse.json({ ok: true });
+
+response.cookies.set('admin_session', signed, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 60 * 60 * 24 * 7, // 7 days
+});
+```
+
+### Session Retrieval
+```typescript
+import { cookies } from 'next/headers';
+
+export async function getSession(): Promise<Session> {
+  const store = await cookies();
+  const value = store.get('admin_session')?.value;
+
+  if (!value) return null;
+
+  try {
+    const raw = verify(value);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as { userId: string };
+
+    // Validate structure
+    if (!parsed?.userId || typeof parsed.userId !== 'string') {
+      return null;
+    }
+
+    return { userId: parsed.userId };
+  } catch {
+    return null;
+  }
+}
+```
+
+## Password Security
+
+### Password Hashing
+Use scrypt (Node.js built-in) for password hashing:
+
+```typescript
+import crypto from 'crypto';
+
+// Hash password with scrypt
+export async function hashPassword(plain: string): Promise<string> {
+  const salt = crypto.randomBytes(16);
+  const N = 16384;  // CPU/memory cost
+  const r = 8;      // Block size
+  const p = 1;      // Parallelization
+  const keylen = 64; // Output length
+
+  const derived = await new Promise<Buffer>((resolve, reject) => {
+    crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
+      if (err) reject(err);
+      else resolve(buf as Buffer);
+    });
+  });
+
+  return `scrypt$${N}$${r}$${p}$${salt.toString('base64')}$${derived.toString('base64')}`;
+}
+
+// Verify password
+export async function verifyPassword(
+  plain: string,
+  stored: string
+): Promise<boolean> {
+  try {
+    const [scheme, sN, sr, sp, sSalt, sHash] = stored.split('$');
+
+    if (scheme !== 'scrypt') return false;
+
+    const N = parseInt(sN, 10);
+    const r = parseInt(sr, 10);
+    const p = parseInt(sp, 10);
+    const salt = Buffer.from(sSalt, 'base64');
+    const expected = Buffer.from(sHash, 'base64');
+    const keylen = expected.length;
+
+    const derived = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
+        if (err) reject(err);
+        else resolve(buf as Buffer);
+      });
+    });
+
+    return crypto.timingSafeEqual(derived, expected);
+  } catch {
+    return false;
+  }
+}
+```
+
+### Password Validation
+```typescript
+import { z } from 'zod';
+
+// Password schema
+const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(100, 'Password must be less than 100 characters')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
+
+// Usage
+const result = passwordSchema.safeParse(password);
+if (!result.success) {
+  return { error: result.error.errors[0].message };
+}
+```
+
+## Middleware Authentication
+
+### Route Protection
+Define public and protected paths:
+
+```typescript
+// src/middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// Public paths (no auth required)
+const PUBLIC_PATHS: Array<(p: string) => boolean> = [
+  (p) => p === '/',
+  (p) => p === '/login',
+  (p) => p === '/register',
+  (p) => p.startsWith('/api/auth/'),
+  (p) => p.startsWith('/api/sdk/'),
+  (p) => p.startsWith('/static/'),
+];
+
+// Protected paths (auth required)
+const PROTECTED_PATHS: Array<(p: string) => boolean> = [
+  (p) => p.startsWith('/admin'),
+  (p) => p.startsWith('/api/sites'),
+  (p) => p.startsWith('/api/insights'),
+];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((fn) => fn(pathname));
+}
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PATHS.some((fn) => fn(pathname));
+}
+```
+
+### Session Verification in Middleware
+```typescript
+async function hasValidSessionCookie(req: NextRequest): Promise<boolean> {
+  const cookieValue = req.cookies.get('admin_session')?.value;
+  if (!cookieValue) return false;
+
+  try {
+    const session = await verifySignedCookie(cookieValue);
+    return session !== null;
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Allow public paths
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Check auth for protected paths
+  if (isProtectedPath(pathname)) {
+    const hasSession = await hasValidSessionCookie(req);
+
+    if (!hasSession) {
+      console.warn('[Middleware] Blocked unauthenticated access', { pathname });
+      const url = new URL('/login', req.url);
+      return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next();
+  }
+
+  // Default: allow
+  return NextResponse.next();
+}
+
+// Exclude Next.js internals
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+  ],
+};
+```
+
+## API Route Authentication
+
+### Protected API Routes
+Always check session in protected routes:
+
+```typescript
+import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+
+export async function GET(req: Request) {
+  // Verify authentication
+  const session = await getSession();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: 'unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Use session.userId for queries
+  const data = await prisma.site.findMany({
+    where: { userId: session.userId },
+  });
+
+  return NextResponse.json({ data });
+}
+```
+
+### Resource Authorization
+Verify user owns the resource:
+
+```typescript
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession();
+
+  if (!session) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  // Fetch resource
+  const resource = await prisma.site.findUnique({
+    where: { id: params.id },
+  });
+
+  // Check existence
+  if (!resource) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  // Check ownership
+  if (resource.userId !== session.userId) {
+    return NextResponse.json(
+      { error: 'forbidden', message: 'You do not own this resource' },
+      { status: 403 }
+    );
+  }
+
+  // Proceed with deletion
+  await prisma.site.delete({ where: { id: params.id } });
+
+  return NextResponse.json({ success: true });
+}
+```
+
+## Input Validation & Sanitization
+
+### Zod Validation
+Always validate and sanitize inputs:
+
+```typescript
+import { z } from 'zod';
+
+// Login schema
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(100),
+});
+
+// Registration schema
+const registerSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(100),
+  name: z.string().trim().min(2).max(100).optional(),
+});
+
+// Usage
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const parsed = loginSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: 'invalid_body',
+        details: parsed.error.errors
+      },
+      { status: 400 }
+    );
+  }
+
+  const { email, password } = parsed.data;
+  // Proceed with validated data
+}
+```
+
+### URL Validation
+```typescript
+// FQDN validation
+export function isValidFqdn(domain: string): boolean {
+  const regex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+  return regex.test(domain);
+}
+
+// URL validation with Zod
+const urlSchema = z.string().url().max(500);
+```
+
+## Security Headers
+
+### Set Security Headers
+Configure security headers in API responses:
+
+```typescript
+export function secureResponse(data: any) {
+  const response = NextResponse.json(data);
+
+  // Prevent MIME sniffing
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+
+  // XSS Protection
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+
+  // Frame options (prevent clickjacking)
+  response.headers.set('X-Frame-Options', 'DENY');
+
+  // Referrer policy
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return response;
+}
+```
+
+### CORS Configuration
+```typescript
+// Allow specific origins
+const ALLOWED_ORIGINS = [
+  process.env.SITE_URL,
+  'https://example.com',
+];
+
+function corsHeaders(origin: string | null) {
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return {};
+  }
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+// OPTIONS handler
+export async function OPTIONS(req: Request) {
+  const origin = req.headers.get('origin');
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(origin),
+  });
+}
+```
+
+## Rate Limiting
+
+### Simple In-Memory Rate Limiter
+```typescript
+// Note: Use Redis for production
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+export function rateLimit(
+  identifier: string,
+  limit: number = 100,
+  windowMs: number = 60000
+): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(identifier, {
+      count: 1,
+      resetAt: now + windowMs,
+    });
+    return true;
+  }
+
+  if (record.count >= limit) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+// Usage
+export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+
+  if (!rateLimit(ip, 10, 60000)) {
+    return NextResponse.json(
+      { error: 'rate_limit_exceeded' },
+      { status: 429 }
+    );
+  }
+
+  // Process request
+}
+```
+
+## CSRF Protection
+
+### CSRF Token for Forms
+```typescript
+// Generate CSRF token
+export function generateCsrfToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Store in session or signed cookie
+export function setCsrfToken(response: NextResponse, token: string) {
+  const signed = sign(token);
+  response.cookies.set('csrf_token', signed, {
+    httpOnly: true,
+    sameSite: 'strict',
+    path: '/',
+  });
+}
+
+// Verify CSRF token
+export function verifyCsrfToken(
+  cookieToken: string | undefined,
+  bodyToken: string | undefined
+): boolean {
+  if (!cookieToken || !bodyToken) return false;
+
+  const verified = verify(cookieToken);
+  if (!verified) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(verified),
+    Buffer.from(bodyToken)
+  );
+}
+```
+
+## Constant-Time Comparison
+
+### Prevent Timing Attacks
+Always use constant-time comparison for sensitive data:
+
+```typescript
+import crypto from 'crypto';
+
+// Good: Constant-time comparison
+function compareTokens(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+
+  return crypto.timingSafeEqual(
+    Buffer.from(a),
+    Buffer.from(b)
+  );
+}
+
+// Bad: Timing-vulnerable comparison
+function compareTokensBad(a: string, b: string): boolean {
+  return a === b; // Can be exploited with timing attacks
+}
+```
+
+## Environment Variables
+
+### Secure Configuration
+```typescript
+// Required environment variables
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'NEXTAUTH_SECRET',
+] as const;
+
+// Validate at startup
+export function validateEnv() {
+  const missing = requiredEnvVars.filter(
+    (key) => !process.env[key]
+  );
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}`
+    );
+  }
+}
+
+// Get with type safety
+export function getEnv(key: string, fallback?: string): string {
+  const value = process.env[key];
+
+  if (!value) {
+    if (fallback !== undefined) return fallback;
+    throw new Error(`Environment variable ${key} is not set`);
+  }
+
+  return value;
+}
+```
+
+## Logging for Security
+
+### Security Event Logging
+```typescript
+// Log security events
+export function logSecurityEvent(
+  event: string,
+  context: Record<string, any>
+) {
+  console.warn('[Security]', event, {
+    timestamp: new Date().toISOString(),
+    ...context,
+  });
+}
+
+// Usage
+logSecurityEvent('Failed login attempt', {
+  email,
+  ip: req.headers.get('x-forwarded-for'),
+});
+
+logSecurityEvent('Unauthorized access attempt', {
+  userId: session?.userId,
+  resource: params.id,
+  action: 'DELETE',
+});
+```
+
+## Common Security Pitfalls to Avoid
+
+### 1. Never Trust Client Input
+Always validate and sanitize all client input, including:
+- Request body
+- Query parameters
+- URL parameters
+- Headers
+- Cookies
+
+### 2. Never Expose Sensitive Data
+- Don't return password hashes in API responses
+- Don't log sensitive data (passwords, tokens, secrets)
+- Use `select` to exclude sensitive fields
+- Sanitize error messages
+
+### 3. Always Use HTTPS in Production
+```typescript
+if (process.env.NODE_ENV === 'production' && !req.headers.get('x-forwarded-proto')?.includes('https')) {
+  const httpsUrl = new URL(req.url);
+  httpsUrl.protocol = 'https:';
+  return NextResponse.redirect(httpsUrl);
+}
+```
+
+### 4. Implement Proper Error Handling
+```typescript
+// Good: Generic error message
+return NextResponse.json(
+  { error: 'authentication_failed' },
+  { status: 401 }
+);
+
+// Bad: Reveals internal details
+return NextResponse.json(
+  { error: `User ${email} not found in database` },
+  { status: 401 }
+);
+```
+
+### 5. Use Parameterized Queries
+Prisma handles this automatically, but if using raw SQL:
+
+```typescript
+// Good: Parameterized
+await prisma.$queryRaw`SELECT * FROM users WHERE email = ${email}`;
+
+// Bad: String interpolation
+await prisma.$queryRawUnsafe(`SELECT * FROM users WHERE email = '${email}'`);
+```
