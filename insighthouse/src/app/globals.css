@@ -8,6 +8,22 @@
   padding: 0;
 }
 
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sidebar-accent);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+
 
 @layer base {
   :root {
