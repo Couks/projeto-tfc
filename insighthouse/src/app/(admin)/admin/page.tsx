@@ -17,17 +17,100 @@ import {
   Settings,
   User,
 } from "lucide-react";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
 
-export default function AdminHome() {
-  // Mock data - in real app, fetch from API
+export default async function AdminHome() {
+  // Fetch real user data
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const sitesCount = await prisma.site.count({
+    where: { userId: session.userId },
+  });
+
+  const firstSite = await prisma.site.findFirst({
+    where: { userId: session.userId },
+    orderBy: { createdAt: "desc" },
+    select: { siteKey: true },
+  });
+
+  // Fetch metrics from PostHog if site exists
+  let overviewData: any = null;
+  let conversionsData: any = null;
+  let journeysData: any = null;
+
+  if (firstSite) {
+    try {
+      const [overviewRes, conversionsRes, journeysRes] = await Promise.all([
+        fetch(
+          `${
+            process.env.SITE_URL
+          }/api/insights/overview?site=${encodeURIComponent(
+            firstSite.siteKey
+          )}`,
+          { cache: "no-store" }
+        ),
+        fetch(
+          `${
+            process.env.SITE_URL
+          }/api/insights/conversions?site=${encodeURIComponent(
+            firstSite.siteKey
+          )}`,
+          { cache: "no-store" }
+        ),
+        fetch(
+          `${
+            process.env.SITE_URL
+          }/api/insights/journeys?site=${encodeURIComponent(
+            firstSite.siteKey
+          )}`,
+          { cache: "no-store" }
+        ),
+      ]);
+
+      if (overviewRes.ok) overviewData = await overviewRes.json();
+      if (conversionsRes.ok) conversionsData = await conversionsRes.json();
+      if (journeysRes.ok) journeysData = await journeysRes.json();
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  }
+
+  // Calculate metrics from real data
+  const totalConversions =
+    conversionsData?.conversion_types?.reduce(
+      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
+      0
+    ) || 0;
+
+  const totalSessions = journeysData?.session_metrics?.total_sessions || 0;
+
+  const conversionRate =
+    totalSessions > 0
+      ? ((totalConversions / totalSessions) * 100).toFixed(2)
+      : "0";
+
+  const bounceRate =
+    journeysData?.bounce_metrics?.total_sessions > 0
+      ? (
+          (journeysData.bounce_metrics.bounced_sessions /
+            journeysData.bounce_metrics.total_sessions) *
+          100
+        ).toFixed(1)
+      : "0";
+
   const metrics = {
-    totalVisitors: 12456,
-    totalSites: 3,
-    conversionRate: 3.2,
-    topCity: "São Paulo",
-    topPropertyType: "Apartamentos",
-    topPurpose: "Venda",
-    avgPriceRange: "R$ 200k - R$ 500k",
+    totalVisitors: journeysData?.session_metrics?.total_users || 0,
+    totalSites: sitesCount,
+    conversionRate: conversionRate,
+    bounceRate: bounceRate,
+    totalConversions: totalConversions,
+    topCity: overviewData?.cidades?.[0]?.[0] || "N/A",
+    topPropertyType: overviewData?.tipos?.[0]?.[0] || "N/A",
+    topPurpose: overviewData?.finalidade?.[0]?.[0] || "N/A",
+    avgPriceRange: overviewData?.preco_venda_ranges?.[0]?.[0] || "N/A",
   };
 
   return (
@@ -40,7 +123,7 @@ export default function AdminHome() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium">Visitantes</CardTitle>
@@ -48,10 +131,14 @@ export default function AdminHome() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.totalVisitors.toLocaleString()}
+              {metrics.totalVisitors > 0
+                ? metrics.totalVisitors.toLocaleString()
+                : "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">
-              +12.3% em relação ao mês anterior
+              {sitesCount > 0
+                ? "Últimos 30 dias"
+                : "Configure um site primeiro"}
             </p>
           </CardContent>
         </Card>
@@ -64,7 +151,30 @@ export default function AdminHome() {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalSites}</div>
             <p className="text-xs text-muted-foreground">
-              Todos funcionando normalmente
+              {metrics.totalSites === 0
+                ? "Nenhum site configurado"
+                : metrics.totalSites === 1
+                ? "Site funcionando"
+                : "Sites funcionando"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
+            <CardTitle className="text-sm font-medium">Conversões</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {metrics.totalConversions > 0
+                ? metrics.totalConversions.toLocaleString()
+                : "N/A"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {parseFloat(metrics.conversionRate) > 0
+                ? `Taxa: ${metrics.conversionRate}%`
+                : "Aguardando dados"}
             </p>
           </CardContent>
         </Card>
@@ -72,14 +182,24 @@ export default function AdminHome() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
             <CardTitle className="text-sm font-medium">
-              Taxa de Conversão
+              Taxa de Rejeição
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.conversionRate}%</div>
+            <div className="text-2xl font-bold">
+              {parseFloat(metrics.bounceRate) > 0
+                ? `${metrics.bounceRate}%`
+                : "N/A"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +0.1% em relação ao mês anterior
+              {parseFloat(metrics.bounceRate) > 0
+                ? parseFloat(metrics.bounceRate) < 25
+                  ? "Excelente ✅"
+                  : parseFloat(metrics.bounceRate) < 40
+                  ? "Normal"
+                  : "Precisa melhorar ⚠️"
+                : "Aguardando dados"}
             </p>
           </CardContent>
         </Card>
@@ -92,14 +212,16 @@ export default function AdminHome() {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.topCity}</div>
             <p className="text-xs text-muted-foreground">
-              1,234 pesquisas (14.6%)
+              {overviewData?.cidades?.[0]?.[1]
+                ? `${overviewData.cidades[0][1]} pesquisas`
+                : "Aguardando dados"}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Dashboard Analytics */}
         <Card>
           <CardHeader>
@@ -142,6 +264,47 @@ export default function AdminHome() {
                 Top Cidades
               </Link>
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Conversions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Conversões
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="w-full justify-start"
+            >
+              <Link href="/admin/conversions">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Todas Conversões
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="w-full justify-start"
+            >
+              <Link href="/admin/journeys">
+                <Users className="h-4 w-4 mr-2" />
+                Jornadas de Usuários
+              </Link>
+            </Button>
+            <div className="pt-2 border-t">
+              <div className="text-sm text-muted-foreground">
+                {metrics.totalConversions > 0
+                  ? `${metrics.totalConversions} conversões`
+                  : "Sem dados ainda"}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -247,10 +410,16 @@ export default function AdminHome() {
               <span className="text-2xl font-bold">
                 {metrics.topPropertyType}
               </span>
-              <Badge variant="secondary">45.2%</Badge>
+              {overviewData?.tipos?.[0]?.[1] && (
+                <Badge variant="secondary">
+                  {overviewData.tipos[0][1]} pesquisas
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Apartamentos lideram as pesquisas
+              {metrics.topPropertyType !== "N/A"
+                ? "Tipo mais procurado pelos usuários"
+                : "Aguardando dados de pesquisa"}
             </p>
           </CardContent>
         </Card>
@@ -262,27 +431,39 @@ export default function AdminHome() {
           <CardContent>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold">{metrics.topPurpose}</span>
-              <Badge variant="secondary">68.5%</Badge>
+              {overviewData?.finalidade?.[0]?.[1] && (
+                <Badge variant="secondary">
+                  {overviewData.finalidade[0][1]} pesquisas
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Venda é a finalidade mais procurada
+              {metrics.topPurpose !== "N/A"
+                ? "Finalidade mais procurada"
+                : "Aguardando dados de pesquisa"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Faixa de Preço Média</CardTitle>
+            <CardTitle className="text-base">Faixa de Preço Popular</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold">
                 {metrics.avgPriceRange}
               </span>
-              <Badge variant="secondary">35.2%</Badge>
+              {overviewData?.preco_venda_ranges?.[0]?.[1] && (
+                <Badge variant="secondary">
+                  {overviewData.preco_venda_ranges[0][1]} pesquisas
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Faixa mais popular nas pesquisas
+              {metrics.avgPriceRange !== "N/A"
+                ? "Faixa mais popular nas pesquisas"
+                : "Aguardando dados de pesquisa"}
             </p>
           </CardContent>
         </Card>

@@ -1,7 +1,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { CitiesChart } from "./_components/CitiesChart";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+
+async function fetchCitiesData(siteKey: string) {
+  try {
+    const res = await fetch(
+      `${process.env.SITE_URL}/api/insights/overview?site=${encodeURIComponent(
+        siteKey
+      )}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function CitiesPage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const site = await prisma.site.findFirst({
+    where: { userId: session.userId },
+    orderBy: { createdAt: "desc" },
+    select: { siteKey: true },
+  });
+
+  const data = site ? await fetchCitiesData(site.siteKey) : null;
+
+  // Calculate real metrics from data
+  const totalSearches =
+    data?.cidades?.reduce(
+      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
+      0
+    ) || 0;
+
+  const uniqueCities = data?.cidades?.length || 0;
+
+  const topCity = data?.cidades?.[0]?.[0] || "N/A";
+  const topCitySearches = data?.cidades?.[0]?.[1] || 0;
+  const topCityPercentage =
+    totalSearches > 0
+      ? ((topCitySearches / totalSearches) * 100).toFixed(1)
+      : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -27,9 +72,13 @@ export default async function CitiesPage() {
               <CardTitle className="text-base">Total de Pesquisas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8,456</div>
+              <div className="text-2xl font-bold">
+                {totalSearches > 0 ? totalSearches.toLocaleString() : "N/A"}
+              </div>
               <p className="text-xs text-muted-foreground">
-                +12.3% em relação ao mês anterior
+                {totalSearches > 0
+                  ? "Pesquisas por cidade registradas"
+                  : "Aguardando dados"}
               </p>
             </CardContent>
           </Card>
@@ -39,9 +88,13 @@ export default async function CitiesPage() {
               <CardTitle className="text-base">Cidades Únicas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">127</div>
+              <div className="text-2xl font-bold">
+                {uniqueCities > 0 ? uniqueCities : "N/A"}
+              </div>
               <p className="text-xs text-muted-foreground">
-                +3.1% em relação ao mês anterior
+                {uniqueCities > 0
+                  ? "Cidades diferentes pesquisadas"
+                  : "Aguardando dados"}
               </p>
             </CardContent>
           </Card>
@@ -51,9 +104,11 @@ export default async function CitiesPage() {
               <CardTitle className="text-base">Cidade Líder</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">São Paulo</div>
+              <div className="text-2xl font-bold">{topCity}</div>
               <p className="text-xs text-muted-foreground">
-                1,234 pesquisas (14.6%)
+                {topCitySearches > 0
+                  ? `${topCitySearches} pesquisas (${topCityPercentage}%)`
+                  : "Aguardando dados"}
               </p>
             </CardContent>
           </Card>

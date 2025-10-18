@@ -27,6 +27,12 @@ export async function POST(req: Request) {
   if (!ok)
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
 
+  // Update last login timestamp
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
   const signed = createSignedSessionCookie({ userId: user.id });
   const res = NextResponse.json({ ok: true });
   res.cookies.set("admin_session", signed, {

@@ -9,6 +9,40 @@ const createSchema = z.object({
   domain: z.string().transform((s) => s.toLowerCase())
 });
 
+// GET /api/sites - List all sites for the logged-in user
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const sites = await prisma.site.findMany({
+      where: { userId: session.userId },
+      select: {
+        id: true,
+        name: true,
+        siteKey: true,
+        status: true,
+        createdAt: true,
+        domains: {
+          select: {
+            id: true,
+            host: true,
+            isPrimary: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(sites);
+  } catch (error) {
+    console.error('[API][GET /api/sites]', error);
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
