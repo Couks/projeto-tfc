@@ -48,6 +48,13 @@ import {
   HelpCircle,
   Gauge,
   GaugeCircle,
+  TrendingUp,
+  Users,
+  MapPin,
+  Target,
+  Activity,
+  CircleDollarSign,
+  User,
 } from "lucide-react";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
 import {
@@ -90,6 +97,7 @@ export default async function AdminLayout({
           </div>
         </SidebarHeader>
         <SidebarContent>
+          {/* Dashboard Principal */}
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <span className="text-xs">Dashboard</span>
@@ -97,51 +105,66 @@ export default async function AdminLayout({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Visão geral">
+                  <SidebarMenuButton asChild tooltip="Visão Geral">
                     <Link href="/admin/">
-                      <LayoutGrid /> <span>Visão geral</span>
+                      <LayoutGrid /> <span>Visão Geral</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
-              <Collapsible open={true}>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          {/* Relatórios Detalhados */}
+          <SidebarGroup>
+            <SidebarGroupLabel asChild>
+              <span className="text-xs">Relatórios</span>
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <Collapsible defaultOpen={false}>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton asChild tooltip="Relatórios">
-                    <Link href="/admin/">
-                      <GaugeCircle /> <span>Relatórios</span>
-                    </Link>
+                  <SidebarMenuButton tooltip="Análises Detalhadas">
+                    <GaugeCircle /> <span>Análises Detalhadas</span>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard">
-                        <span>Métricas principais</span>
+                        <Gauge className="w-4 h-4" />
+                        <span>Métricas Gerais</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard/funnel">
-                        <span>Funil de conversão</span>
+                        <Target className="w-4 h-4" />
+                        <span>Funil de Conversão</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard/cities">
-                        <span>Top cidades</span>
+                        <MapPin className="w-4 h-4" />
+                        <span>Análise por Cidades</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard/types">
-                        <span>Tipos de imóveis</span>
+                        <Building2 className="w-4 h-4" />
+                        <span>Tipos de Imóveis</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard/purposes">
+                        <Activity className="w-4 h-4" />
                         <span>Finalidades</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton href="/admin/dashboard/prices">
-                        <span>Faixas de preço</span>
+                        <CircleDollarSign className="w-4 h-4" />
+                        <span>Faixas de Preço</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -152,6 +175,36 @@ export default async function AdminLayout({
 
           <SidebarSeparator />
 
+          {/* Análise de Conversões */}
+          <SidebarGroup>
+            <SidebarGroupLabel asChild>
+              <span className="text-xs">Conversões</span>
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Análise de Conversões">
+                    <Link href="/admin/conversions">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Análise de Conversões</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Jornadas do Usuário">
+                    <Link href="/admin/journeys">
+                      <Users className="w-4 h-4" />
+                      <span>Jornadas do Usuário</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          {/* Gerenciamento */}
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <span className="text-xs">Gerenciamento</span>
@@ -159,10 +212,10 @@ export default async function AdminLayout({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Sites">
+                  <SidebarMenuButton asChild tooltip="Gerenciar Sites">
                     <Link href="/admin/sites">
                       <Building2 className="w-4 h-4" />
-                      <span>Sites</span>
+                      <span>Gerenciar Sites</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -170,7 +223,15 @@ export default async function AdminLayout({
                   <SidebarMenuButton asChild tooltip="Configurações">
                     <Link href="/admin/install">
                       <Settings className="w-4 h-4" />
-                      <span>Configuração</span>
+                      <span>Configurações</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Minha Conta">
+                    <Link href="/admin/account">
+                      <User className="w-4 h-4" />
+                      <span>Minha Conta</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -206,13 +267,11 @@ export default async function AdminLayout({
                   side="top"
                   className="w-[--radix-popper-anchor-width]"
                 >
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/account">
-                      <span>Conta</span>
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem>
                     <span>Pagamento</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <span>Suporte</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <form
@@ -232,8 +291,8 @@ export default async function AdminLayout({
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      <SidebarInset className="rounded-lg m-2 border border-sidebar-border shadow-layer-4 overflow-hidden">
-        <div className="flex h-12 items-center justify-between border-b px-4 bg-primary/5">
+      <SidebarInset className="m-0 p-0">
+        <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b px-4 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
           </div>
@@ -284,7 +343,7 @@ export default async function AdminLayout({
             </TooltipProvider>
           </div>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="flex-1 overflow-auto p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
