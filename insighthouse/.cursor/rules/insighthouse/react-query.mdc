@@ -1,0 +1,587 @@
+---
+description: React Query (TanStack Query) standards and best practices
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "src/lib/hooks/**"
+  - "src/lib/providers/**"
+---
+
+# React Query (TanStack Query) Standards
+
+## Overview
+
+React Query is the standard data fetching and state management library for all client-side data operations in InsightHouse. It provides intelligent caching, background updates, and optimistic mutations.
+
+## Installation & Setup
+
+### Dependencies
+```bash
+pnpm add @tanstack/react-query @tanstack/react-query-devtools
+```
+
+### Provider Setup
+```typescript
+// src/lib/providers/QueryProvider.tsx
+'use client';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState } from 'react';
+
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+        retry: 2,
+        refetchOnWindowFocus: false,
+      },
+      mutations: {
+        retry: 1,
+      },
+    },
+  }));
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+```
+
+## Data Fetching Patterns
+
+### Server Components vs Client Components
+
+#### Server Components (Default)
+- Use for initial data loading and SEO-critical content
+- Prefetch data with `queryClient.prefetchQuery`
+- Pass initial data to client components via `HydrationBoundary`
+
+```typescript
+// Server Component - Prefetch data
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/query-client';
+import { DashboardClient } from './_components/DashboardClient';
+
+export default async function DashboardPage() {
+  const session = await getSession();
+  const sites = await prisma.site.findMany({ where: { userId: session.userId } });
+
+  const queryClient = getQueryClient();
+
+  // Prefetch data
+  if (sites[0]?.siteKey) {
+    await queryClient.prefetchQuery({
+      queryKey: ['insights', 'overview', sites[0].siteKey],
+      queryFn: async () => {
+        const res = await fetch(`${process.env.SITE_URL}/api/insights/overview?site=${encodeURIComponent(sites[0].siteKey)}`);
+        return res.json();
+      },
+    });
+  }
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardClient initialSites={sites} />
+    </HydrationBoundary>
+  );
+}
+```
+
+#### Client Components
+- Use for interactive features and real-time updates
+- Always use custom hooks for data fetching
+- Handle loading, error, and success states
+
+```typescript
+// Client Component - Use React Query hooks
+'use client';
+
+import { useSites, useOverview } from '@/lib/hooks';
+
+export function DashboardClient({ initialSites }: { initialSites: Site[] }) {
+  const { data: sites = initialSites } = useSites();
+  const firstSite = sites?.[0];
+
+  const { data: overview, isLoading, error } = useOverview(firstSite?.siteKey || '');
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return <div>{/* Render data */}</div>;
+}
+```
+
+## Custom Hooks Standards
+
+### File Organization
+```
+src/lib/hooks/
+├── useSites.ts          # Site management
+├── useInsights.ts       # Analytics data
+├── useAuth.ts           # Authentication
+├── useConversions.ts    # Conversion tracking
+├── useJourneys.ts       # User journeys
+└── index.ts            # Re-exports
+```
+
+### Hook Naming Conventions
+- **Queries**: `use[Resource]` (useSites, useOverview, useUser)
+- **Mutations**: `use[Action][Resource]` (useCreateSite, useUpdateSite, useDeleteSite)
+- **Infinite Queries**: `use[Resource]Infinite` (useSitesInfinite)
+
+### Query Hook Pattern
+```typescript
+// src/lib/hooks/useSites.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export interface Site {
+  id: string;
+  name: string;
+  siteKey: string;
+  status: string;
+  createdAt: string;
+  domains: Array<{
+    id: string;
+    host: string;
+    isPrimary: boolean;
+  }>;
+}
+
+// Query for listing resources
+export function useSites() {
+  return useQuery<Site[]>({
+    queryKey: ['sites'],
+    queryFn: async () => {
+      const res = await fetch('/api/sites');
+      if (!res.ok) throw new Error('Failed to fetch sites');
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Query for single resource
+export function useSite(siteId: string) {
+  return useQuery<Site>({
+    queryKey: ['sites', siteId],
+    queryFn: async () => {
+      const res = await fetch(`/api/sites/${siteId}`);
+      if (!res.ok) throw new Error('Failed to fetch site');
+      return res.json();
+    },
+    enabled: !!siteId,
+  });
+}
+```
+
+### Mutation Hook Pattern
+```typescript
+// Create mutation
+export function useCreateSite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; domain: string }) => {
+      const res = await fetch('/api/sites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to create site');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sites'] });
+    },
+  });
+}
+
+// Update mutation with optimistic updates
+export function useUpdateSite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ siteId, data }: { siteId: string; data: Partial<Site> }) => {
+      const res = await fetch(`/api/sites/${siteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update site');
+      return res.json();
+    },
+    onMutate: async ({ siteId, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['sites', siteId] });
+
+      // Snapshot previous value
+      const previousSite = queryClient.getQueryData(['sites', siteId]);
+
+      // Optimistically update
+      queryClient.setQueryData(['sites', siteId], (old: Site) => ({
+        ...old,
+        ...data,
+      }));
+
+      return { previousSite };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousSite) {
+        queryClient.setQueryData(['sites', variables.siteId], context.previousSite);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['sites', variables.siteId] });
+    },
+  });
+}
+```
+
+## Query Key Standards
+
+### Key Structure
+Use hierarchical, consistent query keys:
+
+```typescript
+// Resource-based keys
+['sites']                           // All sites
+['sites', siteId]                   // Single site
+['sites', siteId, 'domains']        // Site domains
+
+// Feature-based keys
+['insights', 'overview', siteKey]   // Overview data
+['insights', 'conversions', siteKey] // Conversion data
+['insights', 'journeys', siteKey]   // Journey data
+
+// User-based keys
+['auth', 'me']                      // Current user
+['auth', 'sessions']                // User sessions
+```
+
+### Key Factory Pattern
+```typescript
+// src/lib/hooks/queryKeys.ts
+export const queryKeys = {
+  sites: {
+    all: ['sites'] as const,
+    lists: () => [...queryKeys.sites.all, 'list'] as const,
+    list: (filters: string) => [...queryKeys.sites.lists(), { filters }] as const,
+    details: () => [...queryKeys.sites.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.sites.details(), id] as const,
+  },
+  insights: {
+    all: ['insights'] as const,
+    overview: (siteKey: string) => [...queryKeys.insights.all, 'overview', siteKey] as const,
+    conversions: (siteKey: string) => [...queryKeys.insights.all, 'conversions', siteKey] as const,
+    journeys: (siteKey: string) => [...queryKeys.insights.all, 'journeys', siteKey] as const,
+  },
+} as const;
+```
+
+## Cache Configuration
+
+### Stale Time Strategy
+```typescript
+// Different stale times for different data types
+const CACHE_TIMES = {
+  STATIC: 10 * 60 * 1000,    // 10 minutes (sites, user data)
+  DYNAMIC: 2 * 60 * 1000,    // 2 minutes (insights, analytics)
+  REAL_TIME: 30 * 1000,      // 30 seconds (live data)
+} as const;
+
+// Usage in hooks
+export function useSites() {
+  return useQuery({
+    queryKey: ['sites'],
+    queryFn: fetchSites,
+    staleTime: CACHE_TIMES.STATIC,
+  });
+}
+
+export function useOverview(siteKey: string) {
+  return useQuery({
+    queryKey: ['insights', 'overview', siteKey],
+    queryFn: () => fetchOverview(siteKey),
+    staleTime: CACHE_TIMES.DYNAMIC,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  });
+}
+```
+
+### Background Refetching
+```typescript
+// Enable background refetching for critical data
+export function useCriticalData() {
+  return useQuery({
+    queryKey: ['critical-data'],
+    queryFn: fetchCriticalData,
+    refetchInterval: 30 * 1000, // 30 seconds
+    refetchIntervalInBackground: true,
+  });
+}
+```
+
+## Error Handling
+
+### Global Error Handling
+```typescript
+// src/lib/providers/QueryProvider.tsx
+const [queryClient] = useState(() => new QueryClient({
+  defaultOptions: {
+    queries: {
+      onError: (error) => {
+        console.error('Query error:', error);
+        // Global error handling logic
+      },
+    },
+    mutations: {
+      onError: (error) => {
+        console.error('Mutation error:', error);
+        // Global mutation error handling
+      },
+    },
+  },
+}));
+```
+
+### Component-Level Error Handling
+```typescript
+export function DataComponent() {
+  const { data, error, isLoading } = useData();
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return <DataDisplay data={data} />;
+}
+```
+
+## Performance Optimizations
+
+### Prefetching
+```typescript
+// Prefetch data before navigation
+const queryClient = useQueryClient();
+
+const handleNavigation = async (siteId: string) => {
+  await queryClient.prefetchQuery({
+    queryKey: ['sites', siteId],
+    queryFn: () => fetchSite(siteId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  router.push(`/sites/${siteId}`);
+};
+```
+
+### Parallel Queries
+```typescript
+// Fetch multiple resources in parallel
+export function useDashboardData(siteKey: string) {
+  const overview = useOverview(siteKey);
+  const conversions = useConversions(siteKey);
+  const journeys = useJourneys(siteKey);
+
+  return {
+    overview: overview.data,
+    conversions: conversions.data,
+    journeys: journeys.data,
+    isLoading: overview.isLoading || conversions.isLoading || journeys.isLoading,
+    error: overview.error || conversions.error || journeys.error,
+  };
+}
+```
+
+### Infinite Queries
+```typescript
+// For paginated data
+export function useSitesInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['sites', 'infinite'],
+    queryFn: ({ pageParam = 0 }) => fetchSites({ page: pageParam }),
+    getNextPageParam: (lastPage, pages) => {
+      return lastPage.hasMore ? pages.length : undefined;
+    },
+    initialPageParam: 0,
+  });
+}
+```
+
+## Testing
+
+### Mock Query Client
+```typescript
+// src/lib/test-utils.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+
+export function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
+```
+
+### Testing Hooks
+```typescript
+// Test custom hooks
+import { renderHook, waitFor } from '@testing-library/react';
+import { useSites } from '@/lib/hooks/useSites';
+
+test('useSites fetches sites successfully', async () => {
+  const { result } = renderHook(() => useSites());
+
+  await waitFor(() => {
+    expect(result.current.isSuccess).toBe(true);
+  });
+
+  expect(result.current.data).toHaveLength(2);
+});
+```
+
+## Migration Guidelines
+
+### From useEffect + useState
+```typescript
+// Before
+export function OldComponent() {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/data');
+        const data = await res.json();
+        setData(data);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error</div>;
+  return <div>{data}</div>;
+}
+
+// After
+export function NewComponent() {
+  const { data, isLoading, error } = useData();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error</div>;
+  return <div>{data}</div>;
+}
+```
+
+### From Server Components
+```typescript
+// Before (Server Component)
+export default async function Page() {
+  const data = await fetchData();
+  return <div>{data}</div>;
+}
+
+// After (Hybrid approach)
+export default async function Page() {
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['data'],
+    queryFn: fetchData,
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ClientComponent />
+    </HydrationBoundary>
+  );
+}
+```
+
+## Best Practices
+
+### DO's
+- ✅ Use custom hooks for all data fetching
+- ✅ Implement optimistic updates for better UX
+- ✅ Use proper query key hierarchies
+- ✅ Handle loading and error states consistently
+- ✅ Prefetch data when possible
+- ✅ Use background refetching for critical data
+- ✅ Implement proper cache invalidation
+
+### DON'Ts
+- ❌ Don't use useEffect for data fetching
+- ❌ Don't manually manage loading/error states
+- ❌ Don't ignore error handling
+- ❌ Don't use inconsistent query keys
+- ❌ Don't over-fetch data
+- ❌ Don't forget to invalidate cache after mutations
+- ❌ Don't use React Query for client-only state
+
+## Common Patterns
+
+### Conditional Queries
+```typescript
+export function useConditionalData(enabled: boolean) {
+  return useQuery({
+    queryKey: ['conditional-data'],
+    queryFn: fetchData,
+    enabled, // Only run when enabled is true
+  });
+}
+```
+
+### Dependent Queries
+```typescript
+export function useDependentData(userId: string) {
+  const { data: user } = useUser(userId);
+
+  return useQuery({
+    queryKey: ['user-data', userId],
+    queryFn: () => fetchUserData(userId),
+    enabled: !!user, // Only run after user is loaded
+  });
+}
+```
+
+### Query Invalidation
+```typescript
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUser,
+    onSuccess: (data, variables) => {
+      // Invalidate specific queries
+      queryClient.invalidateQueries({ queryKey: ['users', variables.id] });
+
+      // Invalidate all user-related queries
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+```

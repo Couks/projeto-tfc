@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -10,12 +9,7 @@ import {
 } from "@ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { Skeleton } from "@ui/skeleton";
-
-interface TypeData {
-  name: string;
-  value: number;
-  color: string;
-}
+import { useSites, useTypes } from "@/lib/hooks";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -32,53 +26,19 @@ const chartConfig = {
 };
 
 export function TypesChart() {
-  const [typesData, setTypesData] = useState<TypeData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: sites } = useSites();
+  const firstSite = sites?.[0];
+  const {
+    data: typesData,
+    isLoading,
+    error,
+  } = useTypes(firstSite?.siteKey || "");
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const sitesRes = await fetch("/api/sites");
-        if (!sitesRes.ok) throw new Error("Failed to fetch sites");
-
-        const sites = await sitesRes.json();
-        const firstSite = sites[0];
-
-        if (!firstSite) {
-          setTypesData([]);
-          setIsLoading(false);
-          return;
-        }
-
-        const res = await fetch(
-          `/api/insights/overview?site=${encodeURIComponent(firstSite.siteKey)}`
-        );
-        if (!res.ok) throw new Error("Failed to fetch insights");
-
-        const data = await res.json();
-
-        // Transform data for chart
-        const transformed: TypeData[] = (data.tipos || []).map(
-          (item: any[], index: number) => ({
-            name: item[0] || "Unknown",
-            value: parseInt(item[1]) || 0,
-            color: COLORS[index % COLORS.length],
-          })
-        );
-
-        setTypesData(transformed);
-      } catch (err) {
-        console.error("Error fetching types data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load data");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
+  // Add colors to the data
+  const typesDataWithColors = typesData.map((item, index) => ({
+    ...item,
+    color: COLORS[index % COLORS.length],
+  }));
 
   if (isLoading) {
     return (
@@ -92,11 +52,11 @@ export function TypesChart() {
     );
   }
 
-  if (error || typesData.length === 0) {
+  if (error || typesDataWithColors.length === 0) {
     return (
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
-          {error ||
+          {error?.message ||
             "Nenhum dado disponível. Configure um site e aguarde dados de pesquisa."}
         </p>
       </div>
@@ -107,7 +67,7 @@ export function TypesChart() {
     <ChartContainer config={chartConfig} className="h-[400px] w-full">
       <PieChart>
         <Pie
-          data={typesData}
+          data={typesDataWithColors}
           cx="50%"
           cy="50%"
           labelLine={false}
@@ -116,7 +76,7 @@ export function TypesChart() {
           fill="#8884d8"
           dataKey="value"
         >
-          {typesData.map((entry, index) => (
+          {typesDataWithColors.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>

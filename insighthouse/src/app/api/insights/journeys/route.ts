@@ -144,7 +144,11 @@ export async function GET(req: Request) {
 
     const out: Record<string, any> = {};
     keys.forEach((k, i) => {
-      if (k === "session_metrics" || k === "bounce_metrics" || k === "returning_visitors") {
+      if (
+        k === "session_metrics" ||
+        k === "bounce_metrics" ||
+        k === "returning_visitors"
+      ) {
         out[k] = results[i].results?.[0] ? { ...results[i].results[0] } : {};
       } else {
         out[k] = Array.isArray(results[i].results)
@@ -164,7 +168,6 @@ export async function GET(req: Request) {
     );
   }
 }
-
 async function runQuery(
   apiHost: string,
   projectId: string,
@@ -200,3 +203,4 @@ interface HogQLResult {
   columns: string[];
   types: string[];
 }
+

@@ -1,14 +1,9 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Skeleton } from "@ui/skeleton";
-
-interface CityData {
-  city: string;
-  searches: number;
-}
+import { useSites, useCities } from "@/lib/hooks";
 
 const chartConfig = {
   searches: {
@@ -18,55 +13,13 @@ const chartConfig = {
 };
 
 export function CitiesChart() {
-  const [citiesData, setCitiesData] = useState<CityData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        // Fetch site data first
-        const sitesRes = await fetch("/api/sites");
-        if (!sitesRes.ok) throw new Error("Failed to fetch sites");
-
-        const sitesData = await sitesRes.json();
-        // Get first site's siteKey - in a real app, might want to let user select
-        const firstSite = sitesData[0];
-
-        if (!firstSite) {
-          setCitiesData([]);
-          setIsLoading(false);
-          return;
-        }
-
-        // Fetch insights data
-        const res = await fetch(
-          `/api/insights/overview?site=${encodeURIComponent(firstSite.siteKey)}`
-        );
-        if (!res.ok) throw new Error("Failed to fetch insights");
-
-        const data = await res.json();
-
-        // Transform data for chart
-        const transformed: CityData[] = (data.cidades || []).map(
-          (item: any[]) => ({
-            city: item[0] || "Unknown",
-            searches: parseInt(item[1]) || 0,
-          })
-        );
-
-        setCitiesData(transformed);
-      } catch (err) {
-        console.error("Error fetching cities data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load data");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
+  const { data: sites } = useSites();
+  const firstSite = sites?.[0];
+  const {
+    data: citiesData,
+    isLoading,
+    error,
+  } = useCities(firstSite?.siteKey || "");
 
   if (isLoading) {
     return (
@@ -84,7 +37,7 @@ export function CitiesChart() {
     return (
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
-          {error ||
+          {error?.message ||
             "Nenhum dado disponível. Configure um site e aguarde dados de pesquisa."}
         </p>
       </div>

@@ -10,6 +10,7 @@ alwaysApply: true
 - **Framework**: Next.js 15.1+ with App Router (React Server Components)
 - **Language**: TypeScript with strict mode enabled
 - **Database**: PostgreSQL with Prisma ORM
+- **Data Fetching**: React Query (TanStack Query) for client-side state management
 - **Styling**: Tailwind CSS + Radix UI components
 - **Validation**: Zod for runtime type validation
 - **Package Manager**: pnpm with workspace configuration
@@ -20,6 +21,8 @@ insighthouse/
   src/
     app/          # Next.js App Router pages and API routes
     lib/          # Shared utilities, components, and business logic
+      hooks/      # React Query custom hooks
+      providers/  # React providers (QueryProvider, etc.)
     middleware.ts # Global middleware (auth, routing)
     utils/        # Pure utility functions
   prisma/         # Database schema and migrations
@@ -29,9 +32,10 @@ insighthouse/
 ## Code Organization Principles
 
 ### 1. Separation of Concerns
-- **Server Components**: Default for pages, handle data fetching
-- **Client Components**: Use `'use client'` only when necessary (interactivity, hooks)
+- **Server Components**: Default for pages, handle initial data fetching and prefetching
+- **Client Components**: Use `'use client'` for interactivity, React Query hooks, and real-time updates
 - **API Routes**: Business logic, database operations, external integrations
+- **React Query Hooks**: Centralized data fetching logic with caching and state management
 - **Utilities**: Pure functions, no side effects
 
 ### 2. Modularization
@@ -77,11 +81,14 @@ insighthouse/
 - `@ui/*` → `src/lib/components/ui/*` for UI components
 
 ## Performance Best Practices
-- Prefer Server Components for data fetching
-- Use `cache: 'no-store'` or `revalidate` for dynamic data
-- Implement proper loading states
-- Lazy load components when appropriate
-- Optimize images using Next.js Image component
+- **Server Components**: Use for initial data fetching and SEO-critical content
+- **React Query**: Use for client-side data fetching with intelligent caching
+- **Prefetching**: Prefetch data in Server Components using `queryClient.prefetchQuery`
+- **Cache Strategy**: Configure appropriate stale times (static: 10min, dynamic: 2min)
+- **Background Updates**: Enable background refetching for critical data
+- **Loading States**: Implement proper loading and error states
+- **Lazy Loading**: Lazy load components when appropriate
+- **Image Optimization**: Use Next.js Image component
 
 ## Security Best Practices
 - Never expose secrets in client-side code

@@ -185,7 +185,6 @@ export async function GET(req: Request) {
     );
   }
 }
-
 async function runQuery(
   apiHost: string,
   projectId: string,
@@ -201,7 +200,7 @@ async function runQuery(
     },
     body: JSON.stringify({
       query: query.trim(),
-      kind: "HogQLQuery"
+      kind: "HogQLQuery",
     }),
   });
 
@@ -221,3 +220,4 @@ interface HogQLResult {
   columns: string[];
   types: string[];
 }
+
