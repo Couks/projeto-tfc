@@ -114,9 +114,10 @@ export class SdkService {
       // Store config globally
       window.__INSIGHTHOUSE_CONFIG__ = config;
 
-      // Load main SDK script
+      // Load main SDK script from backend static files
+      // O arquivo capture-filters.js é servido diretamente do backend
       var script = document.createElement('script');
-      script.src = API_URL + '/static/capture-filtros-enhanced.js';
+      script.src = API_URL + '/static/capture-filters.js';
       script.async = true;
       script.onload = function() {
         console.log('InsightHouse SDK loaded successfully');

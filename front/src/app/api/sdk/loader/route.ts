@@ -68,7 +68,7 @@ const JS = `(() => {
       // Always register site property so events include properties.site
       window.posthog.register({ site: SITE_KEY });
       if (cfg.groupEnabled) window.posthog.group('site', SITE_KEY);
-      loadScript(staticBase + '/capture-filtros-enhanced.js');
+      loadScript(staticBase + '/capture-filters.js');
     });
   }).catch(() => {});
 })();`;
