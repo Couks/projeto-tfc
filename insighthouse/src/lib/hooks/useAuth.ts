@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../api';
 
 export interface User {
   id: string;
@@ -10,9 +11,7 @@ export function useUser() {
   return useQuery<User>({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
-      const res = await fetch('/api/auth/me');
-      if (!res.ok) throw new Error('Failed to fetch user');
-      return res.json();
+      return apiClient.get<User>('/api/auth/me');
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: false, // Não retry em caso de 401

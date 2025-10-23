@@ -1,41 +1,165 @@
 /**
- * Enhanced InsightHouse Analytics Script
+ * Enhanced InsightHouse Analytics Script - NestJS Backend Integration
  *
  * Features:
  * - Captures ALL search filters (quartos, suites, banheiros, vagas, valores, switches)
  * - User journey tracking with persistent ID
  * - Session tracking
  * - Conversion funnel
+ * - Batch event submission with keepalive
+ * - Automatic retry on failure
  */
 (() => {
-  const PH = typeof window !== "undefined" ? window.posthog : undefined;
   const MyAnalytics = window.MyAnalytics || (window.MyAnalytics = {});
   MyAnalytics.debug = false;
+
+  // Configuration - Update these values
+  const API_URL = window.IH_API_URL || 'http://localhost:3001/api';
+  const SITE_KEY = window.IH_SITE_KEY || '';
+
+  if (!SITE_KEY) {
+    console.error('[InsightHouse] SITE_KEY not configured');
+    return;
+  }
+
+  // =========================================
+  // EVENT QUEUE & BATCH SENDING
+  // =========================================
+
+  let eventQueue = [];
+  const MAX_QUEUE_SIZE = 10;
+  const FLUSH_INTERVAL = 3000; // 3 seconds
+  let flushTimer = null;
+
+  /**
+   * Send events in batch to NestJS backend
+   */
+  const sendBatch = async (events) => {
+    if (!events || events.length === 0) return;
+
+    try {
+      const response = await fetch(`${API_URL}/events/track/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Site-Key': SITE_KEY,
+        },
+        body: JSON.stringify({ events }),
+        keepalive: true,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      log('Batch sent successfully:', events.length, 'events');
+    } catch (error) {
+      log('Failed to send batch:', error);
+      // Store failed events in localStorage for retry
+      const failedEvents = JSON.parse(localStorage.getItem('ih_failed_events') || '[]');
+      failedEvents.push(...events);
+      localStorage.setItem('ih_failed_events', JSON.stringify(failedEvents.slice(-100))); // Keep last 100
+    }
+  };
+
+  /**
+   * Flush event queue
+   */
+  const flushQueue = () => {
+    if (eventQueue.length === 0) return;
+
+    const eventsToSend = [...eventQueue];
+    eventQueue = [];
+    sendBatch(eventsToSend);
+  };
+
+  /**
+   * Schedule queue flush
+   */
+  const scheduleFlush = () => {
+    if (flushTimer) clearTimeout(flushTimer);
+    flushTimer = setTimeout(flushQueue, FLUSH_INTERVAL);
+  };
+
+  /**
+   * Add event to queue
+   */
+  const queueEvent = (event) => {
+    eventQueue.push(event);
+
+    // Flush if queue is full
+    if (eventQueue.length >= MAX_QUEUE_SIZE) {
+      flushQueue();
+    } else {
+      scheduleFlush();
+    }
+  };
+
+  /**
+   * Retry failed events on page load
+   */
+  const retryFailedEvents = () => {
+    const failedEvents = JSON.parse(localStorage.getItem('ih_failed_events') || '[]');
+    if (failedEvents.length > 0) {
+      log('Retrying', failedEvents.length, 'failed events');
+      sendBatch(failedEvents);
+      localStorage.removeItem('ih_failed_events');
+    }
+  };
+
+  // Retry failed events on load
+  retryFailedEvents();
+
+  // Flush on page unload
+  window.addEventListener('beforeunload', () => {
+    flushQueue();
+  });
 
   // =========================================
   // HELPERS
   // =========================================
   const log = (...args) => {
-    if (MyAnalytics.debug) console.log("[MyAnalytics]", ...args);
+    if (MyAnalytics.debug) console.log('[InsightHouse]', ...args);
   };
 
   const safeOn = (el, ev, fn) => {
     if (el) el.addEventListener(ev, fn, { passive: true });
   };
 
-  const capture = (event, props) => {
+  /**
+   * Capture event - now queues for batch sending
+   */
+  const capture = (eventName, properties = {}) => {
     try {
-      if (PH && PH.capture) {
-        // Add user journey context to all events
-        const enrichedProps = {
-          ...props,
-          ...getUserJourneyContext(),
-        };
-        PH.capture(event, enrichedProps);
-        log("capture", event, enrichedProps);
-      }
+      const enrichedProps = {
+        ...properties,
+        ...getUserJourneyContext(),
+      };
+
+      const event = {
+        name: eventName,
+        properties: enrichedProps,
+        context: {
+          url: window.location.href,
+          title: document.title,
+          referrer: document.referrer,
+          userAgent: navigator.userAgent,
+          screen: {
+            width: window.screen.width,
+            height: window.screen.height,
+          },
+          viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          },
+        },
+        ts: Date.now(),
+      };
+
+      queueEvent(event);
+      log('Event queued:', eventName, enrichedProps);
     } catch (e) {
-      log("Error capturing event:", e);
+      log('Error capturing event:', e);
     }
   };
 
@@ -246,6 +370,8 @@
 
   onReady(() => {
     log("Initializing enhanced analytics...");
+    log("API URL:", API_URL);
+    log("Site Key:", SITE_KEY);
 
     // ===== BASIC FILTERS =====
 
@@ -740,6 +866,9 @@
       time_on_page: timeOnPage,
       max_scroll_depth: Math.floor(maxScroll),
     });
+
+    // Force flush queue
+    flushQueue();
   });
 
   // =========================================
@@ -1048,7 +1177,7 @@
    */
   const calculateFormCompleteness = (fields) => {
     const totalFields = Object.keys(fields).length;
-    const filledFields = Object.values(fields).filter(v => v && v.trim()).length;
+    const filledFields = Object.values(fields).filter(v => v && v.toString().trim()).length;
     return Math.round((filledFields / totalFields) * 100);
   };
 
@@ -1079,6 +1208,7 @@
       localStorage.removeItem("ih_session_id");
       localStorage.removeItem("ih_session_timeout");
     },
+    flush: flushQueue, // Manual flush
     debug: MyAnalytics.debug,
   };
 
@@ -1086,4 +1216,3 @@
   log("User ID:", getUserId());
   log("Session ID:", getSessionId());
 })();
-

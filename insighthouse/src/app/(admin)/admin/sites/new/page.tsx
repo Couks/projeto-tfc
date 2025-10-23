@@ -4,6 +4,7 @@ import { Input } from "@ui/input";
 import { Button } from "@ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { Alert, AlertDescription } from "@ui/alert";
+import { apiClient } from "@/lib/api";
 
 export default function NewSitePage() {
   const [name, setName] = useState("");
@@ -17,19 +18,16 @@ export default function NewSitePage() {
     setError(null);
     setLoaderUrl(null);
     setSiteKey(null);
-    const res = await fetch("/api/sites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, domain }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({ error: "Request failed" }));
-      setError(j.error || "Request failed");
-      return;
+    try {
+      const data = await apiClient.post<{ loaderUrl: string; siteKey: string }>(
+        "/api/sites",
+        { name, domain }
+      );
+      setLoaderUrl(data.loaderUrl);
+      setSiteKey(data.siteKey);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Request failed");
     }
-    const data = await res.json();
-    setLoaderUrl(data.loaderUrl);
-    setSiteKey(data.siteKey);
   };
 
   const htmlSnippet = loaderUrl

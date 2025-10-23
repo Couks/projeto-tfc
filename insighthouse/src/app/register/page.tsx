@@ -5,6 +5,7 @@ import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
 import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
+import { apiClient } from "@/lib/api";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -16,17 +17,12 @@ export default function RegisterPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const r = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      setError(j.error || "Falha no registro");
-      return;
+    try {
+      await apiClient.post("/api/auth/register", { email, password, name });
+      location.href = "/login";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha no registro");
     }
-    location.href = "/login";
   };
 
   // Password strength indicators

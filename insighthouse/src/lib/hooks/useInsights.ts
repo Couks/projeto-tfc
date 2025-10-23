@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
+import { apiClient } from '../api';
 
 export interface OverviewData {
   finalidade: Array<[string, number]>;
@@ -20,9 +21,9 @@ export function useOverview(siteKey: string) {
   return useQuery<OverviewData>({
     queryKey: queryKeys.insights.overview(siteKey),
     queryFn: async () => {
-      const res = await fetch(`/api/insights/overview?site=${encodeURIComponent(siteKey)}`);
-      if (!res.ok) throw new Error('Failed to fetch overview');
-      return res.json();
+      return apiClient.get<OverviewData>(
+        `/api/insights/overview?site=${encodeURIComponent(siteKey)}`,
+      );
     },
     enabled: !!siteKey,
     staleTime: 2 * 60 * 1000, // 2 minutes (dados mais dinâmicos)
@@ -34,9 +35,9 @@ export function useConversions(siteKey: string) {
   return useQuery({
     queryKey: queryKeys.insights.conversions(siteKey),
     queryFn: async () => {
-      const res = await fetch(`/api/insights/conversions?site=${encodeURIComponent(siteKey)}`);
-      if (!res.ok) throw new Error('Failed to fetch conversions');
-      return res.json();
+      return apiClient.get(
+        `/api/insights/conversions?site=${encodeURIComponent(siteKey)}`,
+      );
     },
     enabled: !!siteKey,
     staleTime: 2 * 60 * 1000,
@@ -47,9 +48,9 @@ export function useJourneys(siteKey: string) {
   return useQuery({
     queryKey: queryKeys.insights.journeys(siteKey),
     queryFn: async () => {
-      const res = await fetch(`/api/insights/journeys?site=${encodeURIComponent(siteKey)}`);
-      if (!res.ok) throw new Error('Failed to fetch journeys');
-      return res.json();
+      return apiClient.get(
+        `/api/insights/journeys?site=${encodeURIComponent(siteKey)}`,
+      );
     },
     enabled: !!siteKey,
     staleTime: 2 * 60 * 1000,

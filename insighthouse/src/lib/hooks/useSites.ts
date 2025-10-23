@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
+import { apiClient } from '../api';
 
 export interface Site {
   id: string;
@@ -19,9 +20,7 @@ export function useSites() {
   return useQuery<Site[]>({
     queryKey: queryKeys.sites.all,
     queryFn: async () => {
-      const res = await fetch('/api/sites');
-      if (!res.ok) throw new Error('Failed to fetch sites');
-      return res.json();
+      return apiClient.get<Site[]>('/api/sites');
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -32,9 +31,7 @@ export function useSite(siteId: string) {
   return useQuery<Site>({
     queryKey: queryKeys.sites.detail(siteId),
     queryFn: async () => {
-      const res = await fetch(`/api/sites/${siteId}`);
-      if (!res.ok) throw new Error('Failed to fetch site');
-      return res.json();
+      return apiClient.get<Site>(`/api/sites/${siteId}`);
     },
     enabled: !!siteId,
   });
@@ -46,13 +43,7 @@ export function useCreateSite() {
 
   return useMutation({
     mutationFn: async (data: { name: string; domain: string }) => {
-      const res = await fetch('/api/sites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to create site');
-      return res.json();
+      return apiClient.post('/api/sites', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sites.all });
@@ -65,18 +56,20 @@ export function useUpdateSite() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ siteId, data }: { siteId: string; data: Partial<Site> }) => {
-      const res = await fetch(`/api/sites/${siteId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to update site');
-      return res.json();
+    mutationFn: async ({
+      siteId,
+      data,
+    }: {
+      siteId: string;
+      data: Partial<Site>;
+    }) => {
+      return apiClient.put(`/api/sites/${siteId}`, data);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sites.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.sites.detail(variables.siteId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sites.detail(variables.siteId),
+      });
     },
   });
 }
@@ -87,10 +80,7 @@ export function useDeleteSite() {
 
   return useMutation({
     mutationFn: async (siteId: string) => {
-      const res = await fetch(`/api/sites/${siteId}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Failed to delete site');
+      return apiClient.delete(`/api/sites/${siteId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sites.all });

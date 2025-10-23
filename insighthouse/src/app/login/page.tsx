@@ -5,6 +5,7 @@ import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { apiClient } from "@/lib/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,17 +16,12 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const r = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      setError(j.error || "Falha no login");
-      return;
+    try {
+      await apiClient.post("/api/auth/login", { email, password });
+      location.href = "/admin";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha no login");
     }
-    location.href = "/admin";
   };
 
   return (
