@@ -1,0 +1,378 @@
+# Error Handling Standards
+
+## General Principles
+
+- Use NestJS built-in exception classes
+- Always handle promises properly
+- Provide meaningful error messages
+- Log errors appropriately
+- Never expose sensitive information in error messages
+- Use global exception filters for consistent error responses
+
+## Promise Handling
+
+### Top-Level Promises
+
+Always handle top-level promises with `.catch()`:
+
+```typescript
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  await app.listen(process.env.PORT ?? 3000);
+}
+
+bootstrap().catch((error) => {
+  console.error('Error starting the application:', error);
+  process.exit(1);
+});
+```
+
+### Async Functions
+
+Use try-catch blocks in async functions:
+
+```typescript
+async findOne(id: string): Promise<Feature> {
+  try {
+    const feature = await this.repository.findById(id);
+
+    if (!feature) {
+      throw new NotFoundException(`Feature with id ${id} not found`);
+    }
+
+    return feature;
+  } catch (error) {
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    throw new InternalServerErrorException('Error retrieving feature');
+  }
+}
+```
+
+## NestJS Exception Classes
+
+Use the appropriate built-in exception for each scenario:
+
+```typescript
+import {
+  BadRequestException,
+  UnauthorizedException,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  InternalServerErrorException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+
+// 400 Bad Request - Invalid input
+throw new BadRequestException('Invalid input data');
+
+// 401 Unauthorized - Authentication required
+throw new UnauthorizedException('Authentication required');
+
+// 403 Forbidden - Insufficient permissions
+throw new ForbiddenException('Insufficient permissions');
+
+// 404 Not Found - Resource not found
+throw new NotFoundException('Resource not found');
+
+// 409 Conflict - Resource conflict
+throw new ConflictException('Resource already exists');
+
+// 422 Unprocessable Entity - Validation failed
+throw new UnprocessableEntityException('Validation failed');
+
+// 500 Internal Server Error - Unexpected error
+throw new InternalServerErrorException('Internal server error');
+```
+
+## Custom Exceptions
+
+Create custom exceptions when needed:
+
+```typescript
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+export class FeatureAlreadyExistsException extends HttpException {
+  constructor(name: string) {
+    super(
+      {
+        statusCode: HttpStatus.CONFLICT,
+        message: `Feature with name ${name} already exists`,
+        error: 'Conflict',
+      },
+      HttpStatus.CONFLICT,
+    );
+  }
+}
+
+export class InvalidFeatureDataException extends HttpException {
+  constructor(message: string) {
+    super(
+      {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message,
+        error: 'Bad Request',
+      },
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+}
+```
+
+## Global Exception Filter
+
+Create a global exception filter for consistent error responses:
+
+```typescript
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    const errorResponse = {
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      message: typeof message === 'string' ? message : (message as any).message,
+    };
+
+    // Log error details
+    this.logger.error(
+      `${request.method} ${request.url}`,
+      exception instanceof Error ? exception.stack : 'Unknown error',
+    );
+
+    response.status(status).json(errorResponse);
+  }
+}
+```
+
+Register the filter in `main.ts`:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './core/filters/all-exceptions.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new AllExceptionsFilter());
+  await app.listen(process.env.PORT ?? 3000);
+}
+
+bootstrap().catch((error) => {
+  console.error('Error starting the application:', error);
+  process.exit(1);
+});
+```
+
+## HTTP Exception Filter
+
+Create a specific HTTP exception filter:
+
+```typescript
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  Logger,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  catch(exception: HttpException, host: ArgumentsHost): void {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const status = exception.getStatus();
+    const exceptionResponse = exception.getResponse();
+
+    const errorResponse = {
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      message:
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message,
+    };
+
+    this.logger.warn(
+      `${request.method} ${request.url} - Status: ${status} - Message: ${errorResponse.message}`,
+    );
+
+    response.status(status).json(errorResponse);
+  }
+}
+```
+
+## Validation Error Handling
+
+Handle validation errors from class-validator:
+
+```typescript
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) => ({
+          field: error.property,
+          errors: Object.values(error.constraints || {}),
+        }));
+
+        return new BadRequestException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Validation failed',
+          errors: messages,
+        });
+      },
+    }),
+  );
+
+  await app.listen(process.env.PORT ?? 3000);
+}
+
+bootstrap().catch((error) => {
+  console.error('Error starting the application:', error);
+  process.exit(1);
+});
+```
+
+## Logging Best Practices
+
+Use NestJS Logger for consistent logging:
+
+```typescript
+import { Injectable, Logger } from '@nestjs/common';
+
+@Injectable()
+export class FeatureService {
+  private readonly logger = new Logger(FeatureService.name);
+
+  async findOne(id: string): Promise<Feature> {
+    try {
+      this.logger.log(`Finding feature with id: ${id}`);
+      const feature = await this.repository.findById(id);
+
+      if (!feature) {
+        this.logger.warn(`Feature with id ${id} not found`);
+        throw new NotFoundException(`Feature with id ${id} not found`);
+      }
+
+      this.logger.log(`Feature with id ${id} found successfully`);
+      return feature;
+    } catch (error) {
+      this.logger.error(`Error finding feature with id ${id}`, error.stack);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Error retrieving feature');
+    }
+  }
+}
+```
+
+## Error Response Format
+
+Standardize error responses:
+
+```typescript
+interface ErrorResponse {
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  method: string;
+  message: string | string[];
+  error?: string;
+  errors?: ValidationError[];
+}
+
+interface ValidationError {
+  field: string;
+  errors: string[];
+}
+```
+
+Example responses:
+
+```json
+// Simple error
+{
+  "statusCode": 404,
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "path": "/features/123",
+  "method": "GET",
+  "message": "Feature with id 123 not found",
+  "error": "Not Found"
+}
+
+// Validation error
+{
+  "statusCode": 400,
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "path": "/features",
+  "method": "POST",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "name",
+      "errors": ["name should not be empty", "name must be a string"]
+    }
+  ]
+}
+```
+
+## Best Practices
+
+1. **Always Handle Promises**: Use `await` or `.catch()` for all promises
+2. **Use Specific Exceptions**: Choose the most appropriate HTTP exception
+3. **Provide Context**: Include relevant information in error messages
+4. **Log Appropriately**: Use different log levels (log, warn, error)
+5. **Don't Expose Internals**: Never expose stack traces or sensitive data to clients
+6. **Validate Input**: Use DTOs with class-validator decorators
+7. **Global Filters**: Use global exception filters for consistency
+8. **Custom Exceptions**: Create custom exceptions for domain-specific errors
