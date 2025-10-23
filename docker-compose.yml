@@ -1,18 +1,39 @@
+version: "3.9"
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: realty_analytics_postgres
-    restart: unless-stopped
+  db:
+    image: postgres:16
+    container_name: ih-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: realty_analytics
+      POSTGRES_USER: ih
+      POSTGRES_PASSWORD: ih
+      POSTGRES_DB: insighthouse
     ports:
       - "5432:5432"
+    # Use *named volumes* (melhor performance que bind mount no Windows/Mac)
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - ih_pg_data:/var/lib/postgresql/data
+    command: >
+      postgres -c shared_buffers=256MB
+               -c work_mem=16MB
+               -c maintenance_work_mem=128MB
+               -c max_wal_size=2GB
+               -c wal_compression=on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ih -d insighthouse"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: ih-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: matheuscastroks@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
 
 volumes:
-  pg_data:
-
-
+  ih_pg_data:

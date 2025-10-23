@@ -1,0 +1,237 @@
+# NestJS Module Structure Guidelines
+
+## Module Organization
+
+Each feature module should follow this structure:
+
+```
+feature-name/
+├── dto/
+│   ├── create-feature.dto.ts
+│   ├── update-feature.dto.ts
+│   └── feature-response.dto.ts
+├── entities/
+│   └── feature.entity.ts
+├── interfaces/
+│   └── feature.interface.ts
+├── feature.controller.ts
+├── feature.controller.spec.ts
+├── feature.service.ts
+├── feature.service.spec.ts
+└── feature.module.ts
+```
+
+## Module Template
+
+```typescript
+import { Module } from '@nestjs/common';
+import { FeatureController } from './feature.controller';
+import { FeatureService } from './feature.service';
+
+@Module({
+  imports: [],
+  controllers: [FeatureController],
+  providers: [FeatureService],
+  exports: [FeatureService],
+})
+export class FeatureModule {}
+```
+
+## Controller Template
+
+```typescript
+import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { FeatureService } from './feature.service';
+import { CreateFeatureDto } from './dto/create-feature.dto';
+import { UpdateFeatureDto } from './dto/update-feature.dto';
+import type { Feature } from './interfaces/feature.interface';
+
+@ApiTags('features')
+@Controller('features')
+export class FeatureController {
+  constructor(private readonly featureService: FeatureService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all features' })
+  @ApiResponse({ status: 200, description: 'Return all features.' })
+  async findAll(): Promise<Feature[]> {
+    return this.featureService.findAll();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get feature by id' })
+  @ApiResponse({ status: 200, description: 'Return the feature.' })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
+  async findOne(@Param('id') id: string): Promise<Feature> {
+    return this.featureService.findOne(id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create feature' })
+  @ApiResponse({ status: 201, description: 'The feature has been created.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  async create(@Body() createFeatureDto: CreateFeatureDto): Promise<Feature> {
+    return this.featureService.create(createFeatureDto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update feature' })
+  @ApiResponse({ status: 200, description: 'The feature has been updated.' })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateFeatureDto: UpdateFeatureDto,
+  ): Promise<Feature> {
+    return this.featureService.update(id, updateFeatureDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete feature' })
+  @ApiResponse({ status: 200, description: 'The feature has been deleted.' })
+  @ApiResponse({ status: 404, description: 'Feature not found.' })
+  async remove(@Param('id') id: string): Promise<void> {
+    return this.featureService.remove(id);
+  }
+
+  @Get('admin/test')
+  @ApiOperation({ summary: 'Smoke test endpoint' })
+  @ApiResponse({ status: 200, description: 'Service is healthy.' })
+  async test(): Promise<{ status: string }> {
+    return { status: 'ok' };
+  }
+}
+```
+
+## Service Template
+
+```typescript
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateFeatureDto } from './dto/create-feature.dto';
+import { UpdateFeatureDto } from './dto/update-feature.dto';
+import type { Feature } from './interfaces/feature.interface';
+
+@Injectable()
+export class FeatureService {
+  /**
+   * Retrieves all features from the database
+   * @returns Promise with array of features
+   */
+  async findAll(): Promise<Feature[]> {
+    // Implementation
+    return [];
+  }
+
+  /**
+   * Retrieves a single feature by id
+   * @param id - The feature identifier
+   * @returns Promise with the feature
+   * @throws NotFoundException if feature doesn't exist
+   */
+  async findOne(id: string): Promise<Feature> {
+    const feature = null; // Implementation
+
+    if (!feature) {
+      throw new NotFoundException(`Feature with id ${id} not found`);
+    }
+
+    return feature;
+  }
+
+  /**
+   * Creates a new feature
+   * @param createFeatureDto - The feature data
+   * @returns Promise with the created feature
+   */
+  async create(createFeatureDto: CreateFeatureDto): Promise<Feature> {
+    // Implementation
+    return {} as Feature;
+  }
+
+  /**
+   * Updates an existing feature
+   * @param id - The feature identifier
+   * @param updateFeatureDto - The updated feature data
+   * @returns Promise with the updated feature
+   * @throws NotFoundException if feature doesn't exist
+   */
+  async update(id: string, updateFeatureDto: UpdateFeatureDto): Promise<Feature> {
+    const feature = await this.findOne(id);
+    // Implementation
+    return feature;
+  }
+
+  /**
+   * Removes a feature
+   * @param id - The feature identifier
+   * @throws NotFoundException if feature doesn't exist
+   */
+  async remove(id: string): Promise<void> {
+    const feature = await this.findOne(id);
+    // Implementation
+  }
+}
+```
+
+## DTO Template
+
+```typescript
+import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateFeatureDto {
+  @ApiProperty({
+    description: 'The name of the feature',
+    example: 'Feature name',
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  readonly name: string;
+
+  @ApiPropertyOptional({
+    description: 'The description of the feature',
+    example: 'Feature description',
+  })
+  @IsString()
+  @IsOptional()
+  readonly description?: string;
+}
+```
+
+## Core Module Structure
+
+```
+src/
+├── core/
+│   ├── filters/
+│   │   ├── http-exception.filter.ts
+│   │   └── all-exceptions.filter.ts
+│   ├── guards/
+│   │   ├── auth.guard.ts
+│   │   └── roles.guard.ts
+│   ├── interceptors/
+│   │   ├── logging.interceptor.ts
+│   │   └── transform.interceptor.ts
+│   ├── middlewares/
+│   │   └── logger.middleware.ts
+│   └── core.module.ts
+├── shared/
+│   ├── utils/
+│   ├── constants/
+│   └── shared.module.ts
+└── modules/
+    ├── feature-a/
+    └── feature-b/
+```
+
+## Best Practices
+
+1. **Single Responsibility**: Each module should handle one feature domain
+2. **Dependency Injection**: Always use constructor injection
+3. **DTOs**: Use class-validator decorators for validation
+4. **Documentation**: Use Swagger decorators for API documentation
+5. **Error Handling**: Use NestJS built-in exceptions
+6. **Testing**: Write unit tests for services and e2e tests for controllers
+7. **Exports**: Only export what's needed by other modules

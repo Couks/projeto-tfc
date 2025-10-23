@@ -1,0 +1,394 @@
+# Testing Standards for NestJS
+
+## General Testing Principles
+
+- Follow the **Arrange-Act-Assert** (AAA) pattern for unit tests
+- Follow the **Given-When-Then** pattern for e2e tests
+- Use descriptive test names that explain the scenario
+- Keep tests isolated and independent
+- Mock external dependencies
+- Test one thing at a time
+
+## Naming Conventions
+
+### Test Variables
+- `inputX` - Input data for the test
+- `mockX` - Mocked dependencies
+- `actualX` - Actual result from the function
+- `expectedX` - Expected result
+
+### Test Names
+Use the format: `should [expected behavior] when [condition]`
+
+Examples:
+- `should return user when valid id is provided`
+- `should throw NotFoundException when user does not exist`
+- `should create user when valid data is provided`
+
+## Unit Test Template (Service)
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { FeatureService } from './feature.service';
+import type { Feature } from './interfaces/feature.interface';
+
+describe('FeatureService', () => {
+  let service: FeatureService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [FeatureService],
+    }).compile();
+
+    service = module.get<FeatureService>(FeatureService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('findAll', () => {
+    it('should return an array of features', async () => {
+      // Arrange
+      const expectedFeatures: Feature[] = [
+        { id: '1', name: 'Feature 1' },
+        { id: '2', name: 'Feature 2' },
+      ];
+
+      // Act
+      const actualFeatures = await service.findAll();
+
+      // Assert
+      expect(actualFeatures).toEqual(expectedFeatures);
+      expect(actualFeatures).toHaveLength(2);
+    });
+
+    it('should return empty array when no features exist', async () => {
+      // Arrange
+      const expectedFeatures: Feature[] = [];
+
+      // Act
+      const actualFeatures = await service.findAll();
+
+      // Assert
+      expect(actualFeatures).toEqual(expectedFeatures);
+      expect(actualFeatures).toHaveLength(0);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return feature when valid id is provided', async () => {
+      // Arrange
+      const inputId = '1';
+      const expectedFeature: Feature = { id: '1', name: 'Feature 1' };
+
+      // Act
+      const actualFeature = await service.findOne(inputId);
+
+      // Assert
+      expect(actualFeature).toEqual(expectedFeature);
+      expect(actualFeature.id).toBe(inputId);
+    });
+
+    it('should throw NotFoundException when feature does not exist', async () => {
+      // Arrange
+      const inputId = 'non-existent-id';
+
+      // Act & Assert
+      await expect(service.findOne(inputId)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(inputId)).rejects.toThrow(
+        `Feature with id ${inputId} not found`,
+      );
+    });
+  });
+
+  describe('create', () => {
+    it('should create and return feature when valid data is provided', async () => {
+      // Arrange
+      const inputDto = { name: 'New Feature', description: 'Description' };
+      const expectedFeature: Feature = { id: '1', ...inputDto };
+
+      // Act
+      const actualFeature = await service.create(inputDto);
+
+      // Assert
+      expect(actualFeature).toEqual(expectedFeature);
+      expect(actualFeature.name).toBe(inputDto.name);
+    });
+  });
+
+  describe('update', () => {
+    it('should update and return feature when valid data is provided', async () => {
+      // Arrange
+      const inputId = '1';
+      const inputDto = { name: 'Updated Feature' };
+      const expectedFeature: Feature = { id: inputId, ...inputDto };
+
+      // Act
+      const actualFeature = await service.update(inputId, inputDto);
+
+      // Assert
+      expect(actualFeature).toEqual(expectedFeature);
+      expect(actualFeature.name).toBe(inputDto.name);
+    });
+
+    it('should throw NotFoundException when updating non-existent feature', async () => {
+      // Arrange
+      const inputId = 'non-existent-id';
+      const inputDto = { name: 'Updated Feature' };
+
+      // Act & Assert
+      await expect(service.update(inputId, inputDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove feature when valid id is provided', async () => {
+      // Arrange
+      const inputId = '1';
+
+      // Act & Assert
+      await expect(service.remove(inputId)).resolves.not.toThrow();
+    });
+
+    it('should throw NotFoundException when removing non-existent feature', async () => {
+      // Arrange
+      const inputId = 'non-existent-id';
+
+      // Act & Assert
+      await expect(service.remove(inputId)).rejects.toThrow(NotFoundException);
+    });
+  });
+});
+```
+
+## Unit Test Template (Controller)
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { FeatureController } from './feature.controller';
+import { FeatureService } from './feature.service';
+import type { Feature } from './interfaces/feature.interface';
+
+describe('FeatureController', () => {
+  let controller: FeatureController;
+  let service: FeatureService;
+
+  const mockFeatureService = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [FeatureController],
+      providers: [
+        {
+          provide: FeatureService,
+          useValue: mockFeatureService,
+        },
+      ],
+    }).compile();
+
+    controller = module.get<FeatureController>(FeatureController);
+    service = module.get<FeatureService>(FeatureService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('findAll', () => {
+    it('should return array of features', async () => {
+      // Arrange
+      const expectedFeatures: Feature[] = [
+        { id: '1', name: 'Feature 1' },
+        { id: '2', name: 'Feature 2' },
+      ];
+      mockFeatureService.findAll.mockResolvedValue(expectedFeatures);
+
+      // Act
+      const actualFeatures = await controller.findAll();
+
+      // Assert
+      expect(actualFeatures).toEqual(expectedFeatures);
+      expect(service.findAll).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return feature when valid id is provided', async () => {
+      // Arrange
+      const inputId = '1';
+      const expectedFeature: Feature = { id: '1', name: 'Feature 1' };
+      mockFeatureService.findOne.mockResolvedValue(expectedFeature);
+
+      // Act
+      const actualFeature = await controller.findOne(inputId);
+
+      // Assert
+      expect(actualFeature).toEqual(expectedFeature);
+      expect(service.findOne).toHaveBeenCalledWith(inputId);
+      expect(service.findOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('create', () => {
+    it('should create and return feature', async () => {
+      // Arrange
+      const inputDto = { name: 'New Feature', description: 'Description' };
+      const expectedFeature: Feature = { id: '1', ...inputDto };
+      mockFeatureService.create.mockResolvedValue(expectedFeature);
+
+      // Act
+      const actualFeature = await controller.create(inputDto);
+
+      // Assert
+      expect(actualFeature).toEqual(expectedFeature);
+      expect(service.create).toHaveBeenCalledWith(inputDto);
+      expect(service.create).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('test', () => {
+    it('should return status ok for smoke test', async () => {
+      // Arrange
+      const expectedResult = { status: 'ok' };
+
+      // Act
+      const actualResult = await controller.test();
+
+      // Assert
+      expect(actualResult).toEqual(expectedResult);
+    });
+  });
+});
+```
+
+## E2E Test Template
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from './../src/app.module';
+
+describe('FeatureController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('/features (GET)', () => {
+    it('should return array of features', () => {
+      return request(app.getHttpServer())
+        .get('/features')
+        .expect(200)
+        .expect((res) => {
+          expect(Array.isArray(res.body)).toBe(true);
+        });
+    });
+  });
+
+  describe('/features/:id (GET)', () => {
+    it('should return feature when valid id is provided', () => {
+      const featureId = '1';
+      return request(app.getHttpServer())
+        .get(`/features/${featureId}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('id', featureId);
+        });
+    });
+
+    it('should return 404 when feature does not exist', () => {
+      return request(app.getHttpServer())
+        .get('/features/non-existent-id')
+        .expect(404);
+    });
+  });
+
+  describe('/features (POST)', () => {
+    it('should create feature when valid data is provided', () => {
+      const createDto = { name: 'New Feature', description: 'Description' };
+      return request(app.getHttpServer())
+        .post('/features')
+        .send(createDto)
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('id');
+          expect(res.body.name).toBe(createDto.name);
+        });
+    });
+
+    it('should return 400 when invalid data is provided', () => {
+      const invalidDto = { description: 'Missing name' };
+      return request(app.getHttpServer())
+        .post('/features')
+        .send(invalidDto)
+        .expect(400);
+    });
+  });
+
+  describe('/features/:id (PUT)', () => {
+    it('should update feature when valid data is provided', () => {
+      const featureId = '1';
+      const updateDto = { name: 'Updated Feature' };
+      return request(app.getHttpServer())
+        .put(`/features/${featureId}`)
+        .send(updateDto)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.id).toBe(featureId);
+          expect(res.body.name).toBe(updateDto.name);
+        });
+    });
+  });
+
+  describe('/features/:id (DELETE)', () => {
+    it('should delete feature when valid id is provided', () => {
+      const featureId = '1';
+      return request(app.getHttpServer())
+        .delete(`/features/${featureId}`)
+        .expect(200);
+    });
+  });
+
+  describe('/features/admin/test (GET)', () => {
+    it('should return ok status for smoke test', () => {
+      return request(app.getHttpServer())
+        .get('/features/admin/test')
+        .expect(200)
+        .expect({ status: 'ok' });
+    });
+  });
+});
+```
+
+## Best Practices
+
+1. **Test Coverage**: Aim for at least 80% code coverage
+2. **Mock External Dependencies**: Always mock databases, external APIs, etc.
+3. **Test Edge Cases**: Include tests for error conditions and edge cases
+4. **Keep Tests Fast**: Unit tests should run in milliseconds
+5. **Descriptive Names**: Test names should clearly describe what they test
+6. **One Assertion Per Test**: Focus on testing one behavior at a time
+7. **Setup and Teardown**: Use `beforeEach` and `afterEach` for test setup
+8. **Smoke Tests**: Include `admin/test` endpoints for health checks
