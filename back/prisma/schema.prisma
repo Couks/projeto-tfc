@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  passwordHash String?
+
+  // Account settings
+  plan     String  @default("free") // free, pro, enterprise
+  avatarUrl String?
+
+  // Security and preferences
+  twoFactorEnabled     Boolean @default(false)
+  notificationsEnabled Boolean @default(true)
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  // Relations
+  sites Site[]
+
+  @@index([email])
+}
+
+model Site {
+  id      String @id @default(cuid())
+  userId  String
+  name    String
+  siteKey String @unique
+  status  String @default("active") // active, inactive, suspended
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  domains  Domain[]
+  settings Setting[]
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([siteKey])
+  @@index([userId, status])
+}
+
+model Domain {
+  id        String  @id @default(cuid())
+  siteId    String
+  host      String
+  isPrimary Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, host])
+  @@index([host])
+  @@index([siteId])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  siteId String
+  key   String
+  value String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, key])
+  @@index([siteId])
+}
+
+model Event {
+  id         BigInt   @id @default(autoincrement())
+  siteKey    String   @db.VarChar(64)
+  name       String   @db.VarChar(64)
+  userId     String?  @db.VarChar(128)
+  sessionId  String?  @db.VarChar(128)
+  properties Json     @db.JsonB
+  context    Json     @db.JsonB
+  ts         DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([siteKey, name, ts])
+  @@index([siteKey, ts])
+  @@index([name, ts])
+  @@index([sessionId])
+}
+
