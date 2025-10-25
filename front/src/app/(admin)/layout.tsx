@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
+"use client";
+
+import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   SidebarProvider,
   Sidebar,
@@ -62,26 +62,22 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/lib/components/ui/collapsible";
+import { useUser, useLogout } from "@/lib/hooks";
+import { useRouter } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  const { data: user, isLoading } = useUser();
+  const logoutMutation = useLogout();
+  const router = useRouter();
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const session = await getSession();
-  if (!session) redirect("/login");
-  let user: { name: string | null; email: string | null } | null = null;
-  try {
-    const res = await fetch(`${process.env.SITE_URL}/api/auth/me`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      user = { name: data.name ?? null, email: data.email ?? null };
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
-  } catch {}
+  };
 
   return (
     <SidebarProvider>
@@ -254,10 +250,10 @@ export default async function AdminLayout({
                     </Avatar>
                     <div className="flex flex-col text-left">
                       <span className="text-xs font-medium leading-tight">
-                        {user?.name || "User"}
+                        {isLoading ? "Carregando..." : user?.name || "Usuário"}
                       </span>
                       <span className="text-[10px] text-sidebar-foreground/70 leading-tight">
-                        {user?.email || session.userId}
+                        {isLoading ? "..." : user?.email || "user@example.com"}
                       </span>
                     </div>
                     <ChevronUp className="ml-auto" />
@@ -273,16 +269,11 @@ export default async function AdminLayout({
                   <DropdownMenuItem>
                     <span>Suporte</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <form
-                      action="/api/auth/logout"
-                      method="post"
-                      className="w-full"
-                    >
-                      <button type="submit" className="w-full text-left">
-                        Sair
-                      </button>
-                    </form>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    disabled={logoutMutation.isPending}
+                  >
+                    {logoutMutation.isPending ? "Saindo..." : "Sair"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -348,5 +339,3 @@ export default async function AdminLayout({
     </SidebarProvider>
   );
 }
-
-

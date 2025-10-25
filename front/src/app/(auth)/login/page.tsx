@@ -1,26 +1,28 @@
 'use client';
 import { useState } from 'react';
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { useLogin } from "@/lib/hooks";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const loginMutation = useLogin();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     try {
-      await apiClient.post("/api/auth/login", { email, password });
-      location.href = "/admin";
+      await loginMutation.mutateAsync({ email, password });
+      router.push("/admin");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha no login");
+      // Error is handled by React Query and displayed via mutation state
     }
   };
 
@@ -89,9 +91,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {error && (
+              {loginMutation.isError && (
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                  {error}
+                  {loginMutation.error instanceof Error
+                    ? loginMutation.error.message
+                    : "Falha no login"}
                 </div>
               )}
 
@@ -99,8 +103,9 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full h-12 text-base font-medium"
                 size="lg"
+                disabled={loginMutation.isPending}
               >
-                Entrar
+                {loginMutation.isPending ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 

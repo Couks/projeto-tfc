@@ -1,11 +1,12 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { MetricCard } from "@/lib/components/MetricCard";
 import { FunnelVisualization } from "@/lib/components/FunnelVisualization";
 import { ConversionsChart } from "./_components/ConversionsChart";
 import { CTAPerformanceChart } from "./_components/CTAPerformanceChart";
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
+import { useSites, useConversions } from "@/lib/hooks";
+import { Skeleton } from "@ui/skeleton";
 import {
   TrendingUp,
   Users,
@@ -15,30 +16,15 @@ import {
   FileText,
 } from "lucide-react";
 
-async function fetchConversionsData(siteKey: string) {
-  try {
-    const res = await fetch(
-      `${process.env.SITE_URL}/api/insights/conversions?site=${encodeURIComponent(siteKey)}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
+export default function ConversionsPage() {
+  const { data: sites, isLoading: sitesLoading } = useSites();
+  const firstSite = sites?.[0];
 
-export default async function ConversionsPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const { data, isLoading: dataLoading } = useConversions(
+    firstSite?.siteKey || ""
+  );
 
-  const site = await prisma.site.findFirst({
-    where: { userId: session.userId },
-    orderBy: { createdAt: "desc" },
-    select: { siteKey: true, name: true },
-  });
-
-  const data = site ? await fetchConversionsData(site.siteKey) : null;
+  const isLoading = sitesLoading || dataLoading;
 
   // Calculate metrics
   const conversionTypes = data?.conversion_types || [];
@@ -77,11 +63,67 @@ export default async function ConversionsPage() {
   }));
 
   // Conversion types for pie chart
-  const conversionTypesChart = conversionTypes.map((item: any[], index: number) => ({
-    name: item[0],
-    value: parseInt(item[1]) || 0,
-    color: ["hsl(var(--primary))", "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))"][index] || "hsl(var(--accent))",
-  }));
+  const conversionTypesChart = conversionTypes.map(
+    (item: any[], index: number) => ({
+      name: item[0],
+      value: parseInt(item[1]) || 0,
+      color:
+        [
+          "hsl(var(--primary))",
+          "hsl(var(--chart-1))",
+          "hsl(var(--chart-2))",
+          "hsl(var(--chart-3))",
+        ][index] || "hsl(var(--accent))",
+    })
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-6 border rounded-lg">
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-8 w-16 mb-1" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -96,21 +138,31 @@ export default async function ConversionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total de Conversões"
-          value={totalConversions > 0 ? totalConversions.toLocaleString() : "N/A"}
+          value={
+            totalConversions > 0 ? totalConversions.toLocaleString() : "N/A"
+          }
           description="Últimos 30 dias"
           icon={TrendingUp}
         />
 
         <MetricCard
           title="Formulários Enviados"
-          value={formMetrics.submitted > 0 ? formMetrics.submitted.toLocaleString() : "N/A"}
+          value={
+            formMetrics.submitted > 0
+              ? formMetrics.submitted.toLocaleString()
+              : "N/A"
+          }
           description={`Taxa: ${parseFloat(formConversionRate) > 0 ? formConversionRate : "N/A"}%`}
           icon={FileText}
         />
 
         <MetricCard
           title="Taxa de Abandono"
-          value={parseFloat(formAbandonmentRate) > 0 ? `${formAbandonmentRate}%` : "N/A"}
+          value={
+            parseFloat(formAbandonmentRate) > 0
+              ? `${formAbandonmentRate}%`
+              : "N/A"
+          }
           description={`${formMetrics.abandoned} formulários abandonados`}
           icon={MessageSquare}
         />
@@ -157,7 +209,10 @@ export default async function ConversionsPage() {
               <p className="text-xs text-muted-foreground mt-1">Iniciados</p>
               {formMetrics.opened > 0 && (
                 <p className="text-xs text-green-600 mt-1">
-                  {((formMetrics.started / formMetrics.opened) * 100).toFixed(1)}%
+                  {((formMetrics.started / formMetrics.opened) * 100).toFixed(
+                    1
+                  )}
+                  %
                 </p>
               )}
             </div>
@@ -166,7 +221,11 @@ export default async function ConversionsPage() {
               <p className="text-xs text-muted-foreground mt-1">Enviados</p>
               {formMetrics.started > 0 && (
                 <p className="text-xs text-green-600 mt-1">
-                  {((formMetrics.submitted / formMetrics.started) * 100).toFixed(1)}%
+                  {(
+                    (formMetrics.submitted / formMetrics.started) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </p>
               )}
             </div>
@@ -246,7 +305,8 @@ export default async function ConversionsPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">
-                Nenhum dado disponível. Configure um site e aguarde dados de conversão.
+                Nenhum dado disponível. Configure um site e aguarde dados de
+                conversão.
               </p>
             </div>
           )}
@@ -274,4 +334,3 @@ function getFunnelStageName(stage: string): string {
 
   return names[stage] || stage;
 }
-

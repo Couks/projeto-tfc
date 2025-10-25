@@ -23,18 +23,19 @@ export function AdminDashboardClient() {
   const { data: sites } = useSites();
   const firstSite = sites?.[0];
 
-  const { data: overviewData } = useOverview(firstSite?.siteKey || '');
-  const { data: conversionsData } = useConversions(firstSite?.siteKey || '');
-  const { data: journeysData } = useJourneys(firstSite?.siteKey || '');
+  const { data: overviewData } = useOverview(firstSite?.siteKey || "");
+  const { data: conversionsData } = useConversions(firstSite?.siteKey || "");
+  const { data: journeysData } = useJourneys(firstSite?.siteKey || "");
 
-  // Calculate metrics from real data
+  // Calculate metrics from real data with proper type checking
   const totalConversions =
-    conversionsData?.conversion_types?.reduce(
+    (conversionsData as any)?.conversion_types?.reduce(
       (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
       0
     ) || 0;
 
-  const totalSessions = journeysData?.session_metrics?.total_sessions || 0;
+  const totalSessions =
+    (journeysData as any)?.session_metrics?.total_sessions || 0;
 
   const conversionRate =
     totalSessions > 0
@@ -42,22 +43,22 @@ export function AdminDashboardClient() {
       : "0";
 
   const bounceRate =
-    journeysData?.bounce_metrics?.total_sessions > 0
+    (journeysData as any)?.bounce_metrics?.total_sessions > 0
       ? (
-          (journeysData.bounce_metrics.bounced_sessions /
-            journeysData.bounce_metrics.total_sessions) *
+          ((journeysData as any).bounce_metrics.bounced_sessions /
+            (journeysData as any).bounce_metrics.total_sessions) *
           100
         ).toFixed(1)
       : "0";
 
   const metrics = {
-    totalVisitors: journeysData?.session_metrics?.total_users || 0,
+    totalVisitors: (journeysData as any)?.session_metrics?.total_users || 0,
     totalSites: sites?.length || 0,
     conversionRate: conversionRate,
     bounceRate: bounceRate,
     totalConversions: totalConversions,
-    topCity: overviewData?.cidades?.[0]?.[0] || "N/A",
-    topPropertyType: overviewData?.tipos?.[0]?.[0] || "N/A",
+    topCity: (overviewData as any)?.cidades?.[0]?.[0] || "N/A",
+    topPropertyType: (overviewData as any)?.tipos?.[0]?.[0] || "N/A",
     topPurpose: overviewData?.finalidade?.[0]?.[0] || "N/A",
     avgPriceRange: overviewData?.preco_venda_ranges?.[0]?.[0] || "N/A",
   };
@@ -103,8 +104,8 @@ export function AdminDashboardClient() {
               {metrics.totalSites === 0
                 ? "Nenhum site configurado"
                 : metrics.totalSites === 1
-                ? "Site funcionando"
-                : "Sites funcionando"}
+                  ? "Site funcionando"
+                  : "Sites funcionando"}
             </p>
           </CardContent>
         </Card>
@@ -146,8 +147,8 @@ export function AdminDashboardClient() {
                 ? parseFloat(metrics.bounceRate) < 25
                   ? "Excelente ✅"
                   : parseFloat(metrics.bounceRate) < 40
-                  ? "Normal"
-                  : "Precisa melhorar ⚠️"
+                    ? "Normal"
+                    : "Precisa melhorar ⚠️"
                 : "Aguardando dados"}
             </p>
           </CardContent>

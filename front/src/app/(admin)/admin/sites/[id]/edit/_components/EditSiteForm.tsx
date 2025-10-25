@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@ui/select";
 import Link from "next/link";
+import { useUpdateSite } from "@/lib/hooks";
 
 export function EditSiteForm({
   site,
@@ -19,20 +20,25 @@ export function EditSiteForm({
   site: { id: string; name: string; status: "active" | "inactive" };
 }) {
   const router = useRouter();
+  const updateSiteMutation = useUpdateSite();
   const [status, setStatus] = React.useState<"active" | "inactive">(
     site.status
   );
+
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const body = { name: fd.get("name"), status };
-    const r = await fetch(`/api/sites/${site.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (r.ok) router.push("/admin/sites");
-    else alert("Failed to update");
+    const name = fd.get("name") as string;
+
+    try {
+      await updateSiteMutation.mutateAsync({
+        siteId: site.id,
+        data: { name, status },
+      });
+      router.push("/admin/sites");
+    } catch (error) {
+      console.error("Failed to update site:", error);
+    }
   }
   return (
     <form className="space-y-3" onSubmit={onSave}>
@@ -69,13 +75,21 @@ export function EditSiteForm({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Button type="submit" size="sm">
-          Salvar
+        <Button type="submit" size="sm" disabled={updateSiteMutation.isPending}>
+          {updateSiteMutation.isPending ? "Salvando..." : "Salvar"}
         </Button>
         <Button asChild variant="ghost" size="sm">
           <Link href="/admin/sites">Cancelar</Link>
         </Button>
       </div>
+
+      {updateSiteMutation.isError && (
+        <div className="text-sm text-red-600">
+          {updateSiteMutation.error instanceof Error
+            ? updateSiteMutation.error.message
+            : "Falha ao atualizar site"}
+        </div>
+      )}
     </form>
   );
 }

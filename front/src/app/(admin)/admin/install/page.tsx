@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+"use client";
+
 import { Alert, AlertDescription } from "@ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { Button } from "@ui/button";
@@ -9,36 +9,44 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@ui/tooltip";
+import { Skeleton } from "@ui/skeleton";
 import { CopySnippetButton } from "./_components/CopySnippetButton";
+import { useSites } from "@/lib/hooks";
 
-export default async function InstallPage() {
-  const session = await getSession();
-  let site: { siteKey: string } | null = null;
-  let dbAvailable = true;
-  try {
-    site = await prisma.site.findFirst({
-      where: { userId: session?.userId },
-      orderBy: { createdAt: "desc" },
-    });
-  } catch {
-    dbAvailable = false;
-  }
-  const base = process.env.SITE_URL || "";
-  const loaderUrl = site
-    ? `${base}/api/sdk/loader?site=${encodeURIComponent(site.siteKey)}`
+export default function InstallPage() {
+  const { data: sites, isLoading, error } = useSites();
+  const firstSite = sites?.[0];
+  const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "";
+  const loaderUrl = firstSite
+    ? `${base}/api/sdk/loader?site=${encodeURIComponent(firstSite.siteKey)}`
     : "";
-  return (
-    <div className="space-y-4">
-      {!dbAvailable && (
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-xl font-semibold">Instalação</h1>
         <Alert variant="destructive">
           <AlertDescription>
-            Banco de dados indisponível. Verifique DATABASE_URL/DIRECT_URL e
-            rode as migrações.
+            Erro ao carregar sites. Verifique sua conexão e tente novamente.
           </AlertDescription>
         </Alert>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
       <h1 className="text-xl font-semibold">Instalação</h1>
-      {site ? (
+      {firstSite ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Snippet</CardTitle>
@@ -74,5 +82,3 @@ export default async function InstallPage() {
     </div>
   );
 }
-
-

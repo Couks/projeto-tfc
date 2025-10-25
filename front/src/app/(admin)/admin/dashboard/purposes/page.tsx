@@ -1,35 +1,19 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { PurposesChart } from "./_components/PurposesChart";
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
+import { useSites, usePurposes } from "@/lib/hooks";
+import { Skeleton } from "@ui/skeleton";
 
-async function fetchPurposesData(siteKey: string) {
-  try {
-    const res = await fetch(
-      `${process.env.SITE_URL}/api/insights/overview?site=${encodeURIComponent(
-        siteKey
-      )}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
+export default function PurposesPage() {
+  const { data: sites, isLoading: sitesLoading } = useSites();
+  const firstSite = sites?.[0];
 
-export default async function PurposesPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const { data, isLoading: dataLoading } = usePurposes(
+    firstSite?.siteKey || ""
+  );
 
-  const site = await prisma.site.findFirst({
-    where: { userId: session.userId },
-    orderBy: { createdAt: "desc" },
-    select: { siteKey: true },
-  });
-
-  const data = site ? await fetchPurposesData(site.siteKey) : null;
+  const isLoading = sitesLoading || dataLoading;
 
   // Calculate metrics from real data
   const totalSearches =
@@ -40,6 +24,40 @@ export default async function PurposesPage() {
 
   // Get top 3 purposes
   const topPurposes = data?.finalidade?.slice(0, 3) || [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-5 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-3 w-32 mt-2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

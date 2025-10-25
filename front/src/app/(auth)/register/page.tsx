@@ -1,27 +1,29 @@
 'use client';
 import { useState } from 'react';
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { ThemeToggle } from "@/lib/components/ThemeToggle";
 import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { useRegister } from "@/lib/hooks";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const registerMutation = useRegister();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     try {
-      await apiClient.post("/api/auth/register", { email, password, name });
-      location.href = "/login";
+      await registerMutation.mutateAsync({ email, password, name });
+      router.push("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha no registro");
+      // Error is handled by React Query and displayed via mutation state
     }
   };
 
@@ -140,9 +142,11 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {error && (
+              {registerMutation.isError && (
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                  {error}
+                  {registerMutation.error instanceof Error
+                    ? registerMutation.error.message
+                    : "Falha no registro"}
                 </div>
               )}
 
@@ -150,8 +154,11 @@ export default function RegisterPage() {
                 type="submit"
                 className="w-full h-12 text-base font-medium"
                 size="lg"
+                disabled={registerMutation.isPending}
               >
-                Criar conta
+                {registerMutation.isPending
+                  ? "Criando conta..."
+                  : "Criar conta"}
               </Button>
             </form>
 

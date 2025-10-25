@@ -1,22 +1,46 @@
-import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
-import Link from 'next/link'
-import { EditSiteForm } from './_components/EditSiteForm'
+"use client";
+
+import React from "react";
+import Link from "next/link";
 import { Button } from "@ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
+import { EditSiteForm } from "./_components/EditSiteForm";
+import { useSite } from "@/lib/hooks";
+import { Skeleton } from "@ui/skeleton";
 
-export default async function EditSitePage({
+export default function EditSitePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await getSession();
-  if (!session?.userId) return null;
-  const { id } = await params;
-  const site = await prisma.site.findFirst({
-    where: { id, userId: session.userId },
-  });
-  if (!site) {
+  const [siteId, setSiteId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then(({ id }) => setSiteId(id));
+  }, [params]);
+
+  const { data: site, isLoading, error } = useSite(siteId || "");
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-8 w-16" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !site) {
     return (
       <div className="space-y-4">
         <div className="text-sm text-red-600">Site not found.</div>
@@ -26,6 +50,7 @@ export default async function EditSitePage({
       </div>
     );
   }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -46,10 +71,8 @@ export default async function EditSitePage({
               status: site.status as "active" | "inactive",
             }}
           />
-                  </CardContent>
+        </CardContent>
       </Card>
     </div>
   );
 }
-
-

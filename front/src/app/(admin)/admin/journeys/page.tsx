@@ -1,35 +1,21 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { MetricCard } from "@/lib/components/MetricCard";
 import { JourneysChart } from "./_components/JourneysChart";
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
+import { useSites, useJourneys } from "@/lib/hooks";
+import { Skeleton } from "@ui/skeleton";
 import { Users, Clock, FileText, TrendingUp, Target } from "lucide-react";
 
-async function fetchJourneysData(siteKey: string) {
-  try {
-    const res = await fetch(
-      `${process.env.SITE_URL}/api/insights/journeys?site=${encodeURIComponent(siteKey)}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
+export default function JourneysPage() {
+  const { data: sites, isLoading: sitesLoading } = useSites();
+  const firstSite = sites?.[0];
 
-export default async function JourneysPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const { data, isLoading: dataLoading } = useJourneys(
+    firstSite?.siteKey || ""
+  );
 
-  const site = await prisma.site.findFirst({
-    where: { userId: session.userId },
-    orderBy: { createdAt: "desc" },
-    select: { siteKey: true, name: true },
-  });
-
-  const data = site ? await fetchJourneysData(site.siteKey) : null;
+  const isLoading = sitesLoading || dataLoading;
 
   // Extract metrics
   const sessionMetrics = data?.session_metrics || {
@@ -69,6 +55,54 @@ export default async function JourneysPage() {
     const secs = Math.floor(seconds % 60);
     return `${mins}m ${secs}s`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-6 border rounded-lg">
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-8 w-16 mb-1" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,7 +204,9 @@ export default async function JourneysPage() {
                   const page = item[0] || "/";
                   const sessions = parseInt(item[1]) || 0;
                   const totalSessions = sessionMetrics.total_sessions || 1;
-                  const percentage = ((sessions / totalSessions) * 100).toFixed(1);
+                  const percentage = ((sessions / totalSessions) * 100).toFixed(
+                    1
+                  );
 
                   return (
                     <div
@@ -192,7 +228,9 @@ export default async function JourneysPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum dado disponível
+                </p>
               </div>
             )}
           </CardContent>
@@ -209,7 +247,9 @@ export default async function JourneysPage() {
                   const source = item[0] || "Desconhecido";
                   const sessions = parseInt(item[1]) || 0;
                   const totalSessions = sessionMetrics.total_sessions || 1;
-                  const percentage = ((sessions / totalSessions) * 100).toFixed(1);
+                  const percentage = ((sessions / totalSessions) * 100).toFixed(
+                    1
+                  );
 
                   return (
                     <div
@@ -243,7 +283,9 @@ export default async function JourneysPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum dado disponível
+                </p>
               </div>
             )}
           </CardContent>
@@ -305,4 +347,3 @@ export default async function JourneysPage() {
     </div>
   );
 }
-

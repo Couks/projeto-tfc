@@ -3,17 +3,14 @@ import type { NextRequest } from 'next/server';
 
 // Paths that never require auth (public)
 const PUBLIC_PATHS: Array<(p: string) => boolean> = [
-  (p) => p === '/',
-  (p) => p === '/login',
-  (p) => p.startsWith('/api/auth/'),
-  (p) => p.startsWith('/api/sdk/'),
-  (p) => p.startsWith('/static/'),
+  (p) => p === "/",
+  (p) => p === "/login",
 ];
 
 // Paths that require auth (protected)
 const PROTECTED_PATHS: Array<(p: string) => boolean> = [
-  (p) => p.startsWith('/admin'),
-  (p) => p.startsWith('/api/sites'),
+  (p) => p.startsWith("/admin"),
+  (p) => p.startsWith("/api/sites"),
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -25,54 +22,76 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 function getSecret(): string {
-  const s = process.env.NEXTAUTH_SECRET || '';
-  if (!s) return 'dev-secret-do-not-use-in-prod';
+  const s = process.env.NEXTAUTH_SECRET || "";
+  if (!s) return "dev-secret-do-not-use-in-prod";
   return s;
 }
 
-async function hmacHex(raw: string, secret: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(raw));
-  const bytes = new Uint8Array(sig);
-  let hex = '';
-  for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
-  return hex;
-}
+/**
+ * Verifica e decodifica cookie de sessão assinado
+ * Usa Web Crypto API compatível com Edge Runtime
+ * Formato: dados.hmac_hex (mesmo do backend NestJS)
+ */
+async function verifySignedCookie(
+  signed: string
+): Promise<{ userId: string } | null> {
+  if (!signed) return null;
 
-function constantTimeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
-async function verifySignedCookie(v: string | undefined): Promise<{ userId: string } | null> {
-  if (!v) return null;
-  const lastDot = v.lastIndexOf('.');
-  if (lastDot <= 0) return null;
-  const raw = v.slice(0, lastDot);
-  const sig = v.slice(lastDot + 1);
-  const check = await hmacHex(raw, getSecret());
-  const ok = constantTimeEqual(sig, check);
-  if (!ok) return null;
   try {
+    // Encontra o último '.' que separa dados da assinatura
+    const lastDot = signed.lastIndexOf(".");
+    if (lastDot <= 0) return null;
+
+    // Separa dados (antes do .) e assinatura (depois do .)
+    const raw = signed.slice(0, lastDot);
+    const sig = signed.slice(lastDot + 1);
+
+    // Cria chave HMAC usando Web Crypto API
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(getSecret()),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"]
+    );
+
+    // Gera assinatura HMAC-SHA256 dos dados
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(raw)
+    );
+    const expectedSig = Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Compara assinaturas usando constant-time comparison
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      new Uint8Array(signature),
+      new TextEncoder().encode(raw)
+    );
+
+    if (!isValid) return null;
+
+    // Se assinatura válida, decodifica o JSON
     const parsed = JSON.parse(raw) as { userId: string };
-    return typeof parsed?.userId === 'string' && parsed.userId.length > 0 ? parsed : null;
+    // Valida estrutura dos dados
+    if (!parsed?.userId || typeof parsed.userId !== "string") {
+      return null;
+    }
+
+    return parsed;
   } catch {
+    // Qualquer erro de verificação retorna null
     return null;
   }
 }
 
 async function hasValidSessionCookie(req: NextRequest): Promise<boolean> {
-  const c = req.cookies.get('admin_session');
-  return !!(await verifySignedCookie(c?.value));
+  const c = req.cookies.get("admin_session");
+  return !!(await verifySignedCookie(c?.value || ""));
 }
 
 export async function middleware(req: NextRequest) {
@@ -87,11 +106,17 @@ export async function middleware(req: NextRequest) {
   if (isProtectedPath(pathname)) {
     const has = await hasValidSessionCookie(req);
     if (!has) {
-      console.warn('[Middleware] blocked unauthenticated access', { pathname });
-      const url = new URL('/login', req.url);
+      console.warn("[Middleware] blocked unauthenticated access", {
+        pathname,
+        cookies: req.cookies.getAll().map((c) => ({
+          name: c.name,
+          value: c.value?.substring(0, 20) + "...",
+        })),
+      });
+      const url = new URL("/login", req.url);
       return NextResponse.redirect(url);
     }
-    console.log('[Middleware] allowed', { pathname });
+    console.log("[Middleware] allowed", { pathname });
     return NextResponse.next();
   }
 
@@ -102,8 +127,6 @@ export async function middleware(req: NextRequest) {
 // Exclude Next.js internals and static assets from middleware
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
-
-

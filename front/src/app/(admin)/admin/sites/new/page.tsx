@@ -1,32 +1,39 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from "next/navigation";
 import { Input } from "@ui/input";
 import { Button } from "@ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { Alert, AlertDescription } from "@ui/alert";
-import { apiClient } from "@/lib/api";
+import { useCreateSite } from "@/lib/hooks";
 
 export default function NewSitePage() {
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [loaderUrl, setLoaderUrl] = useState<string | null>(null);
   const [siteKey, setSiteKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const createSiteMutation = useCreateSite();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoaderUrl(null);
     setSiteKey(null);
     try {
-      const data = await apiClient.post<{ loaderUrl: string; siteKey: string }>(
-        "/api/sites",
-        { name, domain }
-      );
+      const data = (await createSiteMutation.mutateAsync({ name, domain })) as {
+        loaderUrl: string;
+        siteKey: string;
+      };
       setLoaderUrl(data.loaderUrl);
       setSiteKey(data.siteKey);
+
+      // Redirect to sites list after successful creation
+      setTimeout(() => {
+        router.push("/admin/sites");
+      }, 2000); // Give user time to see the snippet
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      // Error is handled by React Query and displayed via mutation state
     }
   };
 
@@ -61,12 +68,20 @@ export default function NewSitePage() {
                 placeholder="www.exemplo.com"
               />
             </div>
-            <Button type="submit" size="sm">
-              Criar
+            <Button
+              type="submit"
+              size="sm"
+              disabled={createSiteMutation.isPending}
+            >
+              {createSiteMutation.isPending ? "Criando..." : "Criar"}
             </Button>
-            {error && (
+            {createSiteMutation.isError && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  {createSiteMutation.error instanceof Error
+                    ? createSiteMutation.error.message
+                    : "Falha ao criar site"}
+                </AlertDescription>
               </Alert>
             )}
           </form>
@@ -76,20 +91,53 @@ export default function NewSitePage() {
       {loaderUrl && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Snippet</CardTitle>
+            <CardTitle className="text-base">
+              ✅ Site Criado com Sucesso!
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              Use este snippet HTML:
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                Seu site foi criado com sucesso! Você será redirecionado para a
+                lista de sites em alguns segundos.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                Use este snippet HTML no seu site:
+              </div>
+              <pre className="p-3 bg-muted border rounded text-sm overflow-auto">
+                {htmlSnippet}
+              </pre>
+              <div className="text-sm text-muted-foreground">
+                Ou adicione via GTM (Custom HTML tag): o mesmo snippet acima.
+              </div>
+              <div className="text-xs text-muted-foreground">
+                SITE_KEY: {siteKey}
+              </div>
             </div>
-            <pre className="mt-2 p-3 bg-muted border rounded text-sm overflow-auto">
-              {htmlSnippet}
-            </pre>
-            <div className="text-sm text-muted-foreground mt-2">
-              Ou adicione via GTM (Custom HTML tag): o mesmo snippet acima.
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              SITE_KEY: {siteKey}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin/sites")}
+              >
+                Ver Lista de Sites
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setName("");
+                  setDomain("");
+                  setLoaderUrl(null);
+                  setSiteKey(null);
+                }}
+              >
+                Criar Outro Site
+              </Button>
             </div>
           </CardContent>
         </Card>
