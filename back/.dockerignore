@@ -94,3 +94,8 @@ pids/
 # Temporary folders
 tmp/
 temp/
+
+# Deploy files
+deploy.sh
+easypanel.yml
+DEPLOY.md
