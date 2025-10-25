@@ -9,45 +9,33 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  name     String?
-  passwordHash String?
-
-  // Account settings
-  plan     String  @default("free") // free, pro, enterprise
-  avatarUrl String?
-
-  // Security and preferences
-  twoFactorEnabled     Boolean @default(false)
-  notificationsEnabled Boolean @default(true)
-
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastLoginAt DateTime?
-
-  // Relations
-  sites Site[]
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String?
+  passwordHash         String?
+  plan                 String    @default("free")
+  avatarUrl            String?
+  twoFactorEnabled     Boolean   @default(false)
+  notificationsEnabled Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  lastLoginAt          DateTime?
+  sites                Site[]
 
   @@index([email])
 }
 
 model Site {
-  id      String @id @default(cuid())
-  userId  String
-  name    String
-  siteKey String @unique
-  status  String @default("active") // active, inactive, suspended
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  domains  Domain[]
-  settings Setting[]
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  siteKey   String    @unique
+  status    String    @default("active")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  domains   Domain[]
+  settings  Setting[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([siteKey])
@@ -55,17 +43,13 @@ model Site {
 }
 
 model Domain {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   siteId    String
   host      String
-  isPrimary Boolean @default(false)
-
-  // Timestamps
+  isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, host])
   @@index([host])
@@ -73,17 +57,13 @@ model Domain {
 }
 
 model Setting {
-  id    String @id @default(cuid())
-  siteId String
-  key   String
-  value String
-
-  // Timestamps
+  id        String   @id @default(cuid())
+  siteId    String
+  key       String
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, key])
   @@index([siteId])
@@ -95,8 +75,8 @@ model Event {
   name       String   @db.VarChar(64)
   userId     String?  @db.VarChar(128)
   sessionId  String?  @db.VarChar(128)
-  properties Json     @db.JsonB
-  context    Json     @db.JsonB
+  properties Json
+  context    Json
   ts         DateTime @default(now())
   createdAt  DateTime @default(now())
 
@@ -105,4 +85,3 @@ model Event {
   @@index([name, ts])
   @@index([sessionId])
 }
-

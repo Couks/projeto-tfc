@@ -81,7 +81,11 @@ async function bootstrap() {
     // credentials: true permite envio de cookies entre domínios
     // allowedHeaders inclui X-Site-Key para multi-tenancy
     app.enableCors({
-      origin: [frontendUrl || 'http://localhost:3000', 'http://localhost:3000'], // Origens permitidas
+      origin: [
+        frontendUrl || 'http://localhost:3000',
+        'http://localhost:3000',
+        'https://insighthouse.vercel.app',
+      ], // Origens permitidas
       credentials: true, // Permite cookies
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Site-Key'],
