@@ -1,69 +1,74 @@
 /**
- * Enhanced InsightHouse Analytics Script - NestJS Backend Integration
+ * Script de Analytics InsightHouse
  *
- * Features:
- * - Captures ALL search filters (quartos, suites, banheiros, vagas, valores, switches)
- * - User journey tracking with persistent ID
- * - Session tracking
- * - Conversion funnel
- * - Batch event submission with keepalive
- * - Automatic retry on failure
+ * Funcionalidades:
+ * - Captura TODOS os filtros de busca (quartos, suites, banheiros, vagas, valores, switches)
+ * - Rastreamento de jornada do usuário com ID persistente
+ * - Rastreamento de sessão
+ * - Funil de conversão
+ * - Envio de eventos em lote com keepalive
+ * - Retry automático em caso de falha
  */
+
 (() => {
+  // Inicializa o objeto global MyAnalytics
   const MyAnalytics = window.MyAnalytics || (window.MyAnalytics = {});
   MyAnalytics.debug = false;
 
-  // Configuration - Update these values
+  // Configuração - Atualize estes valores
   const API_URL = window.IH_API_URL || 'http://localhost:3001/api';
   const SITE_KEY = window.IH_SITE_KEY || '';
 
+  // Verifica se a chave do site está configurada
   if (!SITE_KEY) {
-    console.error('[InsightHouse] SITE_KEY not configured');
+    console.error('[InsightHouse] SITE_KEY não configurada');
     return;
   }
 
   // =========================================
-  // EVENT QUEUE & BATCH SENDING
+  // FILA DE EVENTOS E ENVIO EM LOTE
   // =========================================
 
+  // Fila de eventos para envio em lote
   let eventQueue = [];
-  const MAX_QUEUE_SIZE = 10;
-  const FLUSH_INTERVAL = 3000; // 3 seconds
+  const MAX_QUEUE_SIZE = 10; // Tamanho máximo da fila
+  const FLUSH_INTERVAL = 3000; // 3 segundos
   let flushTimer = null;
 
   /**
-   * Send events in batch to NestJS backend
+   * Função envia eventos em lote para o backend NestJS
    */
   const sendBatch = async (events) => {
     if (!events || events.length === 0) return;
 
     try {
+      // Faz requisição POST para o endpoint de eventos em lote
       const response = await fetch(`${API_URL}/events/track/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Site-Key': SITE_KEY,
+          'X-Site-Key': SITE_KEY, // Chave do site para autenticação
         },
         body: JSON.stringify({ events }),
-        keepalive: true,
+        keepalive: true, // Mantém conexão viva
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      log('Batch sent successfully:', events.length, 'events');
+      log('Lote enviado com sucesso:', events.length, 'eventos');
     } catch (error) {
-      log('Failed to send batch:', error);
-      // Store failed events in localStorage for retry
+      log('Falha ao enviar lote:', error);
+      // Armazena eventos falhados no localStorage para retry
       const failedEvents = JSON.parse(localStorage.getItem('ih_failed_events') || '[]');
       failedEvents.push(...events);
-      localStorage.setItem('ih_failed_events', JSON.stringify(failedEvents.slice(-100))); // Keep last 100
+      localStorage.setItem('ih_failed_events', JSON.stringify(failedEvents.slice(-100))); // Mantém últimos 100
     }
   };
 
   /**
-   * Flush event queue
+   * Função esvazia a fila de eventos
    */
   const flushQueue = () => {
     if (eventQueue.length === 0) return;
@@ -74,7 +79,7 @@
   };
 
   /**
-   * Schedule queue flush
+   * Função agenda o esvaziamento da fila
    */
   const scheduleFlush = () => {
     if (flushTimer) clearTimeout(flushTimer);
@@ -82,12 +87,12 @@
   };
 
   /**
-   * Add event to queue
+   * Função adiciona evento à fila
    */
   const queueEvent = (event) => {
     eventQueue.push(event);
 
-    // Flush if queue is full
+    // Esvazia se a fila estiver cheia
     if (eventQueue.length >= MAX_QUEUE_SIZE) {
       flushQueue();
     } else {
@@ -96,46 +101,51 @@
   };
 
   /**
-   * Retry failed events on page load
+   * Função tenta reenviar eventos falhados no carregamento da página
    */
   const retryFailedEvents = () => {
     const failedEvents = JSON.parse(localStorage.getItem('ih_failed_events') || '[]');
     if (failedEvents.length > 0) {
-      log('Retrying', failedEvents.length, 'failed events');
+      log('Tentando reenviar', failedEvents.length, 'eventos falhados');
       sendBatch(failedEvents);
       localStorage.removeItem('ih_failed_events');
     }
   };
 
-  // Retry failed events on load
+  // Tenta reenviar eventos falhados no carregamento
   retryFailedEvents();
 
-  // Flush on page unload
+  // Esvazia fila quando a página for fechada
   window.addEventListener('beforeunload', () => {
     flushQueue();
   });
 
   // =========================================
-  // HELPERS
+  // FUNÇÕES AUXILIARES
   // =========================================
+
+  // Função de log para debug
   const log = (...args) => {
     if (MyAnalytics.debug) console.log('[InsightHouse]', ...args);
   };
 
+  // Função adiciona event listener de forma segura
   const safeOn = (el, ev, fn) => {
     if (el) el.addEventListener(ev, fn, { passive: true });
   };
 
   /**
-   * Capture event - now queues for batch sending
+   * Função captura evento - agora adiciona à fila para envio em lote
    */
   const capture = (eventName, properties = {}) => {
     try {
+      // Enriquece propriedades com contexto da jornada do usuário
       const enrichedProps = {
         ...properties,
         ...getUserJourneyContext(),
       };
 
+      // Cria objeto do evento com todas as informações
       const event = {
         name: eventName,
         properties: enrichedProps,
@@ -157,22 +167,23 @@
       };
 
       queueEvent(event);
-      log('Event queued:', eventName, enrichedProps);
+      log('Evento adicionado à fila:', eventName, enrichedProps);
     } catch (e) {
-      log('Error capturing event:', e);
+      log('Erro ao capturar evento:', e);
     }
   };
 
+  // Funções auxiliares para seleção de elementos
   const byId = (id) => document.getElementById(id);
   const bySelAll = (sel) => Array.from(document.querySelectorAll(sel));
 
   // =========================================
-  // USER JOURNEY TRACKING
+  // RASTREAMENTO DE JORNADA DO USUÁRIO
   // =========================================
 
   /**
-   * Get or create persistent user ID
-   * Stored in localStorage for cross-session tracking
+   * Função obtém ou cria ID persistente do usuário
+   * Armazenado no localStorage para rastreamento entre sessões
    */
   const getUserId = () => {
     const STORAGE_KEY = "ih_user_id";
@@ -187,25 +198,25 @@
   };
 
   /**
-   * Get or create session ID
-   * Expires after 30 minutes of inactivity
+   * Função obtém ou cria ID da sessão
+   * Expira após 30 minutos de inatividade
    */
   const getSessionId = () => {
     const STORAGE_KEY = "ih_session_id";
     const TIMEOUT_KEY = "ih_session_timeout";
-    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutos
 
     const now = Date.now();
     const lastActivity = parseInt(localStorage.getItem(TIMEOUT_KEY) || "0");
 
     let sessionId = localStorage.getItem(STORAGE_KEY);
 
-    // Create new session if expired or doesn't exist
+    // Cria nova sessão se expirou ou não existe
     if (!sessionId || (now - lastActivity) > SESSION_TIMEOUT) {
       sessionId = `session_${now}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem(STORAGE_KEY, sessionId);
 
-      // Track new session
+      // Rastreia nova sessão
       capture("session_start", {
         session_id: sessionId,
         referrer: document.referrer,
@@ -213,14 +224,14 @@
       });
     }
 
-    // Update last activity
+    // Atualiza última atividade
     localStorage.setItem(TIMEOUT_KEY, now.toString());
 
     return sessionId;
   };
 
   /**
-   * Track page in user journey
+   * Função rastreia página na jornada do usuário
    */
   const trackPageView = () => {
     const journeyKey = "ih_journey_pages";
@@ -234,7 +245,7 @@
 
     journey.push(pageData);
 
-    // Keep only last 20 pages
+    // Mantém apenas as últimas 20 páginas
     if (journey.length > 20) journey.shift();
 
     localStorage.setItem(journeyKey, JSON.stringify(journey));
@@ -243,7 +254,7 @@
   };
 
   /**
-   * Get user journey context (added to all events)
+   * Função obtém contexto da jornada do usuário (adicionado a todos os eventos)
    */
   const getUserJourneyContext = () => {
     const journey = JSON.parse(localStorage.getItem("ih_journey_pages") || "[]");
@@ -258,27 +269,27 @@
   };
 
   /**
-   * Calculate time on site
+   * Função calcula tempo no site
    */
   const calculateTimeOnSite = () => {
     const firstPageTime = parseInt(localStorage.getItem("ih_first_page_time") || Date.now().toString());
-    return Math.floor((Date.now() - firstPageTime) / 1000); // seconds
+    return Math.floor((Date.now() - firstPageTime) / 1000); // segundos
   };
 
-  // Initialize journey tracking
+  // Inicializa rastreamento da jornada
   if (!localStorage.getItem("ih_first_page_time")) {
     localStorage.setItem("ih_first_page_time", Date.now().toString());
   }
 
-  // Track page view on load
+  // Rastreia visualização da página no carregamento
   trackPageView();
 
   // =========================================
-  // ENHANCED FILTER TRACKING
+  // RASTREAMENTO AVANÇADO DE FILTROS
   // =========================================
 
   /**
-   * Generic change logger with value extraction
+   * Função genérica para capturar mudanças com extração de valores
    */
   const onChange = (el, field) => {
     if (!el) return;
@@ -286,7 +297,7 @@
     safeOn(el, "change", (e) => {
       let value = "";
 
-      // Handle different input types
+      // Trata diferentes tipos de input
       if (el.type === "checkbox" || el.type === "radio") {
         value = el.checked ? el.value : "";
       } else if (el.multiple && el.selectedOptions) {
@@ -304,7 +315,7 @@
   };
 
   /**
-   * Track checkbox groups (quartos, suites, etc.)
+   * Função rastreia grupos de checkbox (quartos, suites, etc.)
    */
   const trackCheckboxGroup = (name, displayName) => {
     bySelAll(`input[name="${name}"]`).forEach((el) => {
@@ -322,7 +333,7 @@
   };
 
   /**
-   * Track slider with range values
+   * Função rastreia slider com valores de range
    */
   const trackSlider = (sliderId, field) => {
     const slider = byId(sliderId);
@@ -342,7 +353,7 @@
   };
 
   /**
-   * Track switch toggles (all checkboxes in filters)
+   * Função rastreia switches/toggles (todos os checkboxes nos filtros)
    */
   const trackSwitch = (switchId, label) => {
     const switchEl = byId(switchId);
@@ -358,8 +369,10 @@
   };
 
   // =========================================
-  // INITIALIZE TRACKING ON DOM READY
+  // INICIALIZA RASTREAMENTO QUANDO DOM ESTIVER PRONTO
   // =========================================
+
+  // Função aguarda DOM estar pronto
   const onReady = (fn) => {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -369,11 +382,11 @@
   };
 
   onReady(() => {
-    log("Initializing enhanced analytics...");
+    log("Inicializando analytics avançado...");
     log("API URL:", API_URL);
     log("Site Key:", SITE_KEY);
 
-    // ===== BASIC FILTERS =====
+    // ===== FILTROS BÁSICOS =====
 
     // Finalidade (Venda/Aluguel)
     onChange(byId("property-status"), "finalidade");
@@ -386,7 +399,7 @@
       });
     });
 
-    // Tipos de Imóvel (multiple select)
+    // Tipos de Imóvel (seleção múltipla)
     onChange(byId("residencial-property-type"), "tipo");
 
     // Cidade(s)
@@ -413,18 +426,18 @@
       }
     });
 
-    // ===== ADVANCED FILTERS (NOW TRACKED) =====
+    // ===== FILTROS AVANÇADOS (AGORA RASTREADOS) =====
 
-    // Quartos (checkboxes - multiple selection)
+    // Quartos (checkboxes - seleção múltipla)
     trackCheckboxGroup("dormitorios[]", "quartos");
 
-    // Suítes (radio buttons - single selection)
+    // Suítes (radio buttons - seleção única)
     trackCheckboxGroup("suites[]", "suites");
 
-    // Banheiros (radio buttons - single selection)
+    // Banheiros (radio buttons - seleção única)
     trackCheckboxGroup("banheiros[]", "banheiros");
 
-    // Vagas (radio buttons - single selection)
+    // Vagas (radio buttons - seleção única)
     trackCheckboxGroup("vagas[]", "vagas");
 
     // ===== SLIDERS (RANGES) =====
@@ -438,8 +451,9 @@
     // Área (m²)
     trackSlider("input-slider-area", "area");
 
-    // ===== MANUAL NUMBER INPUTS (NEW) =====
+    // ===== INPUTS NUMÉRICOS MANUAIS (NOVO) =====
 
+    // Função rastreia inputs numéricos manuais
     const trackNumberInput = (inputId, field) => {
       const input = byId(inputId);
       if (!input) return;
@@ -474,7 +488,7 @@
     trackSwitch("filterproposta", "reservado");
     trackSwitch("filterpacote", "valor_total_pacote");
 
-    // ===== COMMERCIAL FILTERS (NEW) =====
+    // ===== FILTROS COMERCIAIS (NOVO) =====
 
     // Salas (comercial)
     trackCheckboxGroup("salas[]", "salas_comercial");
@@ -482,7 +496,7 @@
     // Galpões (comercial)
     trackCheckboxGroup("galpoes[]", "galpoes");
 
-    // ===== COMODIDADES (NEW) =====
+    // ===== COMODIDADES (NOVO) =====
 
     const comodidades = [
       "ArCondicionado",
@@ -496,7 +510,7 @@
       trackSwitch(`${comodidade}-advanced`, `comodidade_${comodidade.toLowerCase()}`);
     });
 
-    // ===== LAZER E ESPORTE (NEW) =====
+    // ===== LAZER E ESPORTE (NOVO) =====
 
     const lazer = [
       "Churrasqueira",
@@ -511,7 +525,7 @@
       trackSwitch(`${item}-advanced`, `lazer_${item.toLowerCase()}`);
     });
 
-    // ===== CÔMODOS (NEW) =====
+    // ===== CÔMODOS (NOVO) =====
 
     const comodos = ["AreaServico", "Varanda"];
 
@@ -519,7 +533,7 @@
       trackSwitch(`${comodo}-advanced`, `comodo_${comodo.toLowerCase()}`);
     });
 
-    // ===== SEGURANÇA (NEW) =====
+    // ===== SEGURANÇA (NOVO) =====
 
     const seguranca = [
       "Alarme",
@@ -532,74 +546,79 @@
       trackSwitch(`${item}-advanced`, `seguranca_${item.toLowerCase()}`);
     });
 
-    log("All filters initialized ✓");
+    log("Todos os filtros inicializados ✓");
   });
 
   // =========================================
-  // SEARCH SUBMIT TRACKING (ENHANCED)
+  // RASTREAMENTO DE SUBMISSÃO DE BUSCA (APRIMORADO)
   // =========================================
 
   /**
-   * Capture complete search state on submit
+   * Função captura estado completo da busca no submit
    */
   const captureSearchSubmit = (source) => {
+    // Função obtém valor de campo
     const getVal = (id) => {
       const el = byId(id);
       return el && el.value ? el.value : "";
     };
 
+    // Função obtém valores de seleção múltipla
     const getMultiSelect = (id) => {
       const el = byId(id);
       if (!el || !el.selectedOptions) return [];
       return Array.from(el.selectedOptions).map(opt => opt.value);
     };
 
+    // Função obtém valores de checkboxes marcados
     const getCheckedValues = (name) => {
       return bySelAll(`input[name="${name}"]:checked`).map(el => el.value);
     };
 
+    // Função obtém range de slider
     const getSliderRange = (id) => {
       const value = getVal(id);
       const [min, max] = value.split(",");
       return { min: min || "0", max: max || "unlimited" };
     };
 
+    // Função verifica se checkbox está marcado
     const isChecked = (id) => {
       const el = byId(id);
       return el ? el.checked : false;
     };
 
-    // Build complete search payload
+    // Constrói payload completo da busca
     const searchData = {
-      // Source
+      // Origem da busca
       source: source,
       timestamp: Date.now(),
 
-      // Basic filters
+      // Filtros básicos
       finalidade: getVal("property-status"),
       tipos: getMultiSelect("residencial-property-type"),
       cidades: getMultiSelect("search-field-cidade"),
       bairros: getMultiSelect("search-field-cidadebairro"),
 
-      // Advanced filters - QUARTOS, SUITES, BANHEIROS, VAGAS
+      // Filtros avançados - QUARTOS, SUITES, BANHEIROS, VAGAS
       quartos: getCheckedValues("dormitorios[]"),
       suites: getCheckedValues("suites[]"),
       banheiros: getCheckedValues("banheiros[]"),
       vagas: getCheckedValues("vagas[]"),
 
-      // Commercial filters
+      // Filtros comerciais
       salas: getCheckedValues("salas[]"),
       galpoes: getCheckedValues("galpoes[]"),
 
-      // Price ranges
+      // Faixas de preço
       preco_venda: getSliderRange("input-slider-valor-venda"),
       preco_aluguel: getSliderRange("input-slider-valor-aluguel"),
 
-      // Manual price inputs
+      // Inputs manuais de preço
       preco_min_manual: getVal("input-number-valor-min"),
       preco_max_manual: getVal("input-number-valor-max"),
 
-      // Area range
+      // Faixa de área
       area: getSliderRange("input-slider-area"),
       area_min_manual: getVal("input-number-area-min"),
       area_max_manual: getVal("input-number-area-max"),
@@ -650,17 +669,17 @@
         portaria_24h: isChecked("Portaria24Hrs-advanced"),
       },
 
-      // Journey context
+      // Contexto da jornada
       journey_length: JSON.parse(localStorage.getItem("ih_journey_pages") || "[]").length,
     };
 
     capture("search_submit", searchData);
 
-    // Track funnel stage
+    // Rastreia estágio do funil
     trackFunnelStage("search_submitted");
   };
 
-  // Attach to submit buttons
+  // Anexa aos botões de submit
   safeOn(byId("submit-main-search-form"), "click", () => {
     captureSearchSubmit("main_form");
   });
@@ -674,7 +693,7 @@
     trackFunnelStage("search_by_code");
   });
 
-  // Sidebar form submit
+  // Submit do formulário da sidebar
   bySelAll(".submit-sidebar-search-form").forEach((btn) => {
     safeOn(btn, "click", () => {
       captureSearchSubmit("sidebar_form");
@@ -682,11 +701,11 @@
   });
 
   // =========================================
-  // RESULT INTERACTIONS (ENHANCED)
+  // INTERAÇÕES COM RESULTADOS (APRIMORADO)
   // =========================================
 
   /**
-   * Track clicks on property results
+   * Função rastreia cliques em resultados de propriedades
    */
   document.addEventListener("click", (e) => {
     const a = e.target && e.target.closest ? e.target.closest("a") : null;
@@ -695,7 +714,7 @@
     const href = (a.getAttribute("href") || "").toString();
     if (!href) return;
 
-    // Property page click
+    // Clique em página de propriedade
     if (href.indexOf("/imovel/") !== -1) {
       const codigo = extractCodigoFromUrl(href);
       capture("results_item_click", {
@@ -706,7 +725,7 @@
       trackFunnelStage("viewed_property");
     }
 
-    // Condomínio click
+    // Clique em condomínio
     else if (href.indexOf("/condominio/") !== -1) {
       capture("results_item_click", {
         target: href,
@@ -714,7 +733,7 @@
       });
     }
 
-    // "SABER MAIS" button
+    // Botão "SABER MAIS"
     else if (a.classList.contains("button-info-panel")) {
       const codigo = extractCodigoFromParent(a);
       capture("results_saber_mais_click", {
@@ -726,7 +745,7 @@
   }, { passive: true });
 
   /**
-   * Extract property code from URL
+   * Função extrai código da propriedade da URL
    */
   const extractCodigoFromUrl = (url) => {
     const match = url.match(/\/imovel\/(\d+)\//);
@@ -734,7 +753,7 @@
   };
 
   /**
-   * Extract property code from parent element
+   * Função extrai código da propriedade do elemento pai
    */
   const extractCodigoFromParent = (el) => {
     const box = el.closest(".imovel-box-single");
@@ -742,7 +761,7 @@
   };
 
   // =========================================
-  // FAVORITOS TRACKING (NEW)
+  // RASTREAMENTO DE FAVORITOS (NOVO)
   // =========================================
 
   document.addEventListener("click", (e) => {
@@ -761,9 +780,10 @@
   }, { passive: true });
 
   // =========================================
-  // CONVERSION TRACKING (ENHANCED)
+  // RASTREAMENTO DE CONVERSÃO (APRIMORADO)
   // =========================================
 
+  // Função rastreia conversões
   const trackConversion = (sel, eventName, label) => {
     bySelAll(sel).forEach((el) => {
       safeOn(el, "click", () => {
@@ -784,7 +804,7 @@
     "contacted_whatsapp"
   );
 
-  // Phone
+  // Telefone
   trackConversion(
     'a[href^="tel:"]',
     "conversion_phone_click",
@@ -799,11 +819,11 @@
   );
 
   // =========================================
-  // FUNNEL TRACKING
+  // RASTREAMENTO DE FUNIL
   // =========================================
 
   /**
-   * Track user progression through conversion funnel
+   * Função rastreia progressão do usuário através do funil de conversão
    */
   const trackFunnelStage = (stage) => {
     const FUNNEL_KEY = "ih_funnel_stages";
@@ -826,14 +846,14 @@
   };
 
   /**
-   * Get complete funnel for user
+   * Função obtém funil completo do usuário
    */
   window.MyAnalytics.getFunnel = () => {
     return JSON.parse(localStorage.getItem("ih_funnel_stages") || "[]");
   };
 
   // =========================================
-  // SCROLL DEPTH TRACKING (NEW)
+  // RASTREAMENTO DE PROFUNDIDADE DE SCROLL (NOVO)
   // =========================================
 
   let maxScroll = 0;
@@ -855,7 +875,7 @@
   }, { passive: true });
 
   // =========================================
-  // TIME ON PAGE (NEW)
+  // TEMPO NA PÁGINA (NOVO)
   // =========================================
 
   const pageLoadTime = Date.now();
@@ -867,12 +887,12 @@
       max_scroll_depth: Math.floor(maxScroll),
     });
 
-    // Force flush queue
+    // Força esvaziamento da fila
     flushQueue();
   });
 
   // =========================================
-  // ADVANCED COLLAPSE TOGGLE TRACKING (NEW)
+  // RASTREAMENTO DE TOGGLE DE FILTROS AVANÇADOS (NOVO)
   // =========================================
 
   const advancedTrigger = byId("collapseAdvFilter-trigger");
@@ -884,7 +904,7 @@
   });
 
   // =========================================
-  // ORDENAÇÃO TRACKING (NEW)
+  // RASTREAMENTO DE ORDENAÇÃO (NOVO)
   // =========================================
 
   bySelAll(".dropdown-orderby ul li a").forEach((link) => {
@@ -897,18 +917,18 @@
   });
 
   // =========================================
-  // PROPERTY PAGE CONVERSION TRACKING
+  // RASTREAMENTO DE CONVERSÃO NA PÁGINA DE PROPRIEDADE
   // =========================================
 
   /**
-   * Get property code from current page
+   * Função obtém código da propriedade da página atual
    */
   const getPropertyCodeFromPage = () => {
-    // Try to get from URL (e.g., /imovel/2854/...)
+    // Tenta obter da URL (ex: /imovel/2854/...)
     const match = window.location.pathname.match(/\/imovel\/(\d+)\//);
     if (match) return match[1];
 
-    // Try to get from form button data attribute
+    // Tenta obter do atributo data do botão do formulário
     const formBtn = document.querySelector('a[href*="codigo_imovel="]');
     if (formBtn) {
       const href = formBtn.getAttribute("href") || "";
@@ -922,20 +942,20 @@
   onReady(() => {
     const propertyCode = getPropertyCodeFromPage();
 
-    if (!propertyCode) return; // Not on property page
+    if (!propertyCode) return; // Não está na página de propriedade
 
-    log("Property page detected, code:", propertyCode);
+    log("Página de propriedade detectada, código:", propertyCode);
 
-    // ===== PROPERTY PAGE VIEW =====
+    // ===== VISUALIZAÇÃO DA PÁGINA DE PROPRIEDADE =====
     capture("property_page_view", {
       codigo: propertyCode,
       url: window.location.href,
       title: document.title,
     });
 
-    // ===== CTA BUTTONS TRACKING =====
+    // ===== RASTREAMENTO DE BOTÕES CTA =====
 
-    // "FAZER PROPOSTA" button
+    // Botão "FAZER PROPOSTA"
     const propostaBtn = document.querySelector(".cadastro-proposta-cta");
     safeOn(propostaBtn, "click", () => {
       capture("cta_fazer_proposta_click", {
@@ -945,7 +965,7 @@
       trackFunnelStage("clicked_fazer_proposta");
     });
 
-    // "ALUGAR ESTE IMÓVEL" button
+    // Botão "ALUGAR ESTE IMÓVEL"
     const alugarBtn = document.querySelector(".cadastro-inquilino-cta");
     safeOn(alugarBtn, "click", () => {
       capture("cta_alugar_imovel_click", {
@@ -955,7 +975,7 @@
       trackFunnelStage("clicked_alugar_imovel");
     });
 
-    // "MAIS INFORMAÇÕES" button (opens modal)
+    // Botão "MAIS INFORMAÇÕES" (abre modal)
     const maisInfoBtn = document.querySelector('a[data-toggle="modal"][href="#imovel-contato"]');
     safeOn(maisInfoBtn, "click", () => {
       capture("cta_mais_informacoes_click", {
@@ -964,7 +984,7 @@
       trackFunnelStage("opened_contact_form");
     });
 
-    // Share button
+    // Botão de compartilhar
     const shareBtn = document.querySelector('a[href="#modal-compartilhar"]');
     safeOn(shareBtn, "click", () => {
       capture("property_share_click", {
@@ -972,7 +992,7 @@
       });
     });
 
-    // Favorite button (property page)
+    // Botão de favoritar (página de propriedade)
     const favBtn = document.querySelector('.clb-form-fixed-fav a[data-codigo]');
     safeOn(favBtn, "click", () => {
       const isFavorited = favBtn && favBtn.classList.contains("favorited");
@@ -983,14 +1003,14 @@
       trackFunnelStage("favorited_property");
     });
 
-    // ===== CONTACT FORM TRACKING =====
+    // ===== RASTREAMENTO DE FORMULÁRIO DE CONTATO =====
 
     /**
-     * Track contact form submission
-     * Monitors the modal form (#imovel-contato)
+     * Função rastreia submissão do formulário de contato
+     * Monitora o formulário modal (#imovel-contato)
      */
     const trackContactForm = () => {
-      // Wait for modal to be in DOM (may be loaded dynamically)
+      // Aguarda modal estar no DOM (pode ser carregado dinamicamente)
       const checkModal = setInterval(() => {
         const modal = byId("imovel-contato");
         const form = modal ? modal.querySelector("form") : null;
@@ -998,9 +1018,9 @@
         if (!form) return;
 
         clearInterval(checkModal);
-        log("Contact form found, attaching listeners");
+        log("Formulário de contato encontrado, anexando listeners");
 
-        // Track form field interactions
+        // Rastreia interações com campos do formulário
         const trackFormField = (selector, fieldName) => {
           const field = form.querySelector(selector);
           if (!field) return;
@@ -1023,13 +1043,13 @@
           });
         };
 
-        // Track individual fields
+        // Rastreia campos individuais
         trackFormField('input[name="nome"], input[type="text"]', "nome");
         trackFormField('input[name="email"], input[type="email"]', "email");
         trackFormField('input[name="celular"], input[name="telefone"], input[type="tel"]', "telefone");
         trackFormField('textarea[name="mensagem"], textarea', "mensagem");
 
-        // Track form submission
+        // Rastreia submissão do formulário
         safeOn(form, "submit", (e) => {
           const formData = new FormData(form);
           const nome = formData.get("nome") || "";
@@ -1051,10 +1071,10 @@
             }),
           });
 
-          // MAIN CONVERSION EVENT
+          // EVENTO PRINCIPAL DE CONVERSÃO
           trackFunnelStage("submitted_contact_form");
 
-          // Mark as converted
+          // Marca como convertido
           capture("conversion_contact_form", {
             codigo: propertyCode,
             contact_type: "form",
@@ -1063,7 +1083,7 @@
           });
         });
 
-        // Track form abandonment
+        // Rastreia abandono do formulário
         let formStarted = false;
 
         form.querySelectorAll("input, textarea").forEach((field) => {
@@ -1077,7 +1097,7 @@
           });
         });
 
-        // Detect form abandonment on modal close
+        // Detecta abandono do formulário no fechamento do modal
         const detectAbandonment = () => {
           if (formStarted) {
             const formData = new FormData(form);
@@ -1092,28 +1112,28 @@
           }
         };
 
-        // Listen for modal close
+        // Escuta fechamento do modal
         const modalElement = byId("imovel-contato");
         if (modalElement) {
           safeOn(modalElement, "hidden.bs.modal", detectAbandonment);
 
-          // Also try close button
+          // Também tenta botão de fechar
           const closeBtn = modalElement.querySelector('[data-dismiss="modal"]');
           safeOn(closeBtn, "click", detectAbandonment);
         }
 
-      }, 500); // Check every 500ms
+      }, 500); // Verifica a cada 500ms
 
-      // Stop checking after 10 seconds
+      // Para verificação após 10 segundos
       setTimeout(() => clearInterval(checkModal), 10000);
     };
 
-    // Initialize contact form tracking
+    // Inicializa rastreamento do formulário de contato
     trackContactForm();
 
-    // ===== PROPERTY INFO PANEL INTERACTIONS (NEW) =====
+    // ===== INTERAÇÕES DO PAINEL DE INFORMAÇÕES DA PROPRIEDADE (NOVO) =====
 
-    // Track image gallery interactions
+    // Rastreia interações da galeria de imagens
     bySelAll(".swiper-button-next, .swiper-button-prev").forEach((btn) => {
       safeOn(btn, "click", () => {
         capture("property_gallery_navigation", {
@@ -1123,7 +1143,7 @@
       });
     });
 
-    // Track image clicks (open fullscreen)
+    // Rastreia cliques em imagens (abre tela cheia)
     bySelAll(".foto-imovel, .swiper-slide").forEach((slide) => {
       safeOn(slide, "click", () => {
         capture("property_image_click", {
@@ -1132,28 +1152,28 @@
       });
     });
 
-  }); // End property page tracking
+  }); // Fim do rastreamento da página de propriedade
 
   // =========================================
-  // REJECTION RATE & BOUNCE TRACKING
+  // RASTREAMENTO DE TAXA DE REJEIÇÃO E BOUNCE
   // =========================================
 
   /**
-   * Calculate bounce rate indicators
+   * Função calcula indicadores de taxa de bounce
    */
   const trackBounceIndicators = () => {
     const journey = JSON.parse(localStorage.getItem("ih_journey_pages") || "[]");
     const timeOnPage = Math.floor((Date.now() - pageLoadTime) / 1000);
 
-    // Bounced if:
-    // - Only 1 page in journey
-    // - Less than 10 seconds on page
-    // - No interactions
+    // Bounce se:
+    // - Apenas 1 página na jornada
+    // - Menos de 10 segundos na página
+    // - Sem interações
     const isBounce = journey.length <= 1 && timeOnPage < 10;
 
-    // Quick exit if:
-    // - Less than 30 seconds
-    // - Less than 25% scroll
+    // Saída rápida se:
+    // - Menos de 30 segundos
+    // - Menos de 25% de scroll
     const isQuickExit = timeOnPage < 30 && maxScroll < 25;
 
     if (isBounce || isQuickExit) {
@@ -1169,11 +1189,11 @@
   window.addEventListener("beforeunload", trackBounceIndicators);
 
   // =========================================
-  // HELPER FUNCTIONS
+  // FUNÇÕES AUXILIARES
   // =========================================
 
   /**
-   * Calculate form completeness percentage
+   * Função calcula porcentagem de completude do formulário
    */
   const calculateFormCompleteness = (fields) => {
     const totalFields = Object.keys(fields).length;
@@ -1182,7 +1202,7 @@
   };
 
   /**
-   * Get value from form field
+   * Função obtém valor de campo do formulário
    */
   const getVal = (id) => {
     const el = byId(id);
@@ -1190,7 +1210,7 @@
   };
 
   // =========================================
-  // EXPORT API FOR EXTERNAL USE
+  // API DE EXPORTAÇÃO PARA USO EXTERNO
   // =========================================
 
   window.MyAnalytics = {
@@ -1208,11 +1228,11 @@
       localStorage.removeItem("ih_session_id");
       localStorage.removeItem("ih_session_timeout");
     },
-    flush: flushQueue, // Manual flush
+    flush: flushQueue, // Esvaziamento manual
     debug: MyAnalytics.debug,
   };
 
-  log("Enhanced analytics initialized ✓");
+  log("Analytics avançado inicializado ✓");
   log("User ID:", getUserId());
   log("Session ID:", getSessionId());
 })();
