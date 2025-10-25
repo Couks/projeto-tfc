@@ -9,8 +9,7 @@
   "scripts": {
     "dev": "pnpm --recursive run dev",
     "build": "pnpm --recursive run build",
-    "start": "pnpm --recursive run start",
-    "build:posthog": "node scripts/build-posthog.mjs"
+    "start": "pnpm --recursive run start"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
