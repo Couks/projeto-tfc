@@ -14,7 +14,6 @@
   "devDependencies": {
     "@types/node": "^20.12.7",
     "esbuild": "^0.23.0",
-    "posthog-js": "^1.165.0",
     "typescript": "^5.4.5"
   },
   "pnpm": {
