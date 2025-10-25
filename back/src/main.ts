@@ -210,22 +210,15 @@ async function bootstrap() {
       `,
     });
 
-    // Inicia o servidor HTTP na porta configurada (apenas em desenvolvimento)
-    if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
-      await app.listen(port);
+    // Inicia o servidor HTTP na porta configurada
+    await app.listen(port);
 
-      // Logs informativos sobre URLs e configurações
-      logger.log(`Application is running on: http://localhost:${port}`);
-      logger.log(`API Documentation: http://localhost:${port}/api/docs`);
-      logger.log(`Frontend URL: ${frontendUrl}`);
-      logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
-      logger.log(`Swagger JSON: http://localhost:${port}/api/docs-json`);
-    } else {
-      // Em produção (Vercel), apenas inicializa sem listen
-      logger.log('Application initialized for serverless deployment');
-      logger.log(`Frontend URL: ${frontendUrl}`);
-      logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
-    }
+    // Logs informativos sobre URLs e configurações
+    logger.log(`Application is running on: http://localhost:${port}`);
+    logger.log(`API Documentation: http://localhost:${port}/api/docs`);
+    logger.log(`Frontend URL: ${frontendUrl}`);
+    logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
+    logger.log(`Swagger JSON: http://localhost:${port}/api/docs-json`);
   } catch (error) {
     // Em caso de erro na inicialização, loga o erro e encerra o processo
     logger.error(
