@@ -11,7 +11,7 @@ WORKDIR /app
 ############################
 FROM base AS deps
 # Dependências de sistema necessárias ao Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 \
   && rm -rf /var/lib/apt/lists/*
 
 # Habilita PNPM via Corepack
