@@ -7,67 +7,71 @@ FROM node:22-slim AS base
 WORKDIR /app
 
 ############################
-# Deps (instala apenas o workspace "back")
+# Deps - Instalação direta sem workspace
 ############################
 FROM base AS deps
 # Dependências de sistema necessárias ao Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 \
   && rm -rf /var/lib/apt/lists/*
 
-# Habilita PNPM via Corepack
-RUN corepack enable
+# Copia apenas os arquivos do back (sem workspace)
+COPY back/package.json ./
+COPY back/prisma ./prisma
 
-# Copia MANIFESTOS da RAIZ (onde está o lock)
-# Inclua pnpm-workspace.yaml se existir
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml* ./
+# Instala dependências diretamente (sem PNPM workspace)
+RUN npm ci --only=production
 
-# Copia manifestos e prisma do serviço back
-COPY back/package.json back/
-COPY back/prisma back/prisma
+# Instala Prisma CLI globalmente para garantir disponibilidade
+RUN npm install -g prisma@5.17.0
 
-# Instala SOMENTE para o back (com lockfile)
-# (postinstall do back já rodará "prisma generate", pois prisma foi copiado)
-RUN pnpm install --frozen-lockfile --filter ./back...
+# Gera o cliente Prisma
+RUN npx prisma generate
 
 ############################
-# Build do back e poda das devDeps
+# Build
 ############################
 FROM deps AS build
-# Copia configs + código do back
-COPY back/tsconfig*.json back/nest-cli.json* back/
-COPY back/src back/src
-COPY back/public back/public
+# Copia código fonte
+COPY back/tsconfig*.json back/nest-cli.json* ./
+COPY back/src ./src
+COPY back/public ./public
 
-# Compila
-RUN pnpm -C back run build
+# Instala devDependencies para build
+RUN npm install
 
-# Remove devDependencies SÓ do back
-RUN pnpm -C back prune --prod
+# Compila o código
+RUN npm run build
+
+# Remove devDependencies após build
+RUN npm prune --omit=dev
 
 ############################
-# Runner (imagem final, leve)
+# Runner (imagem final)
 ############################
 FROM node:22-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# runtime deps (Prisma + healthcheck)
+# Dependências de runtime
 RUN apt-get update && apt-get install -y --no-install-recommends openssl curl \
   && rm -rf /var/lib/apt/lists/*
 
-# Copia SOMENTE o necessário do back
-COPY --from=build /app/back/node_modules ./node_modules
-COPY --from=build /app/back/dist ./dist
-COPY --from=build /app/back/public ./public
-COPY --from=deps  /app/back/prisma ./prisma
-COPY back/package.json ./package.json
+# Instala Prisma CLI globalmente
+RUN npm install -g prisma@5.17.0
+
+# Copia arquivos necessários
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/public ./public
+COPY --from=deps /app/prisma ./prisma
+COPY --from=deps /app/package.json ./package.json
 
 EXPOSE 3001
 
-# Healthcheck (ajuste a rota se for diferente)
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD curl -fsS http://localhost:3001/api/health || exit 1
 
-# Prisma está em dependencies no back, então o CLI existe no runtime
-CMD ["sh","-c","npx prisma migrate deploy && node dist/main"]
+# Comando de inicialização
+CMD ["sh","-c","prisma migrate deploy && node dist/main"]
 
