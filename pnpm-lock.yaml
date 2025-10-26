@@ -75,6 +75,9 @@ importers:
       nanoid:
         specifier: ^3.3.7
         version: 3.3.11
+      prisma:
+        specifier: ^5.17.0
+        version: 5.22.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -133,9 +136,6 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.6.2
-      prisma:
-        specifier: ^5.17.0
-        version: 5.22.0
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
