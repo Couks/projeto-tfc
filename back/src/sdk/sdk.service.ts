@@ -95,6 +95,10 @@ export class SdkService {
   }
   window.__INSIGHTHOUSE_LOADED__ = true;
 
+  // Set global variables for the SDK script
+  window.IH_SITE_KEY = SITE_KEY;
+  window.IH_API_URL = API_URL;
+
   // Fetch site configuration
   fetch(API_URL + '/api/sdk/site-config?site=' + SITE_KEY)
     .then(function(res) {

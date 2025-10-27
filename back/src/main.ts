@@ -77,6 +77,9 @@ async function bootstrap() {
         'https://insighthouse.vercel.app',
         'http://localhost:3000',
         'http://localhost:3002',
+        // Permite qualquer origem para endpoints do SDK
+        /^https?:\/\/.*\.matheuscastro\.rocketdecolando\.com\.br$/,
+        /^https?:\/\/.*\.rocketdecolando\.com\.br$/,
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

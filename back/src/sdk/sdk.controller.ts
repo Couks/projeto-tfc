@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Res,
+  HttpStatus,
+  Options,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { SdkService } from './sdk.service';
 
@@ -27,7 +34,21 @@ export class SdkController {
 
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Permite qualquer origem para o SDK
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.status(HttpStatus.OK).send(script);
+  }
+
+  /**
+   * Handle OPTIONS requests for CORS preflight
+   * @param res Express response
+   */
+  @Options('loader')
+  handleOptions(@Res() res: Response) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(HttpStatus.OK).send();
   }
 }
