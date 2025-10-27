@@ -39,7 +39,7 @@ services:
       # Authentication
       - NEXTAUTH_SECRET=CDJUGsX+5nKNX3ikSf1qQ/35jwxeG/+kya6T6zKP+cs=
       # API Configuration
-      - API_BASE_URL=https://api.matheuscastroks.com.br
+      - API_BASE_URL=http://localhost:3001
     depends_on:
       db:
         condition: service_healthy
