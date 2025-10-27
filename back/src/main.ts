@@ -51,7 +51,31 @@ async function bootstrap() {
     // MIDDLEWARE DE SEGURANÇA - HELMET
     // ============================================
     // Helmet adiciona headers HTTP de segurança automaticamente
-    app.use(helmet());
+    // Configuração personalizada para permitir SDK em qualquer site
+    app.use(
+      helmet({
+        // Desabilita CSP para endpoints do SDK (permite execução em qualquer site)
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", '*'],
+            styleSrc: ["'self'", "'unsafe-inline'", '*'],
+            imgSrc: ["'self'", 'data:', '*'],
+            connectSrc: ["'self'", '*'],
+            fontSrc: ["'self'", '*'],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'", '*'],
+            frameSrc: ["'self'", '*'],
+          },
+        },
+        // Permite que o SDK seja carregado em frames de outros sites
+        frameguard: false,
+        // Permite carregamento de recursos de qualquer origem para o SDK
+        crossOriginEmbedderPolicy: false,
+        crossOriginOpenerPolicy: false,
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+      }),
+    );
 
     // ============================================
     // MIDDLEWARE DE COMPRESSÃO
