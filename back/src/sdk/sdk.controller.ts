@@ -55,16 +55,6 @@ export class SdkController {
   }
 
   /**
-   * Test endpoint to verify controller is working
-   * @param res Express response
-   */
-  @Get('test')
-  testEndpoint(@Res() res: Response) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(HttpStatus.OK).json({ message: 'SDK controller is working' });
-  }
-
-  /**
    * Serve the capture-filters.js file directly
    * @param res Express response
    */

@@ -62,10 +62,9 @@ export class PrismaService
       await this.$connect();
       this.logger.log('Database connected successfully');
     } catch (error) {
-      // Se falhar, loga erro mas não propaga exceção (permite testar endpoints sem banco)
+      // Se falhar, loga erro e propaga exceção (app não inicia)
       this.logger.error('Failed to connect to database', error);
-      this.logger.warn('Application will continue without database connection');
-      // throw error; // Comentado temporariamente para testar endpoints
+      throw error;
     }
   }
 
