@@ -1,0 +1,656 @@
+# Frontend Types Organization
+
+## Overview
+
+This rule defines patterns for organizing TypeScript types in the frontend. All types are centralized in `lib/types/` and organized by domain to ensure type safety, maintainability, and alignment with backend DTOs.
+
+## Core Principles
+
+- **Centralized Types**: All types in `lib/types/` directory
+- **Domain Organization**: Types grouped by business domain
+- **Backend Alignment**: Types must match backend response structures exactly
+- **No `any` Types**: Strict typing enforcement throughout the app
+- **Type Safety**: Use generics and proper type inference
+- **Documentation**: JSDoc for complex types
+- **Re-exports**: Convenient imports via `index.ts`
+
+## Type Organization Structure
+
+```
+lib/types/
+├── index.ts          # Re-exports all types
+├── insights.ts       # Analytics and insights types
+├── sites.ts          # Sites and domains types
+├── auth.ts           # Authentication types
+└── common.ts         # Shared/common types
+```
+
+## Domain-Based Organization
+
+### Insights Types (`insights.ts`)
+
+```typescript
+/**
+ * Overview analytics data structure
+ * Matches backend InsightsService.getOverview() response
+ */
+export interface OverviewData {
+  finalidade: Array<[string, number]>;
+  tipos: Array<[string, number]>;
+  cidades: Array<[string, number]>;
+  bairros: Array<[string, number]>;
+  preco_venda_ranges: Array<[string, number]>;
+  preco_aluguel_ranges: Array<[string, number]>;
+  area_ranges: Array<[string, number]>;
+  dormitorios: Array<[string, number]>;
+  suites: Array<[string, number]>;
+  banheiros: Array<[string, number]>;
+  vagas: Array<[string, number]>;
+  flags: Array<[string, number]>;
+}
+
+/**
+ * Conversion analytics data structure
+ * Matches backend InsightsService.getConversions() response
+ */
+export interface ConversionsData {
+  conversions: Array<{
+    type: string;
+    count: number;
+  }>;
+  funnel: Array<{
+    step: string;
+    count: number;
+  }>;
+}
+
+/**
+ * User journey analytics data structure
+ * Matches backend InsightsService.getJourneys() response
+ */
+export interface JourneysData {
+  pageDepth: Array<{
+    depth: number;
+    count: number;
+  }>;
+  scrollDepth: Array<{
+    depth: number;
+    count: number;
+  }>;
+  timeOnPage: Array<{
+    range: string;
+    count: number;
+  }>;
+  visitorType: Array<{
+    type: string;
+    count: number;
+  }>;
+}
+
+/**
+ * Chart data structure for visualization components
+ */
+export interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+/**
+ * Funnel stage data for funnel visualization
+ */
+export interface FunnelStage {
+  name: string;
+  value: number;
+  color?: string;
+}
+```
+
+### Sites Types (`sites.ts`)
+
+```typescript
+/**
+ * Site entity structure
+ * Matches backend SitesService response
+ */
+export interface Site {
+  id: string;
+  name: string;
+  siteKey: string;
+  status: string;
+  createdAt: string;
+  domains: Domain[];
+}
+
+/**
+ * Domain entity structure
+ * Matches backend SitesService domain response
+ */
+export interface Domain {
+  id: string;
+  host: string;
+  isPrimary: boolean;
+  siteId?: string;
+}
+
+/**
+ * Create site request data
+ * Matches backend CreateSiteDto
+ */
+export interface CreateSiteData {
+  name: string;
+  domains?: Array<{
+    host: string;
+    isPrimary?: boolean;
+  }>;
+}
+
+/**
+ * Update site request data
+ * Matches backend UpdateSiteDto
+ */
+export interface UpdateSiteData {
+  name?: string;
+  status?: string;
+}
+
+/**
+ * Create domain request data
+ * Matches backend CreateDomainDto
+ */
+export interface CreateDomainData {
+  host: string;
+  isPrimary?: boolean;
+}
+```
+
+### Auth Types (`auth.ts`)
+
+```typescript
+/**
+ * User entity structure
+ * Matches backend AuthService user response
+ */
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+/**
+ * Login request data
+ * Matches backend LoginDto
+ */
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+/**
+ * Register request data
+ * Matches backend RegisterDto
+ */
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+}
+
+/**
+ * Authentication response
+ * Matches backend AuthService login/register response
+ */
+export interface AuthResponse {
+  user: User;
+  message: string;
+}
+```
+
+### Common Types (`common.ts`)
+
+```typescript
+/**
+ * Generic API response wrapper
+ * Used for consistent API responses
+ */
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  statusCode: number;
+}
+
+/**
+ * Paginated response structure
+ * Used for paginated endpoints
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * Error response structure
+ * Matches backend error response format
+ */
+export interface ApiError {
+  message: string;
+  statusCode: number;
+  error?: string;
+  timestamp?: string;
+}
+
+/**
+ * Loading state for components
+ */
+export interface LoadingState {
+  isLoading: boolean;
+  isError: boolean;
+  error?: Error | null;
+}
+
+/**
+ * Generic form state
+ */
+export interface FormState<T> extends LoadingState {
+  data: T;
+  errors: Record<keyof T, string>;
+  isValid: boolean;
+}
+```
+
+## Type Naming Conventions
+
+### Interface Naming
+
+```typescript
+// ✅ Good: PascalCase with descriptive names
+export interface UserProfile { }
+export interface CreateUserRequest { }
+export interface UpdateUserResponse { }
+export interface UserListResponse { }
+
+// ❌ Bad: Generic or unclear names
+export interface Data { }
+export interface Response { }
+export interface UserData { }
+```
+
+### Type vs Interface
+
+```typescript
+// ✅ Use interfaces for object shapes
+export interface User {
+  id: string;
+  name: string;
+}
+
+// ✅ Use types for unions, primitives, computed types
+export type UserStatus = 'active' | 'inactive' | 'pending';
+export type UserId = string;
+export type UserWithStatus = User & { status: UserStatus };
+```
+
+### Generic Type Naming
+
+```typescript
+// ✅ Good: Single letter for simple generics
+export interface ApiResponse<T> {
+  data: T;
+}
+
+// ✅ Good: Descriptive names for complex generics
+export interface Repository<TEntity, TKey = string> {
+  findById(id: TKey): Promise<TEntity>;
+  create(entity: Omit<TEntity, 'id'>): Promise<TEntity>;
+}
+```
+
+## Type Safety Patterns
+
+### Strict Type Checking
+
+```typescript
+// ✅ Always type function parameters and returns
+export function processUserData(user: User): ProcessedUser {
+  return {
+    ...user,
+    displayName: user.name.toUpperCase(),
+    isActive: user.status === 'active'
+  };
+}
+
+// ❌ Avoid any types
+export function processData(data: any): any {
+  return data;
+}
+```
+
+### Type Guards
+
+```typescript
+/**
+ * Type guard to check if object is User
+ */
+export function isUser(obj: unknown): obj is User {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'name' in obj &&
+    'email' in obj
+  );
+}
+
+/**
+ * Type guard for API error
+ */
+export function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    'statusCode' in error
+  );
+}
+```
+
+### Utility Types Usage
+
+```typescript
+// ✅ Use built-in utility types
+export type CreateUserData = Omit<User, 'id' | 'createdAt'>;
+export type UpdateUserData = Partial<Pick<User, 'name' | 'email'>>;
+export type UserKeys = keyof User;
+export type UserValues = User[keyof User];
+
+// ✅ Custom utility types
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+```
+
+## Backend Alignment
+
+### Matching Backend DTOs
+
+```typescript
+// Backend DTO (NestJS)
+export class CreateSiteDto {
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsArray()
+  domains?: CreateDomainDto[];
+}
+
+// Frontend Type (must match exactly)
+export interface CreateSiteData {
+  name: string;
+  domains?: CreateDomainData[];
+}
+```
+
+### Response Type Mapping
+
+```typescript
+// Backend service response
+export interface SiteResponse {
+  id: string;
+  name: string;
+  siteKey: string;
+  status: SiteStatus;
+  createdAt: Date;
+  domains: DomainResponse[];
+}
+
+// Frontend type (Date becomes string in JSON)
+export interface Site {
+  id: string;
+  name: string;
+  siteKey: string;
+  status: string; // SiteStatus enum becomes string
+  createdAt: string; // Date becomes string in JSON
+  domains: Domain[];
+}
+```
+
+## Re-export Patterns
+
+### Index File (`index.ts`)
+
+```typescript
+// Re-export all types for convenient imports
+export * from './insights';
+export * from './sites';
+export * from './auth';
+export * from './common';
+
+// Re-export specific types with aliases if needed
+export type { User as UserEntity } from './auth';
+export type { Site as SiteEntity } from './sites';
+```
+
+### Import Patterns
+
+```typescript
+// ✅ Good: Import from centralized types
+import { User, CreateUserData, ApiResponse } from '@/lib/types';
+
+// ✅ Good: Import specific types
+import type { User, CreateUserData } from '@/lib/types';
+
+// ❌ Bad: Import from individual files
+import { User } from '@/lib/types/auth';
+import { CreateUserData } from '@/lib/types/auth';
+```
+
+## Documentation Standards
+
+### JSDoc for Complex Types
+
+```typescript
+/**
+ * Represents analytics data for property searches
+ *
+ * @interface OverviewData
+ * @property {Array<[string, number]>} finalidade - Property purpose distribution [purpose, count]
+ * @property {Array<[string, number]>} tipos - Property type distribution [type, count]
+ * @property {Array<[string, number]>} cidades - City distribution [city, count]
+ * @property {Array<[string, number]>} preco_venda_ranges - Sale price ranges [range, count]
+ * @property {Array<[string, number]>} preco_aluguel_ranges - Rent price ranges [range, count]
+ */
+export interface OverviewData {
+  finalidade: Array<[string, number]>;
+  tipos: Array<[string, number]>;
+  cidades: Array<[string, number]>;
+  bairros: Array<[string, number]>;
+  preco_venda_ranges: Array<[string, number]>;
+  preco_aluguel_ranges: Array<[string, number]>;
+  area_ranges: Array<[string, number]>;
+  dormitorios: Array<[string, number]>;
+  suites: Array<[string, number]>;
+  banheiros: Array<[string, number]>;
+  vagas: Array<[string, number]>;
+  flags: Array<[string, number]>;
+}
+```
+
+### Type Comments
+
+```typescript
+// ✅ Good: Explain complex types
+export interface ConversionMetrics {
+  // Total number of conversions in the period
+  totalConversions: number;
+
+  // Conversion rate as percentage (0-100)
+  conversionRate: number;
+
+  // Breakdown by conversion type
+  byType: Record<string, number>;
+}
+
+// ✅ Good: Explain array structures
+export interface SearchFilters {
+  // Array of selected property types
+  types: string[];
+
+  // Price range [min, max] in currency units
+  priceRange: [number, number];
+
+  // Optional date range for filtering
+  dateRange?: {
+    from: string; // ISO date string
+    to: string;   // ISO date string
+  };
+}
+```
+
+## Type Validation
+
+### Runtime Type Checking
+
+```typescript
+import { z } from 'zod';
+
+// Define Zod schema for runtime validation
+export const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  createdAt: z.string(),
+});
+
+// Infer TypeScript type from Zod schema
+export type User = z.infer<typeof UserSchema>;
+
+// Runtime validation function
+export function validateUser(data: unknown): User {
+  return UserSchema.parse(data);
+}
+```
+
+### API Response Validation
+
+```typescript
+// Validate API responses at runtime
+export async function fetchUser(id: string): Promise<User> {
+  const response = await apiClient.get(`/api/users/${id}`);
+
+  // Validate response structure
+  const user = validateUser(response);
+
+  return user;
+}
+```
+
+## Best Practices
+
+### Do's
+
+- ✅ Organize types by domain/business area
+- ✅ Match backend DTOs exactly
+- ✅ Use descriptive interface names
+- ✅ Document complex types with JSDoc
+- ✅ Use utility types for transformations
+- ✅ Implement type guards for runtime safety
+- ✅ Re-export from index.ts for convenience
+- ✅ Use strict TypeScript configuration
+
+### Don'ts
+
+- ❌ Don't use `any` types
+- ❌ Don't duplicate type definitions
+- ❌ Don't mix concerns in single type files
+- ❌ Don't ignore backend changes
+- ❌ Don't use generic names like `Data` or `Response`
+- ❌ Don't forget to update types when backend changes
+- ❌ Don't use `object` instead of specific interfaces
+
+## Common Patterns
+
+### API Response Types
+
+```typescript
+// Standard API response wrapper
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  statusCode: number;
+}
+
+// Usage in hooks
+export function useUser(id: string) {
+  return useQuery<User>({
+    queryKey: ['user', id],
+    queryFn: async () => {
+      const response = await apiClient.get<ApiResponse<User>>(`/api/users/${id}`);
+      return response.data; // Extract data from wrapper
+    },
+  });
+}
+```
+
+### Form Data Types
+
+```typescript
+// Form data with validation
+export interface CreateUserForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+// Validation errors
+export interface FormErrors<T> {
+  [K in keyof T]?: string;
+}
+
+// Form state
+export interface FormState<T> {
+  data: T;
+  errors: FormErrors<T>;
+  isValid: boolean;
+  isSubmitting: boolean;
+}
+```
+
+### Component Props Types
+
+```typescript
+// Component props with proper typing
+export interface UserCardProps {
+  user: User;
+  onEdit?: (user: User) => void;
+  onDelete?: (userId: string) => void;
+  className?: string;
+}
+
+// Generic component props
+export interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+  onItemClick?: (item: T) => void;
+  loading?: boolean;
+  error?: string;
+}
+```
+
+## Auto-Attach Rules
+
+This rule applies to:
+- `src/lib/types/**/*.ts` - All type definition files
+- `src/lib/hooks/**/*.ts` - Hooks using types
+- `src/**/*Client.tsx` - Client components using types
+- `src/app/**/page.tsx` - Pages using types
+
+## Related Rules
+
+- `api-client.mdc` - API client type usage
+- `react-query.mdc` - React Query type patterns
+- `react-components.mdc` - Component prop types

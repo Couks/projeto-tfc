@@ -12,30 +12,30 @@ alwaysApply: false
 
 ### Server Components (Default)
 Use Server Components by default for better performance. They should:
-- Handle data fetching directly
+- Handle data prefetching using `getQueryClient().prefetchQuery`
 - Not use React hooks (useState, useEffect, etc.)
 - Not use browser APIs
 - Return JSX directly
+- Pass prefetched data to Client Components
 
 Example:
 ```typescript
-import { prisma } from '@/lib/db';
-import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+import { getQueryClient } from '@/lib/getQueryClient';
+import { apiClient } from '@/lib/api';
+import { queryKeys } from '@/lib/hooks/queryKeys';
+import { Site } from '@/lib/types';
+import { SitesClient } from './_components/SitesClient';
 
-export default async function UserList() {
-  const users = await prisma.user.findMany();
+export default async function SitesPage() {
+  const queryClient = getQueryClient();
 
-  return (
-    <div className="space-y-4">
-      {users.map((user) => (
-        <Card key={user.id}>
-          <CardHeader>
-            <CardTitle>{user.name}</CardTitle>
-          </CardHeader>
-        </Card>
-      ))}
-    </div>
-  );
+  // Prefetch data on server
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.sites.all,
+    queryFn: () => apiClient.get<Site[]>('/api/sites'),
+  });
+
+  return <SitesClient />;
 }
 ```
 
@@ -52,26 +52,57 @@ Example:
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSites, useCreateSite } from '@/lib/hooks';
 import { Button } from '@ui/button';
-import { useSites } from '@/lib/hooks/useSites';
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+import { Skeleton } from '@ui/skeleton';
 
-export function InteractiveButton() {
-  const [count, setCount] = useState(0);
-  const router = useRouter();
-  const { data: sites, isLoading } = useSites();
+export function SitesClient() {
+  const { data: sites, isLoading, error } = useSites();
+  const createSite = useCreateSite();
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleClick = () => {
-    setCount(count + 1);
-    router.refresh();
+  const handleCreateSite = async () => {
+    setIsCreating(true);
+    try {
+      await createSite.mutateAsync({
+        name: 'New Site',
+        domains: [{ host: 'example.com', isPrimary: true }]
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (error) {
+    return <div>Error loading sites: {error.message}</div>;
+  }
 
   return (
-    <Button onClick={handleClick}>
-      Clicked {count} times - Sites: {sites?.length || 0}
-    </Button>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Sites</h1>
+        <Button onClick={handleCreateSite} disabled={isCreating}>
+          {isCreating ? 'Creating...' : 'Create Site'}
+        </Button>
+      </div>
+
+      {sites?.map((site) => (
+        <Card key={site.id}>
+          <CardHeader>
+            <CardTitle>{site.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Site Key: {site.siteKey}</p>
+            <p>Status: {site.status}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
 ```
@@ -98,45 +129,46 @@ Example:
 
 import { useState, useEffect } from 'react';
 import { Button } from '@ui/button';
-import type { User } from '@prisma/client';
+import type { Site } from '@/lib/types';
 
-interface UserCardProps {
-  user: User;
-  onUpdate?: (user: User) => void;
+interface SiteCardProps {
+  site: Site;
+  onUpdate?: (site: Site) => void;
 }
 
 const MAX_NAME_LENGTH = 50;
 
-export function UserCard({ user, onUpdate }: UserCardProps) {
+export function SiteCard({ site, onUpdate }: SiteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user.name);
+  const [name, setName] = useState(site.name);
 
   useEffect(() => {
-    setName(user.name);
-  }, [user.name]);
+    setName(site.name);
+  }, [site.name]);
 
   const handleSave = () => {
     setIsEditing(false);
-    onUpdate?.({ ...user, name });
+    onUpdate?.({ ...site, name });
   };
 
   const truncatedName = name.length > MAX_NAME_LENGTH
     ? `${name.slice(0, MAX_NAME_LENGTH)}...`
     : name;
 
-  if (!user) {
+  if (!site) {
     return null;
   }
 
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-semibold">{truncatedName}</h3>
+      <p className="text-sm text-muted-foreground">Key: {site.siteKey}</p>
       <Button onClick={handleSave}>Save</Button>
     </div>
   );
 }
 
-UserCard.displayName = 'UserCard';
+SiteCard.displayName = 'SiteCard';
 ```
 
 ## Props Best Practices

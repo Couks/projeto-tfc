@@ -15,22 +15,25 @@ alwaysApply: false
 ### Test Pyramid
 Follow the testing pyramid:
 1. **Unit Tests** (70%): Test individual functions and components
-2. **Integration Tests** (20%): Test component interactions and API routes
+2. **Integration Tests** (20%): Test component interactions and API client
 3. **E2E Tests** (10%): Test critical user flows
 
 ### What to Test
 - **Do Test**:
   - Business logic and utility functions
   - Component behavior and state changes
-  - API endpoints and data validation
+  - React Query hooks and data fetching
+  - API client interactions
   - Error handling and edge cases
   - User interactions and form submissions
+  - Authentication flows
 
 - **Don't Test**:
   - Implementation details
   - Third-party library internals
   - Trivial code (getters, setters)
   - Framework code
+  - Backend API implementation (tested separately)
 
 ## Test Structure
 
@@ -41,14 +44,18 @@ src/
     UserCard.tsx
     UserCard.test.tsx
   lib/
+    hooks/
+      useSites.ts
+      useSites.test.ts
     utils/
       formatDate.ts
       formatDate.test.ts
   app/
-    api/
-      users/
-        route.ts
-        route.test.ts
+    (admin)/
+      admin/
+        sites/
+          page.tsx
+          page.test.tsx
 ```
 
 ### Test Naming
@@ -161,6 +168,245 @@ describe('User validation', () => {
       age: 150,
     });
     expect(result.success).toBe(false);
+  });
+});
+```
+
+## React Query Testing
+
+### Testing React Query Hooks
+```typescript
+// useSites.test.ts
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useSites } from './useSites';
+import { apiClient } from '../api';
+
+// Mock API client
+jest.mock('../api', () => ({
+  apiClient: {
+    get: jest.fn(),
+  },
+}));
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+describe('useSites', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should fetch sites successfully', async () => {
+    const mockSites = [
+      { id: '1', name: 'Site 1', siteKey: 'site-1', status: 'active', createdAt: '2023-01-01' },
+      { id: '2', name: 'Site 2', siteKey: 'site-2', status: 'active', createdAt: '2023-01-02' },
+    ];
+
+    (apiClient.get as jest.Mock).mockResolvedValue(mockSites);
+
+    const { result } = renderHook(() => useSites(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(mockSites);
+    expect(apiClient.get).toHaveBeenCalledWith('/api/sites');
+  });
+
+  it('should handle error state', async () => {
+    const error = new Error('Failed to fetch sites');
+    (apiClient.get as jest.Mock).mockRejectedValue(error);
+
+    const { result } = renderHook(() => useSites(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toEqual(error);
+  });
+
+  it('should show loading state initially', () => {
+    (apiClient.get as jest.Mock).mockImplementation(() => new Promise(() => {}));
+
+    const { result } = renderHook(() => useSites(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.data).toBeUndefined();
+  });
+});
+```
+
+### Testing React Query Mutations
+```typescript
+// useCreateSite.test.ts
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useCreateSite } from './useCreateSite';
+import { apiClient } from '../api';
+
+jest.mock('../api', () => ({
+  apiClient: {
+    post: jest.fn(),
+  },
+}));
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+describe('useCreateSite', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should create site successfully', async () => {
+    const newSite = {
+      id: '1',
+      name: 'New Site',
+      siteKey: 'new-site',
+      status: 'active',
+      createdAt: '2023-01-01',
+    };
+
+    const createData = {
+      name: 'New Site',
+      domains: [{ host: 'example.com', isPrimary: true }],
+    };
+
+    (apiClient.post as jest.Mock).mockResolvedValue(newSite);
+
+    const { result } = renderHook(() => useCreateSite(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate(createData);
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(newSite);
+    expect(apiClient.post).toHaveBeenCalledWith('/api/sites', createData);
+  });
+
+  it('should handle mutation error', async () => {
+    const error = new Error('Failed to create site');
+    (apiClient.post as jest.Mock).mockRejectedValue(error);
+
+    const { result } = renderHook(() => useCreateSite(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: 'Test Site' });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toEqual(error);
+  });
+});
+```
+
+### Testing Components with React Query
+```typescript
+// SitesList.test.tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SitesList } from './SitesList';
+import { apiClient } from '@/lib/api';
+
+jest.mock('@/lib/api', () => ({
+  apiClient: {
+    get: jest.fn(),
+  },
+}));
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+describe('SitesList', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should render sites list', async () => {
+    const mockSites = [
+      { id: '1', name: 'Site 1', siteKey: 'site-1', status: 'active', createdAt: '2023-01-01' },
+      { id: '2', name: 'Site 2', siteKey: 'site-2', status: 'active', createdAt: '2023-01-02' },
+    ];
+
+    (apiClient.get as jest.Mock).mockResolvedValue(mockSites);
+
+    render(<SitesList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Site 1')).toBeInTheDocument();
+      expect(screen.getByText('Site 2')).toBeInTheDocument();
+    });
+  });
+
+  it('should show loading state', () => {
+    (apiClient.get as jest.Mock).mockImplementation(() => new Promise(() => {}));
+
+    render(<SitesList />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
+  it('should show error state', async () => {
+    const error = new Error('Failed to fetch sites');
+    (apiClient.get as jest.Mock).mockRejectedValue(error);
+
+    render(<SitesList />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Error loading sites')).toBeInTheDocument();
+    });
   });
 });
 ```
@@ -421,25 +667,33 @@ jest.mock('@/lib/utils', () => ({
 }));
 ```
 
-### Mocking Prisma
+### Mocking API Client
 ```typescript
-// __mocks__/@/lib/db.ts
-export const prisma = {
-  user: {
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
+// Mock the API client for testing
+jest.mock('@/lib/api', () => ({
+  apiClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
     delete: jest.fn(),
   },
-  site: {
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-};
+}));
+
+// In tests
+import { apiClient } from '@/lib/api';
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+it('should call API client with correct parameters', async () => {
+  (apiClient.get as jest.Mock).mockResolvedValue(mockData);
+
+  // Test your component or hook
+  // ...
+
+  expect(apiClient.get).toHaveBeenCalledWith('/api/sites');
+});
 ```
 
 ### Mocking fetch

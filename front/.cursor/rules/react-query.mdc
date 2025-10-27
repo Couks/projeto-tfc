@@ -1,0 +1,552 @@
+# React Query Patterns
+
+## Overview
+
+This rule defines patterns for using React Query (@tanstack/react-query) for data fetching, caching, and state management in the frontend. React Query handles all server state while React handles client state.
+
+## Core Principles
+
+- **Server State**: Managed by React Query (API data, cache, synchronization)
+- **Client State**: Managed by React (UI state, form state, local state)
+- **Type Safety**: All queries and mutations must be properly typed
+- **Centralized Keys**: Query keys organized in `queryKeys.ts`
+- **Error Handling**: Consistent error handling patterns
+- **Loading States**: Proper loading and error UI patterns
+
+## Query Hooks Patterns
+
+### Basic Query Hook
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from './queryKeys';
+import { apiClient } from '../api';
+import { ResourceType } from '../types';
+
+export function useResources() {
+  return useQuery<ResourceType[]>({
+    queryKey: queryKeys.resources.all,
+    queryFn: async () => {
+      return apiClient.get<ResourceType[]>('/api/resources');
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+```
+
+### Query with Parameters
+
+```typescript
+export function useResource(id: string) {
+  return useQuery<ResourceType>({
+    queryKey: queryKeys.resources.detail(id),
+    queryFn: async () => {
+      return apiClient.get<ResourceType>(`/api/resources/${id}`);
+    },
+    enabled: !!id, // Only run if id exists
+    staleTime: 5 * 60 * 1000,
+  });
+}
+```
+
+### Dependent Query
+
+```typescript
+export function useResourceDetails(resourceId: string) {
+  const { data: resource } = useResource(resourceId);
+
+  return useQuery<ResourceDetails>({
+    queryKey: queryKeys.resources.details(resourceId),
+    queryFn: async () => {
+      return apiClient.get<ResourceDetails>(`/api/resources/${resourceId}/details`);
+    },
+    enabled: !!resource, // Only run if parent resource exists
+    staleTime: 2 * 60 * 1000,
+  });
+}
+```
+
+## Mutation Hooks Patterns
+
+### Basic Mutation
+
+```typescript
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+export function useCreateResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateResourceData) => {
+      return apiClient.post<ResourceType>('/api/resources', data);
+    },
+    onSuccess: (newResource) => {
+      // Invalidate and refetch resources list
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.resources.all
+      });
+
+      // Optionally add to cache
+      queryClient.setQueryData(
+        queryKeys.resources.detail(newResource.id),
+        newResource
+      );
+    },
+    onError: (error) => {
+      console.error('Failed to create resource:', error);
+    },
+  });
+}
+```
+
+### Optimistic Updates
+
+```typescript
+export function useUpdateResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateResourceData }) => {
+      return apiClient.put<ResourceType>(`/api/resources/${id}`, data);
+    },
+    onMutate: async ({ id, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.resources.detail(id) });
+
+      // Snapshot previous value
+      const previousResource = queryClient.getQueryData(queryKeys.resources.detail(id));
+
+      // Optimistically update
+      queryClient.setQueryData(queryKeys.resources.detail(id), (old: ResourceType) => ({
+        ...old,
+        ...data,
+      }));
+
+      return { previousResource };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousResource) {
+        queryClient.setQueryData(
+          queryKeys.resources.detail(variables.id),
+          context.previousResource
+        );
+      }
+    },
+    onSettled: (data, error, variables) => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.resources.detail(variables.id)
+      });
+    },
+  });
+}
+```
+
+## Query Keys Organization
+
+### Centralized Query Keys
+
+```typescript
+// lib/hooks/queryKeys.ts
+export const queryKeys = {
+  // Sites
+  sites: {
+    all: ['sites'] as const,
+    detail: (id: string) => [...queryKeys.sites.all, id] as const,
+  },
+
+  // Domains (nested under sites)
+  domains: {
+    all: (siteId: string) => [...queryKeys.sites.detail(siteId), 'domains'] as const,
+  },
+
+  // Insights (analytics data)
+  insights: {
+    all: ['insights'] as const,
+    overview: (siteKey: string) => [...queryKeys.insights.all, 'overview', siteKey] as const,
+    conversions: (siteKey: string) => [...queryKeys.insights.all, 'conversions', siteKey] as const,
+    journeys: (siteKey: string) => [...queryKeys.insights.all, 'journeys', siteKey] as const,
+  },
+
+  // Auth
+  auth: {
+    all: ['auth'] as const,
+    me: () => [...queryKeys.auth.all, 'me'] as const,
+  },
+} as const;
+```
+
+### Query Key Patterns
+
+- **Hierarchical**: `['parent', 'child', 'id']`
+- **Consistent**: Same pattern across all domains
+- **Type-safe**: Use `as const` for literal types
+- **Invalidation**: Easy to invalidate related queries
+
+## Cache Configuration
+
+### Default Options
+
+```typescript
+// lib/providers/QueryProvider.tsx
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+```
+
+### Per-Query Configuration
+
+```typescript
+// Different stale times for different data types
+export function useOverview(siteKey: string) {
+  return useQuery<OverviewData>({
+    queryKey: queryKeys.insights.overview(siteKey),
+    queryFn: () => apiClient.get(`/api/insights/overview?site=${siteKey}`),
+    staleTime: 2 * 60 * 1000, // 2 minutes (more dynamic)
+    refetchInterval: 5 * 60 * 1000, // Auto-refetch every 5 minutes
+  });
+}
+
+export function useSites() {
+  return useQuery<Site[]>({
+    queryKey: queryKeys.sites.all,
+    queryFn: () => apiClient.get('/api/sites'),
+    staleTime: 10 * 60 * 1000, // 10 minutes (less dynamic)
+  });
+}
+```
+
+## Error Handling
+
+### Query Error Handling
+
+```typescript
+export function useResources() {
+  return useQuery<ResourceType[]>({
+    queryKey: queryKeys.resources.all,
+    queryFn: async () => {
+      try {
+        return await apiClient.get<ResourceType[]>('/api/resources');
+      } catch (error) {
+        // Log error for debugging
+        console.error('Failed to fetch resources:', error);
+        throw error; // Re-throw to let React Query handle it
+      }
+    },
+    retry: (failureCount, error) => {
+      // Don't retry on 4xx errors
+      if (error instanceof Error && error.message.includes('4')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+}
+```
+
+### Component Error Handling
+
+```typescript
+'use client';
+
+import { useResources } from '@/lib/hooks';
+import { Skeleton } from '@ui/skeleton';
+import { Alert, AlertDescription } from '@ui/alert';
+
+export function ResourceList() {
+  const { data, isLoading, error, isError } = useResources();
+
+  if (isLoading) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>
+          Failed to load resources. Please try again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return <div>No resources found.</div>;
+  }
+
+  return (
+    <div>
+      {data.map(resource => (
+        <ResourceCard key={resource.id} resource={resource} />
+      ))}
+    </div>
+  );
+}
+```
+
+## Loading States
+
+### Loading Patterns
+
+```typescript
+// Multiple loading states
+export function useResourceWithDetails(id: string) {
+  const resourceQuery = useResource(id);
+  const detailsQuery = useResourceDetails(id);
+
+  return {
+    resource: resourceQuery.data,
+    details: detailsQuery.data,
+    isLoading: resourceQuery.isLoading || detailsQuery.isLoading,
+    isError: resourceQuery.isError || detailsQuery.isError,
+    error: resourceQuery.error || detailsQuery.error,
+  };
+}
+```
+
+### Suspense Integration
+
+```typescript
+// For components using Suspense
+export function useResourceSuspense(id: string) {
+  return useQuery<ResourceType>({
+    queryKey: queryKeys.resources.detail(id),
+    queryFn: () => apiClient.get(`/api/resources/${id}`),
+    suspense: true, // Enable Suspense mode
+  });
+}
+```
+
+## Prefetching
+
+### Server-Side Prefetching
+
+```typescript
+// lib/getQueryClient.ts
+import { QueryClient } from '@tanstack/react-query';
+import { cache } from 'react';
+
+export const getQueryClient = cache(() => new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+    },
+  },
+}));
+
+// In page component
+import { getQueryClient } from '@/lib/getQueryClient';
+import { queryKeys } from '@/lib/hooks/queryKeys';
+import { apiClient } from '@/lib/api';
+
+export default async function ResourcePage({ params }: { params: { id: string } }) {
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.resources.detail(params.id),
+    queryFn: () => apiClient.get(`/api/resources/${params.id}`),
+  });
+
+  return <ResourceClient id={params.id} />;
+}
+```
+
+### Client-Side Prefetching
+
+```typescript
+export function usePrefetchResource() {
+  const queryClient = useQueryClient();
+
+  const prefetch = useCallback((id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.resources.detail(id),
+      queryFn: () => apiClient.get(`/api/resources/${id}`),
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [queryClient]);
+
+  return prefetch;
+}
+
+// Usage in component
+export function ResourceCard({ resource }: { resource: ResourceType }) {
+  const prefetch = usePrefetchResource();
+
+  return (
+    <div
+      onMouseEnter={() => prefetch(resource.id)}
+      className="p-4 border rounded"
+    >
+      {resource.name}
+    </div>
+  );
+}
+```
+
+## Cache Invalidation
+
+### Invalidation Strategies
+
+```typescript
+// Invalidate all queries for a resource type
+queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+
+// Invalidate specific resource
+queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(id) });
+
+// Invalidate all insights for a site
+queryClient.invalidateQueries({
+  queryKey: queryKeys.insights.all,
+  predicate: (query) => query.queryKey.includes(siteKey)
+});
+
+// Remove from cache
+queryClient.removeQueries({ queryKey: queryKeys.resources.detail(id) });
+```
+
+### Mutation Success Patterns
+
+```typescript
+export function useDeleteResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/api/resources/${id}`),
+    onSuccess: (_, id) => {
+      // Remove from cache
+      queryClient.removeQueries({ queryKey: queryKeys.resources.detail(id) });
+
+      // Invalidate list to refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+    },
+  });
+}
+```
+
+## Best Practices
+
+### Do's
+
+- ✅ Use centralized query keys
+- ✅ Type all queries and mutations
+- ✅ Handle loading and error states
+- ✅ Use appropriate stale times
+- ✅ Implement optimistic updates for better UX
+- ✅ Prefetch data when possible
+- ✅ Use `enabled` for dependent queries
+- ✅ Implement proper error boundaries
+
+### Don'ts
+
+- ❌ Don't use React Query for client state
+- ❌ Don't forget to handle loading states
+- ❌ Don't ignore error handling
+- ❌ Don't use overly complex query keys
+- ❌ Don't forget to clean up subscriptions
+- ❌ Don't use `any` types
+- ❌ Don't mutate query data directly
+
+## Common Patterns
+
+### Pagination
+
+```typescript
+export function useResourcesPaginated(page: number) {
+  return useQuery({
+    queryKey: [...queryKeys.resources.all, 'paginated', page],
+    queryFn: () => apiClient.get(`/api/resources?page=${page}`),
+    keepPreviousData: true, // Keep previous page data while loading next
+  });
+}
+```
+
+### Infinite Queries
+
+```typescript
+export function useInfiniteResources() {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.resources.all, 'infinite'],
+    queryFn: ({ pageParam = 0 }) =>
+      apiClient.get(`/api/resources?page=${pageParam}`),
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.hasNext ? pages.length : undefined,
+  });
+}
+```
+
+### Background Refetching
+
+```typescript
+export function useRealtimeResource(id: string) {
+  return useQuery({
+    queryKey: queryKeys.resources.detail(id),
+    queryFn: () => apiClient.get(`/api/resources/${id}`),
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    refetchIntervalInBackground: true,
+  });
+}
+```
+
+## Development Tools
+
+### React Query DevTools
+
+```typescript
+// Already included in QueryProvider.tsx
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+```
+
+### Debugging Queries
+
+```typescript
+// Add to component for debugging
+export function ResourceList() {
+  const query = useResources();
+
+  // Debug query state
+  console.log('Query state:', {
+    isLoading: query.isLoading,
+    isError: query.isError,
+    data: query.data,
+    error: query.error,
+  });
+
+  // ... rest of component
+}
+```
+
+## Auto-Attach Rules
+
+This rule applies to:
+- `src/lib/hooks/**/*.ts` - All hook files
+- `src/**/*Client.tsx` - Client components using React Query
+- `src/app/**/page.tsx` - Pages with data fetching
+- `src/lib/providers/**/*.tsx` - Query providers
+
+## Related Rules
+
+- `api-client.mdc` - API client patterns
+- `frontend-types.mdc` - TypeScript type organization
+- `react-components.mdc` - React component patterns

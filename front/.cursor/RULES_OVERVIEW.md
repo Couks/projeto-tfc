@@ -16,14 +16,15 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 **Descrição**: Padrões gerais de arquitetura e código
 
 **Conteúdo**:
-- Stack tecnológica (Next.js 15, TypeScript, Prisma, PostgreSQL)
-- Estrutura do projeto
+- Stack tecnológica (Next.js 15, NestJS backend, TypeScript, React Query)
+- Estrutura do projeto (frontend/backend separados)
 - Princípios Clean Code (SOLID, DRY, KISS, YAGNI)
 - Convenções de nomenclatura (arquivos, código, database)
 - Path aliases (`@/lib/*`, `@ui/*`)
 - Performance e segurança
 - Ordem de imports
 - Tratamento de erros
+- Padrões de data fetching com React Query
 
 **Aplicação**: Sempre incluída em todos os contextos
 
@@ -47,68 +48,84 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 - Composição de componentes
 - Performance (React.memo, useCallback)
 - Acessibilidade
+- Integração com React Query
 
 ---
 
-### 3. **api-routes.mdc** (Auto-Aplicada)
+### 3. **react-query.mdc** (Auto-Aplicada) ⭐ **NOVO**
 
-**Descrição**: Padrões para rotas de API
+**Descrição**: Padrões para React Query (@tanstack/react-query)
 
-**Aplica-se a**: `src/app/api/**/*.ts`
+**Aplica-se a**: `src/lib/hooks/**/*.ts`, `src/**/*Client.tsx`
 
 **Conteúdo**:
-- Organização de rotas
-- Estrutura de handlers (GET, POST, PUT, DELETE)
-- Validação com Zod (body, query params, route params)
-- Autenticação e autorização
-- HTTP status codes apropriados
-- Formato de resposta consistente
-- Tratamento de erros
-- Operações de database
-- Transações
-- Performance e caching
-- Rate limiting e CORS
-- Logging estruturado
+- Query hooks patterns (useQuery com tipagem adequada)
+- Mutation hooks patterns (useMutation com updates otimistas)
+- Organização de query keys (centralizada em `queryKeys.ts`)
+- Estratégias de invalidação de cache
+- Configuração de stale time e garbage collection
+- Tratamento de erros em queries/mutations
+- Estados de loading e error
+- Padrões de prefetching (server-side com getQueryClient)
+- Updates otimistas
+- Cancelamento de queries
+- Queries dependentes (enabled prop)
+- Infinite queries (quando necessário)
+- Uso do React Query DevTools
 
 ---
 
-### 4. **database-prisma.mdc** (Auto-Aplicada)
+### 4. **api-client.mdc** (Auto-Aplicada) ⭐ **NOVO**
 
-**Descrição**: Padrões de database e Prisma ORM
+**Descrição**: Padrões para cliente API centralizado
 
-**Aplica-se a**: `prisma/**/*.prisma`, `src/lib/db.ts`
+**Aplica-se a**: `src/lib/api.ts`, `src/lib/hooks/**/*.ts`
 
 **Conteúdo**:
-- Design de schema (naming, IDs, timestamps)
-- Relacionamentos (one-to-many, one-to-one, many-to-many)
-- Cascade deletion
-- Indexes (single, composite, unique)
-- Inicialização do Prisma Client (singleton pattern)
-- Operações CRUD
-- Queries avançadas (filtering, sorting, pagination)
-- Aggregações e group by
-- Transações
-- Raw SQL (quando necessário)
-- Migrações
-- Performance optimization
-- Error handling (códigos de erro Prisma)
-- Segurança (row-level security, dados sensíveis)
+- Uso do singleton ApiClient (`apiClient` de `lib/api.ts`)
+- Métodos HTTP (get, post, put, delete)
+- Type safety com generics (`apiClient.get<Type>()`)
+- Padrões de tratamento de erros
+- Inclusão de credentials (`credentials: 'include'`)
+- Configuração de base URL (env var)
+- Interceptors de request/response (quando necessário)
+- Padrões de retry logic
+- Tratamento de timeout
 
 ---
 
-### 5. **authentication-security.mdc** (Auto-Aplicada)
+### 5. **frontend-types.mdc** (Auto-Aplicada) ⭐ **NOVO**
+
+**Descrição**: Organização de tipos TypeScript
+
+**Aplica-se a**: `src/lib/types/**/*.ts`
+
+**Conteúdo**:
+- **Tipos Centralizados**: Todos os tipos em `lib/types/`
+- **Organização por Domínio**:
+  - `insights.ts` - Tipos de analytics que correspondem aos DTOs do backend
+  - `sites.ts` - Tipos de sites/domínios
+  - `index.ts` - Re-exports para conveniência
+- **Nomenclatura de Tipos**: PascalCase para interfaces/types
+- **Alinhamento com Backend**: Tipos devem corresponder exatamente às estruturas de resposta do backend
+- **Sem tipos `any`**: Aplicação rigorosa de tipagem
+- **Inferência de Tipos**: Uso de generics em hooks/chamadas de API
+- **Padrões de Export**: Named exports, re-export do index
+- **Documentação**: JSDoc para tipos complexos
+
+---
+
+### 6. **authentication-security.mdc** (Auto-Aplicada)
 
 **Descrição**: Autenticação e segurança
 
-**Aplica-se a**: `src/lib/auth.ts`, `src/middleware.ts`, `src/app/api/auth/**/*.ts`
+**Aplica-se a**: `src/lib/hooks/useAuth.ts`, `src/middleware.ts`, `src/app/(auth)/**/*.tsx`
 
 **Conteúdo**:
 - Session management (cookies assinados, HMAC)
-- Password security (scrypt hashing)
 - Middleware de autenticação
 - Proteção de rotas (public/protected paths)
-- Autenticação em API routes
-- Autorização (ownership check)
+- Autenticação em componentes
 - Validação e sanitização de inputs
 - Security headers (CSP, CORS, X-Frame-Options)
 - CORS configuration
@@ -121,7 +138,7 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 
 ---
 
-### 6. **typescript-utilities.mdc** (Auto-Aplicada)
+### 7. **typescript-utilities.mdc** (Auto-Aplicada)
 
 **Descrição**: TypeScript e funções utilitárias
 
@@ -149,10 +166,11 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 - Enums vs const objects
 - JSDoc documentation
 - Testing considerations
+- **Tipos React Query**: Padrões de tipagem para hooks e mutations
 
 ---
 
-### 7. **testing.mdc** (Auto-Aplicada)
+### 8. **testing.mdc** (Auto-Aplicada)
 
 **Descrição**: Padrões de testes
 
@@ -164,16 +182,18 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 - Estrutura de testes (naming, describe/it blocks)
 - Unit tests (utilities, validation)
 - Component tests (React Testing Library)
+- **React Query testing patterns** (QueryClientProvider wrapper)
+- **Hook testing** com React Query
+- **API client mocking** (Mock Service Worker patterns)
 - Testing hooks
-- API route tests
-- Mocking (modules, Prisma, fetch)
+- Mocking (modules, API client, fetch)
 - Test helpers (custom render, fixtures)
 - Best practices (AAA pattern, one assertion per test, edge cases)
 - Code coverage (goals, running coverage)
 
 ---
 
-### 8. **documentation.mdc** (Auto-Aplicada)
+### 9. **documentation.mdc** (Auto-Aplicada)
 
 **Descrição**: Padrões de documentação
 
@@ -194,7 +214,7 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 
 ---
 
-### 9. **template-component.mdc** (Manual/Template)
+### 10. **template-component.mdc** (Manual/Template)
 
 **Descrição**: Templates para criação de componentes React
 
@@ -211,24 +231,32 @@ Este documento fornece uma visão geral de todas as regras de padronização cri
 
 ---
 
-### 10. **template-api-route.mdc** (Manual/Template)
+### 11. **template-api-route.mdc** (Manual/Template) ❌ **REMOVIDO**
 
-**Descrição**: Templates para criação de rotas de API
+**Descrição**: ~~Templates para criação de rotas de API~~
 
-**Como usar**: `@template-api-route Create a new API endpoint...`
+**Status**: **REMOVIDO** - Não temos mais API routes no frontend (todas no backend NestJS)
 
-**Conteúdo**:
-- Collection route (GET, POST)
-- Item route (GET, PUT, DELETE)
-- Public API route
-- File upload route
-- Webhook route
-- Batch operation route
-- Checklist para novos endpoints
+---
+
+### 12. **database-prisma.mdc** (Auto-Aplicada) ❌ **REMOVIDO**
+
+**Descrição**: ~~Padrões de database e Prisma ORM~~
+
+**Status**: **REMOVIDO** - Prisma é usado apenas no backend, não no frontend
 
 ---
 
 ## 📚 Documentação Complementar
+
+### **MIGRATION_NOTES.md** ⭐ **NOVO**
+Guia de migração da arquitetura com:
+- Evolução da arquitetura (monolito → frontend/backend separados)
+- Breaking changes dos padrões antigos
+- Como migrar componentes
+- Como migrar data fetching
+- Armadilhas comuns
+- Exemplos antes/depois
 
 ### **AGENTS.md**
 Instruções principais para o Cursor AI com:
@@ -267,10 +295,8 @@ Documentação das regras com:
 
 ### **.env.example**
 Template de variáveis de ambiente:
-- `DATABASE_URL` - PostgreSQL connection
-- `DIRECT_URL` - Direct database connection
+- `NEXT_PUBLIC_API_BASE_URL` - Backend API URL
 - `NEXTAUTH_SECRET` - Session signing secret
-- `SITE_URL` - Application base URL
 - `NODE_ENV` - Environment
 
 ### **README.md** (Atualizado)
@@ -291,12 +317,13 @@ README principal atualizado com:
 
 As regras são aplicadas automaticamente quando você:
 1. Edita um componente React → `react-components.mdc`
-2. Cria/edita uma API route → `api-routes.mdc`
-3. Trabalha com schema Prisma → `database-prisma.mdc`
-4. Modifica arquivos de auth → `authentication-security.mdc`
-5. Escreve utilities → `typescript-utilities.mdc`
-6. Escreve testes → `testing.mdc`
-7. Atualiza documentação → `documentation.mdc`
+2. Trabalha com React Query hooks → `react-query.mdc`
+3. Usa o API client → `api-client.mdc`
+4. Define tipos TypeScript → `frontend-types.mdc`
+5. Modifica arquivos de auth → `authentication-security.mdc`
+6. Escreve utilities → `typescript-utilities.mdc`
+7. Escreve testes → `testing.mdc`
+8. Atualiza documentação → `documentation.mdc`
 
 A regra `architecture.mdc` está **sempre ativa**.
 
@@ -306,10 +333,6 @@ Para usar templates, mencione-os explicitamente:
 
 ```
 @template-component Create a new UserProfile component with edit functionality
-```
-
-```
-@template-api-route Create an API endpoint to manage user settings
 ```
 
 ### Verificando Regras Ativas
@@ -325,8 +348,9 @@ No Cursor, veja a sidebar para visualizar quais regras estão ativas no contexto
 | Quando você está... | Regras aplicadas |
 |---------------------|------------------|
 | Criando componente | `architecture` + `react-components` |
-| Criando API route | `architecture` + `api-routes` |
-| Modificando schema | `architecture` + `database-prisma` |
+| Criando React Query hook | `architecture` + `react-query` |
+| Usando API client | `architecture` + `api-client` |
+| Definindo tipos | `architecture` + `frontend-types` |
 | Implementando auth | `architecture` + `authentication-security` |
 | Escrevendo utility | `architecture` + `typescript-utilities` |
 | Escrevendo teste | `architecture` + `testing` |
@@ -335,11 +359,12 @@ No Cursor, veja a sidebar para visualizar quais regras estão ativas no contexto
 ### Por Contexto de Trabalho
 
 **Novo Feature Completo**:
-1. Schema (database-prisma)
-2. API routes (api-routes)
-3. Componentes (react-components)
-4. Testes (testing)
-5. Documentação (documentation)
+1. Tipos (`frontend-types`)
+2. API client usage (`api-client`)
+3. React Query hooks (`react-query`)
+4. Componentes (`react-components`)
+5. Testes (`testing`)
+6. Documentação (`documentation`)
 
 Todas com `architecture` como base.
 
@@ -348,8 +373,8 @@ Todas com `architecture` como base.
 ## 🎓 Próximos Passos
 
 1. **Familiarize-se** com as regras lendo os arquivos em `.cursor/rules/`
-2. **Pratique** criando novos componentes e APIs usando os templates
-3. **Consulte** `AGENTS.md` para entender a arquitetura
+2. **Pratique** criando novos componentes e hooks usando os templates
+3. **Consulte** `MIGRATION_NOTES.md` para entender as mudanças
 4. **Contribua** seguindo `CONTRIBUTING.md`
 5. **Mantenha** as regras atualizadas conforme o projeto evolui
 
@@ -358,12 +383,12 @@ Todas com `architecture` como base.
 ## 📞 Suporte
 
 - Dúvidas sobre regras: Consulte `.cursor/rules/README.md`
-- Dúvidas sobre arquitetura: Consulte `AGENTS.md`
+- Dúvidas sobre migração: Consulte `MIGRATION_NOTES.md`
 - Dúvidas sobre contribuição: Consulte `CONTRIBUTING.md`
 - Issues: Abra uma issue no repositório
 
 ---
 
-**Última atualização**: Outubro 2025
-**Versão das Regras**: 1.0.0
-
+**Última atualização**: Janeiro 2025
+**Versão das Regras**: 2.0.0
+**Arquitetura**: Frontend/Backend Separados

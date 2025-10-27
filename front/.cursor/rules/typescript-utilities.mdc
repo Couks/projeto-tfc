@@ -30,20 +30,29 @@ Always use strict TypeScript configuration:
 Avoid `any` and prefer proper typing:
 
 ```typescript
-// Good: Proper typing
+// Good: Proper typing with API types
 interface User {
   id: string;
   email: string;
-  name: string | null;
+  name: string;
+  createdAt: string;
 }
 
 function getUser(id: string): Promise<User | null> {
-  return prisma.user.findUnique({ where: { id } });
+  return apiClient.get<User>(`/api/users/${id}`);
+}
+
+// Good: React Query with proper typing
+function useUser(id: string) {
+  return useQuery<User>({
+    queryKey: ['user', id],
+    queryFn: () => apiClient.get<User>(`/api/users/${id}`),
+  });
 }
 
 // Avoid: Using any
 function getUser(id: any): Promise<any> {
-  return prisma.user.findUnique({ where: { id } });
+  return apiClient.get(`/api/users/${id}`);
 }
 ```
 
@@ -107,6 +116,49 @@ const result: ApiResult<User> = {
 function processRecord<T extends { id: string }>(record: T): string {
   return record.id;
 }
+```
+
+### React Query Types
+Use proper typing for React Query hooks and mutations:
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api';
+import { User, CreateUserData } from '@/lib/types';
+
+// Query hook with proper typing
+function useUser(id: string) {
+  return useQuery<User>({
+    queryKey: ['user', id],
+    queryFn: () => apiClient.get<User>(`/api/users/${id}`),
+    enabled: !!id,
+  });
+}
+
+// Mutation hook with proper typing
+function useCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, CreateUserData>({
+    mutationFn: (data: CreateUserData) =>
+      apiClient.post<User>('/api/users', data),
+    onSuccess: (newUser) => {
+      queryClient.setQueryData(['user', newUser.id], newUser);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+// Query key types
+export const queryKeys = {
+  users: {
+    all: ['users'] as const,
+    detail: (id: string) => [...queryKeys.users.all, id] as const,
+  },
+} as const;
+
+// Type-safe query key usage
+type UserQueryKey = typeof queryKeys.users.detail;
 ```
 
 ### Utility Types

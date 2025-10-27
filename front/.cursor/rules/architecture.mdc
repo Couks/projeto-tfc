@@ -7,35 +7,58 @@ alwaysApply: true
 # Project Architecture Standards
 
 ## Technology Stack
-- **Framework**: Next.js 15.1+ with App Router (React Server Components)
+- **Frontend**: Next.js 15.1+ with App Router (React Server Components)
+- **Backend**: NestJS with TypeScript (separate service on port 3001)
 - **Language**: TypeScript with strict mode enabled
-- **Database**: PostgreSQL with Prisma ORM
-- **Data Fetching**: React Query (TanStack Query) for client-side state management
-- **Styling**: Tailwind CSS + Radix UI components
+- **Database**: PostgreSQL with Prisma ORM (backend only)
+- **Data Fetching**: React Query (@tanstack/react-query) for client-side state management
+- **API Communication**: Centralized API client with type safety
+- **Authentication**: Session-based auth with HMAC-signed cookies
+- **Styling**: Tailwind CSS + Radix UI components (shadcn/ui)
 - **Validation**: Zod for runtime type validation
 - **Package Manager**: pnpm with workspace configuration
 
 ## Project Structure
 ```
-insighthouse/
-  src/
-    app/          # Next.js App Router pages and API routes
-    lib/          # Shared utilities, components, and business logic
-      hooks/      # React Query custom hooks
-      providers/  # React providers (QueryProvider, etc.)
-    middleware.ts # Global middleware (auth, routing)
-    utils/        # Pure utility functions
-  prisma/         # Database schema and migrations
-  public/         # Static assets
+projeto-tfc/
+├── back/                    # NestJS Backend Service
+│   ├── src/
+│   │   ├── auth/           # Authentication module
+│   │   ├── sites/          # Sites management module
+│   │   ├── insights/       # Analytics module
+│   │   ├── events/         # Event tracking module
+│   │   ├── sdk/            # SDK configuration module
+│   │   ├── prisma/         # Database service
+│   │   └── common/         # Shared utilities and decorators
+│   ├── prisma/             # Database schema and migrations
+│   └── package.json        # Backend dependencies
+└── front/                  # Next.js Frontend Service
+    ├── src/
+    │   ├── app/            # Next.js App Router (UI only)
+    │   │   ├── (admin)/    # Admin dashboard pages
+    │   │   ├── (auth)/     # Authentication pages
+    │   │   └── page.tsx    # Landing page
+    │   ├── lib/            # Core libraries and utilities
+    │   │   ├── api.ts      # API client singleton
+    │   │   ├── hooks/      # React Query custom hooks
+    │   │   ├── types/      # TypeScript type definitions
+    │   │   ├── providers/  # React providers (QueryProvider)
+    │   │   └── components/ # Shared UI components
+    │   ├── middleware.ts   # Authentication middleware
+    │   └── utils/          # Pure utility functions
+    └── package.json        # Frontend dependencies
 ```
 
 ## Code Organization Principles
 
 ### 1. Separation of Concerns
-- **Server Components**: Default for pages, handle initial data fetching and prefetching
+- **Frontend (Next.js)**: UI/UX, client-side state, user interactions
+- **Backend (NestJS)**: Business logic, database operations, external integrations
+- **Server Components**: Default for pages, handle initial data prefetching
 - **Client Components**: Use `'use client'` for interactivity, React Query hooks, and real-time updates
-- **API Routes**: Business logic, database operations, external integrations
+- **API Client**: Centralized HTTP client with type safety and error handling
 - **React Query Hooks**: Centralized data fetching logic with caching and state management
+- **Type Definitions**: Centralized TypeScript types matching backend DTOs
 - **Utilities**: Pure functions, no side effects
 
 ### 2. Modularization
@@ -43,6 +66,7 @@ insighthouse/
 - Group related components in feature directories
 - Use `_components` folders for private components
 - Export public APIs from index files or named exports
+- Backend modules are self-contained with controllers, services, and DTOs
 
 ### 3. Clean Code Principles
 - **Single Responsibility**: Each function/component does one thing well
@@ -71,41 +95,50 @@ insighthouse/
 - **Event Handlers**: camelCase with `handle` prefix (e.g., `handleClick`, `handleSubmit`)
 - **Boolean Variables**: Prefix with `is`, `has`, `should` (e.g., `isLoading`, `hasAccess`)
 
-### Database (Prisma)
+### Database (Prisma - Backend Only)
 - **Models**: PascalCase singular (e.g., `User`, `Site`)
 - **Fields**: camelCase (e.g., `userId`, `createdAt`)
 - **Relations**: camelCase plural for one-to-many (e.g., `sites`, `domains`)
+- **Note**: Prisma is only used in the backend service, not in frontend
 
 ## Path Aliases
 - `@/lib/*` → `src/lib/*` for library code
 - `@ui/*` → `src/lib/components/ui/*` for UI components
 
 ## Performance Best Practices
-- **Server Components**: Use for initial data fetching and SEO-critical content
+- **Server Components**: Use for initial data prefetching and SEO-critical content
 - **React Query**: Use for client-side data fetching with intelligent caching
-- **Prefetching**: Prefetch data in Server Components using `queryClient.prefetchQuery`
+- **Prefetching**: Prefetch data in Server Components using `getQueryClient().prefetchQuery`
 - **Cache Strategy**: Configure appropriate stale times (static: 10min, dynamic: 2min)
 - **Background Updates**: Enable background refetching for critical data
-- **Loading States**: Implement proper loading and error states
+- **Loading States**: Implement proper loading and error states with React Query
 - **Lazy Loading**: Lazy load components when appropriate
 - **Image Optimization**: Use Next.js Image component
+- **API Client**: Use singleton pattern for consistent HTTP client
+- **Type Safety**: Ensure all API calls are properly typed
 
 ## Security Best Practices
 - Never expose secrets in client-side code
-- Validate all user inputs with Zod
+- Validate all user inputs with Zod (backend)
 - Use environment variables for configuration
-- Implement proper authentication checks
-- Sanitize database queries (Prisma handles this)
+- Implement proper authentication checks with session cookies
+- Sanitize database queries (Prisma handles this in backend)
 - Use CSRF protection for forms
-- Set proper HTTP headers (CORS, CSP, etc.)
+- Set proper HTTP headers (CORS, CSP, etc.) in backend
+- Use HMAC-signed cookies for session authentication
+- Include credentials in API calls (`credentials: 'include'`)
+- Validate session cookies in middleware
 
 ## Error Handling Strategy
 - Use try-catch blocks for async operations
-- Return proper HTTP status codes in API routes
+- Return proper HTTP status codes in backend API
 - Provide meaningful error messages
 - Log errors for debugging (use console.error)
 - Handle edge cases explicitly
 - Never expose internal errors to users
+- Use React Query error handling patterns
+- Implement proper error boundaries in React components
+- Handle API client errors consistently
 
 ## Code Comments
 - Comment the "why", not the "what"
@@ -125,9 +158,53 @@ Example:
 ```typescript
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { z } from 'zod';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@ui/button';
-import { prisma } from '@/lib/db';
-import type { User } from '@prisma/client';
+import { apiClient } from '@/lib/api';
+import type { User, Site } from '@/lib/types';
 import { formatDate } from '../utils';
+```
+
+## Data Fetching Patterns
+
+### React Query Hooks
+```typescript
+// lib/hooks/useSites.ts
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../api';
+import { Site } from '../types';
+
+export function useSites() {
+  return useQuery<Site[]>({
+    queryKey: ['sites'],
+    queryFn: () => apiClient.get<Site[]>('/api/sites'),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+```
+
+### API Client Usage
+```typescript
+// lib/api.ts
+import { apiClient } from '@/lib/api';
+
+// In components or hooks
+const sites = await apiClient.get<Site[]>('/api/sites');
+const newSite = await apiClient.post<Site>('/api/sites', siteData);
+```
+
+### Type Safety
+```typescript
+// lib/types/sites.ts
+export interface Site {
+  id: string;
+  name: string;
+  siteKey: string;
+  status: string;
+  createdAt: string;
+  domains: Domain[];
+}
+
+// Usage with proper typing
+const { data: sites } = useSites(); // sites is typed as Site[] | undefined
 ```

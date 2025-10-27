@@ -1,217 +1,149 @@
----
-description: Authentication and security patterns
-globs:
-  - src/lib/auth.ts
-  - src/middleware.ts
-  - src/app/api/auth/**/*.ts
-alwaysApply: false
----
-
 # Authentication & Security Standards
 
-## Session Management
+## Overview
 
-### Session Cookie Pattern
-Use signed cookies with HMAC verification:
+This rule defines patterns for authentication and security in the frontend application. The system uses session-based authentication with HMAC-signed cookies, communicating with a NestJS backend for all authentication operations.
 
-```typescript
-import crypto from 'crypto';
+## Authentication Architecture
 
-// Session type
-export type Session = { userId: string } | null;
+### Session-Based Authentication
+- **Frontend**: Validates session cookies in middleware
+- **Backend**: Handles login/logout and session creation
+- **Cookies**: HMAC-SHA256 signed session cookies
+- **Format**: `{userId:string}.signature`
+- **Storage**: HttpOnly cookies (handled by backend)
 
-// Get secret from environment
-function getSecret(): string {
-  const secret = process.env.NEXTAUTH_SECRET || '';
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('NEXTAUTH_SECRET is required in production');
-    }
-    return 'dev-secret-do-not-use-in-prod';
-  }
-  return secret;
-}
+### Authentication Flow
+1. User submits login form
+2. Frontend sends credentials to backend `/api/auth/login`
+3. Backend validates credentials and creates session cookie
+4. Frontend middleware validates session cookie on protected routes
+5. Frontend uses `useUser()` hook to get current user data
 
-// Sign a value with HMAC
-function sign(value: string): string {
-  const hmac = crypto
-    .createHmac('sha256', getSecret())
-    .update(value)
-    .digest('hex');
-  return `${value}.${hmac}`;
-}
+## Session Cookie Management
 
-// Verify signed value
-function verify(signed: string | undefined): string | null {
-  if (!signed) return null;
-
-  const lastDot = signed.lastIndexOf('.');
-  if (lastDot <= 0) return null;
-
-  const raw = signed.slice(0, lastDot);
-  const sig = signed.slice(lastDot + 1);
-
-  const check = crypto
-    .createHmac('sha256', getSecret())
-    .update(raw)
-    .digest('hex');
-
-  // Constant-time comparison
-  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(check))
-    ? raw
-    : null;
-}
-```
-
-### Session Cookie Creation
-```typescript
-export function createSignedSessionCookie(value: { userId: string }): string {
-  return sign(JSON.stringify(value));
-}
-
-// Usage in login route
-const signed = createSignedSessionCookie({ userId: user.id });
-const response = NextResponse.json({ ok: true });
-
-response.cookies.set('admin_session', signed, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  path: '/',
-  maxAge: 60 * 60 * 24 * 7, // 7 days
-});
-```
-
-### Session Retrieval
-```typescript
-import { cookies } from 'next/headers';
-
-export async function getSession(): Promise<Session> {
-  const store = await cookies();
-  const value = store.get('admin_session')?.value;
-
-  if (!value) return null;
-
-  try {
-    const raw = verify(value);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as { userId: string };
-
-    // Validate structure
-    if (!parsed?.userId || typeof parsed.userId !== 'string') {
-      return null;
-    }
-
-    return { userId: parsed.userId };
-  } catch {
-    return null;
-  }
-}
-```
-
-## Password Security
-
-### Password Hashing
-Use scrypt (Node.js built-in) for password hashing:
+### Cookie Verification (Frontend)
 
 ```typescript
-import crypto from 'crypto';
-
-// Hash password with scrypt
-export async function hashPassword(plain: string): Promise<string> {
-  const salt = crypto.randomBytes(16);
-  const N = 16384;  // CPU/memory cost
-  const r = 8;      // Block size
-  const p = 1;      // Parallelization
-  const keylen = 64; // Output length
-
-  const derived = await new Promise<Buffer>((resolve, reject) => {
-    crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
-      if (err) reject(err);
-      else resolve(buf as Buffer);
-    });
-  });
-
-  return `scrypt$${N}$${r}$${p}$${salt.toString('base64')}$${derived.toString('base64')}`;
-}
-
-// Verify password
-export async function verifyPassword(
-  plain: string,
-  stored: string
-): Promise<boolean> {
-  try {
-    const [scheme, sN, sr, sp, sSalt, sHash] = stored.split('$');
-
-    if (scheme !== 'scrypt') return false;
-
-    const N = parseInt(sN, 10);
-    const r = parseInt(sr, 10);
-    const p = parseInt(sp, 10);
-    const salt = Buffer.from(sSalt, 'base64');
-    const expected = Buffer.from(sHash, 'base64');
-    const keylen = expected.length;
-
-    const derived = await new Promise<Buffer>((resolve, reject) => {
-      crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
-        if (err) reject(err);
-        else resolve(buf as Buffer);
-      });
-    });
-
-    return crypto.timingSafeEqual(derived, expected);
-  } catch {
-    return false;
-  }
-}
-```
-
-### Password Validation
-```typescript
-import { z } from 'zod';
-
-// Password schema
-const passwordSchema = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(100, 'Password must be less than 100 characters')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number');
-
-// Usage
-const result = passwordSchema.safeParse(password);
-if (!result.success) {
-  return { error: result.error.errors[0].message };
-}
-```
-
-## Middleware Authentication
-
-### Route Protection
-Define public and protected paths:
-
-```typescript
-// src/middleware.ts
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Public paths (no auth required)
+/**
+ * Verifies HMAC-signed session cookie
+ * Uses Web Crypto API compatible with Edge Runtime
+ */
+async function verifySignedCookie(signed: string): Promise<{ userId: string } | null> {
+  if (!signed) return null;
+
+  try {
+    // Find the last '.' that separates data from signature
+    const lastDot = signed.lastIndexOf(".");
+    if (lastDot <= 0) return null;
+
+    // Separate data (before .) and signature (after .)
+    const raw = signed.slice(0, lastDot);
+    const sig = signed.slice(lastDot + 1);
+
+    // Create HMAC key using Web Crypto API
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(getSecret()),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"]
+    );
+
+    // Generate HMAC-SHA256 signature of data
+    const signature = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(raw)
+    );
+    const expectedSig = Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Compare signatures using constant-time comparison
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      new Uint8Array(signature),
+      new TextEncoder().encode(raw)
+    );
+
+    if (!isValid) return null;
+
+    // If signature valid, decode JSON
+    const parsed = JSON.parse(raw) as { userId: string };
+    // Validate data structure
+    if (!parsed?.userId || typeof parsed.userId !== "string") {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    // Any verification error returns null
+    return null;
+  }
+}
+
+function getSecret(): string {
+  const s = process.env.NEXTAUTH_SECRET || "";
+  if (!s) return "dev-secret-do-not-use-in-prod";
+  return s;
+}
+```
+
+### Middleware Implementation
+
+```typescript
+// middleware.ts
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Allow all public paths
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Require auth for protected paths
+  if (isProtectedPath(pathname)) {
+    const hasValidSession = await hasValidSessionCookie(req);
+    if (!hasValidSession) {
+      console.warn("[Middleware] blocked unauthenticated access", {
+        pathname,
+        cookies: req.cookies.getAll().map((c) => ({
+          name: c.name,
+          value: c.value?.substring(0, 20) + "...",
+        })),
+      });
+      const url = new URL("/login", req.url);
+      return NextResponse.redirect(url);
+    }
+    console.log("[Middleware] allowed", { pathname });
+    return NextResponse.next();
+  }
+
+  // Default allow
+  return NextResponse.next();
+}
+
+async function hasValidSessionCookie(req: NextRequest): Promise<boolean> {
+  const c = req.cookies.get("admin_session");
+  return !!(await verifySignedCookie(c?.value || ""));
+}
+
+// Path configuration
 const PUBLIC_PATHS: Array<(p: string) => boolean> = [
-  (p) => p === '/',
-  (p) => p === '/login',
-  (p) => p === '/register',
-  (p) => p.startsWith('/api/auth/'),
-  (p) => p.startsWith('/api/sdk/'),
-  (p) => p.startsWith('/static/'),
+  (p) => p === "/",
+  (p) => p === "/login",
+  (p) => p === "/register",
 ];
 
-// Protected paths (auth required)
 const PROTECTED_PATHS: Array<(p: string) => boolean> = [
-  (p) => p.startsWith('/admin'),
-  (p) => p.startsWith('/api/sites'),
-  (p) => p.startsWith('/api/insights'),
+  (p) => p.startsWith("/admin"),
+  (p) => p.startsWith("/api/sites"),
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -223,447 +155,491 @@ function isProtectedPath(pathname: string): boolean {
 }
 ```
 
-### Session Verification in Middleware
-```typescript
-async function hasValidSessionCookie(req: NextRequest): Promise<boolean> {
-  const cookieValue = req.cookies.get('admin_session')?.value;
-  if (!cookieValue) return false;
+## Authentication Hooks
 
-  try {
-    const session = await verifySignedCookie(cookieValue);
-    return session !== null;
-  } catch {
-    return false;
-  }
+### User Hook
+
+```typescript
+// lib/hooks/useAuth.ts
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from './queryKeys';
+import { apiClient } from '../api';
+import { User } from '../types';
+
+export interface LoginData {
+  email: string;
+  password: string;
 }
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+}
 
-  // Allow public paths
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
+// Query to get current user
+export function useUser() {
+  return useQuery<User>({
+    queryKey: queryKeys.auth.me(),
+    queryFn: async () => {
+      return apiClient.get<User>("/api/auth/me");
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: false, // Don't retry on 401
+  });
+}
+
+// Mutation for login
+export function useLogin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: LoginData) => {
+      return apiClient.post<{ user: User; message: string }>("/api/auth/login", data);
+    },
+    onSuccess: () => {
+      // Invalidate user query to refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    },
+  });
+}
+
+// Mutation for logout
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return apiClient.post("/api/auth/logout");
+    },
+    onSuccess: () => {
+      // Clear all queries
+      queryClient.clear();
+      // Redirect to login
+      window.location.href = '/login';
+    },
+  });
+}
+
+// Mutation for register
+export function useRegister() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: RegisterData) => {
+      return apiClient.post<{ user: User; message: string }>("/api/auth/register", data);
+    },
+    onSuccess: () => {
+      // Invalidate user query to refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    },
+  });
+}
+```
+
+## Component Patterns
+
+### Login Form
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { useLogin } from '@/lib/hooks';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+
+export function LoginForm() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
+  const loginMutation = useLogin();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await loginMutation.mutateAsync(formData);
+      // Redirect handled by mutation success
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <Input
+            name="password"
+            type="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <Button
+            type="submit"
+            disabled={loginMutation.isPending}
+            className="w-full"
+          >
+            {loginMutation.isPending ? 'Logging in...' : 'Login'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Protected Route Component
+
+```typescript
+'use client';
+
+import { useUser } from '@/lib/hooks';
+import { Skeleton } from '@ui/skeleton';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
+  const { data: user, isLoading, error } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (error && !isLoading) {
+      router.push('/login');
+    }
+  }, [error, isLoading, router]);
+
+  if (isLoading) {
+    return fallback || <Skeleton className="h-32 w-full" />;
   }
 
-  // Check auth for protected paths
-  if (isProtectedPath(pathname)) {
-    const hasSession = await hasValidSessionCookie(req);
+  if (error || !user) {
+    return null; // Will redirect to login
+  }
 
-    if (!hasSession) {
-      console.warn('[Middleware] Blocked unauthenticated access', { pathname });
-      const url = new URL('/login', req.url);
-      return NextResponse.redirect(url);
+  return <>{children}</>;
+}
+```
+
+### User Profile Component
+
+```typescript
+'use client';
+
+import { useUser, useLogout } from '@/lib/hooks';
+import { Button } from '@ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
+import { Skeleton } from '@ui/skeleton';
+
+export function UserProfile() {
+  const { data: user, isLoading } = useUser();
+  const logoutMutation = useLogout();
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  if (isLoading) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Name</p>
+          <p className="font-medium">{user.name}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Email</p>
+          <p className="font-medium">{user.email}</p>
+        </div>
+        <Button
+          onClick={handleLogout}
+          variant="destructive"
+          disabled={logoutMutation.isPending}
+        >
+          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## API Client Configuration
+
+### Credentials Inclusion
+
+```typescript
+// lib/api.ts
+class ApiClient {
+  async get<T>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      method: 'GET',
+      credentials: 'include', // Include cookies for session
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    return NextResponse.next();
+    return response.json();
   }
 
-  // Default: allow
-  return NextResponse.next();
-}
+  async post<T>(path: string, data?: any, options?: RequestInit): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      method: 'POST',
+      credentials: 'include', // Include cookies for session
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
 
-// Exclude Next.js internals
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `API request failed: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  }
+}
+```
+
+## Security Best Practices
+
+### Frontend Security
+
+- **Never store sensitive data in localStorage/sessionStorage**
+- **Always include credentials in API calls**
+- **Validate session cookies in middleware**
+- **Use HTTPS in production**
+- **Implement proper error handling**
+- **Don't expose internal errors to users**
+
+### Authentication Security
+
+- **HMAC-SHA256 signed cookies**
+- **Constant-time comparison for signature verification**
+- **Session expiration handling**
+- **Proper logout with cookie clearing**
+- **CSRF protection via same-origin policy**
+
+### Route Protection
+
+```typescript
+// Path configuration for middleware
+const PUBLIC_PATHS = [
+  (p: string) => p === "/",
+  (p: string) => p === "/login",
+  (p: string) => p === "/register",
+];
+
+const PROTECTED_PATHS = [
+  (p: string) => p.startsWith("/admin"),
+  (p: string) => p.startsWith("/api/sites"),
+];
+
+// Exclude Next.js internals from middleware
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
 ```
 
-## API Route Authentication
+## Error Handling
 
-### Protected API Routes
-Always check session in protected routes:
+### Authentication Errors
 
 ```typescript
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
-
-export async function GET(req: Request) {
-  // Verify authentication
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.json(
-      { error: 'unauthorized' },
-      { status: 401 }
+// Handle authentication errors in components
+export function AuthErrorHandler({ error }: { error: Error }) {
+  if (error.message.includes('401')) {
+    return (
+      <div className="text-red-600">
+        Session expired. Please log in again.
+      </div>
     );
   }
 
-  // Use session.userId for queries
-  const data = await prisma.site.findMany({
-    where: { userId: session.userId },
-  });
-
-  return NextResponse.json({ data });
-}
-```
-
-### Resource Authorization
-Verify user owns the resource:
-
-```typescript
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-
-  // Fetch resource
-  const resource = await prisma.site.findUnique({
-    where: { id: params.id },
-  });
-
-  // Check existence
-  if (!resource) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  // Check ownership
-  if (resource.userId !== session.userId) {
-    return NextResponse.json(
-      { error: 'forbidden', message: 'You do not own this resource' },
-      { status: 403 }
+  if (error.message.includes('403')) {
+    return (
+      <div className="text-red-600">
+        You don't have permission to access this resource.
+      </div>
     );
   }
 
-  // Proceed with deletion
-  await prisma.site.delete({ where: { id: params.id } });
-
-  return NextResponse.json({ success: true });
-}
-```
-
-## Input Validation & Sanitization
-
-### Zod Validation
-Always validate and sanitize inputs:
-
-```typescript
-import { z } from 'zod';
-
-// Login schema
-const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(8).max(100),
-});
-
-// Registration schema
-const registerSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(8).max(100),
-  name: z.string().trim().min(2).max(100).optional(),
-});
-
-// Usage
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
-  const parsed = loginSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: 'invalid_body',
-        details: parsed.error.errors
-      },
-      { status: 400 }
-    );
-  }
-
-  const { email, password } = parsed.data;
-  // Proceed with validated data
-}
-```
-
-### URL Validation
-```typescript
-// FQDN validation
-export function isValidFqdn(domain: string): boolean {
-  const regex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
-  return regex.test(domain);
-}
-
-// URL validation with Zod
-const urlSchema = z.string().url().max(500);
-```
-
-## Security Headers
-
-### Set Security Headers
-Configure security headers in API responses:
-
-```typescript
-export function secureResponse(data: any) {
-  const response = NextResponse.json(data);
-
-  // Prevent MIME sniffing
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-
-  // XSS Protection
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-
-  // Frame options (prevent clickjacking)
-  response.headers.set('X-Frame-Options', 'DENY');
-
-  // Referrer policy
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  return response;
-}
-```
-
-### CORS Configuration
-```typescript
-// Allow specific origins
-const ALLOWED_ORIGINS = [
-  process.env.SITE_URL,
-  'https://example.com',
-];
-
-function corsHeaders(origin: string | null) {
-  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
-    return {};
-  }
-
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400',
-  };
-}
-
-// OPTIONS handler
-export async function OPTIONS(req: Request) {
-  const origin = req.headers.get('origin');
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders(origin),
-  });
-}
-```
-
-## Rate Limiting
-
-### Simple In-Memory Rate Limiter
-```typescript
-// Note: Use Redis for production
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-export function rateLimit(
-  identifier: string,
-  limit: number = 100,
-  windowMs: number = 60000
-): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(identifier);
-
-  if (!record || now > record.resetAt) {
-    rateLimitMap.set(identifier, {
-      count: 1,
-      resetAt: now + windowMs,
-    });
-    return true;
-  }
-
-  if (record.count >= limit) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
-
-// Usage
-export async function POST(req: Request) {
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
-
-  if (!rateLimit(ip, 10, 60000)) {
-    return NextResponse.json(
-      { error: 'rate_limit_exceeded' },
-      { status: 429 }
-    );
-  }
-
-  // Process request
-}
-```
-
-## CSRF Protection
-
-### CSRF Token for Forms
-```typescript
-// Generate CSRF token
-export function generateCsrfToken(): string {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-// Store in session or signed cookie
-export function setCsrfToken(response: NextResponse, token: string) {
-  const signed = sign(token);
-  response.cookies.set('csrf_token', signed, {
-    httpOnly: true,
-    sameSite: 'strict',
-    path: '/',
-  });
-}
-
-// Verify CSRF token
-export function verifyCsrfToken(
-  cookieToken: string | undefined,
-  bodyToken: string | undefined
-): boolean {
-  if (!cookieToken || !bodyToken) return false;
-
-  const verified = verify(cookieToken);
-  if (!verified) return false;
-
-  return crypto.timingSafeEqual(
-    Buffer.from(verified),
-    Buffer.from(bodyToken)
+  return (
+    <div className="text-red-600">
+      Authentication error: {error.message}
+    </div>
   );
 }
 ```
 
-## Constant-Time Comparison
-
-### Prevent Timing Attacks
-Always use constant-time comparison for sensitive data:
+### API Error Handling
 
 ```typescript
-import crypto from 'crypto';
+// Centralized error handling in API client
+class ApiClient {
+  private async handleResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
 
-// Good: Constant-time comparison
-function compareTokens(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
+      // Handle authentication errors
+      if (response.status === 401) {
+        // Redirect to login
+        window.location.href = '/login';
+        throw new Error('Unauthorized');
+      }
 
-  return crypto.timingSafeEqual(
-    Buffer.from(a),
-    Buffer.from(b)
-  );
-}
+      throw new Error(
+        errorData.message || `API request failed: ${response.statusText}`,
+      );
+    }
 
-// Bad: Timing-vulnerable comparison
-function compareTokensBad(a: string, b: string): boolean {
-  return a === b; // Can be exploited with timing attacks
+    return response.json();
+  }
 }
 ```
 
 ## Environment Variables
 
-### Secure Configuration
+### Required Environment Variables
+
+```bash
+# Frontend (.env.local)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXTAUTH_SECRET=your-secret-key-here
+
+# Backend (.env)
+NEXTAUTH_SECRET=your-secret-key-here
+DATABASE_URL=postgresql://...
+FRONTEND_URL=http://localhost:3000
+```
+
+### Environment Configuration
+
 ```typescript
-// Required environment variables
-const requiredEnvVars = [
-  'DATABASE_URL',
-  'NEXTAUTH_SECRET',
-] as const;
+// lib/config.ts
+export const config = {
+  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+  authSecret: process.env.NEXTAUTH_SECRET || 'dev-secret-do-not-use-in-prod',
+  isProduction: process.env.NODE_ENV === 'production',
+};
+```
 
-// Validate at startup
-export function validateEnv() {
-  const missing = requiredEnvVars.filter(
-    (key) => !process.env[key]
-  );
+## Testing Authentication
 
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}`
-    );
-  }
-}
+### Mock Authentication
 
-// Get with type safety
-export function getEnv(key: string, fallback?: string): string {
-  const value = process.env[key];
+```typescript
+// For testing
+export function mockAuth() {
+  // Mock user data
+  const mockUser: User = {
+    id: '1',
+    email: 'test@example.com',
+    name: 'Test User',
+    createdAt: new Date().toISOString(),
+  };
 
-  if (!value) {
-    if (fallback !== undefined) return fallback;
-    throw new Error(`Environment variable ${key} is not set`);
-  }
-
-  return value;
+  // Mock API responses
+  jest.mock('@/lib/api', () => ({
+    apiClient: {
+      get: jest.fn().mockResolvedValue(mockUser),
+      post: jest.fn().mockResolvedValue({ user: mockUser, message: 'Success' }),
+    },
+  }));
 }
 ```
 
-## Logging for Security
+### Test Authentication Flow
 
-### Security Event Logging
 ```typescript
-// Log security events
-export function logSecurityEvent(
-  event: string,
-  context: Record<string, any>
-) {
-  console.warn('[Security]', event, {
-    timestamp: new Date().toISOString(),
-    ...context,
+// Authentication flow tests
+describe('Authentication', () => {
+  it('should redirect to login when not authenticated', async () => {
+    // Mock unauthenticated state
+    jest.mocked(apiClient.get).mockRejectedValue(new Error('401'));
+
+    render(<ProtectedRoute><div>Protected Content</div></ProtectedRoute>);
+
+    // Should redirect to login
+    expect(mockRouter.push).toHaveBeenCalledWith('/login');
   });
-}
 
-// Usage
-logSecurityEvent('Failed login attempt', {
-  email,
-  ip: req.headers.get('x-forwarded-for'),
+  it('should display user profile when authenticated', async () => {
+    const mockUser = { id: '1', name: 'Test User', email: 'test@example.com' };
+    jest.mocked(apiClient.get).mockResolvedValue(mockUser);
+
+    render(<UserProfile />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test User')).toBeInTheDocument();
+    });
+  });
 });
-
-logSecurityEvent('Unauthorized access attempt', {
-  userId: session?.userId,
-  resource: params.id,
-  action: 'DELETE',
-});
 ```
 
-## Common Security Pitfalls to Avoid
+## Auto-Attach Rules
 
-### 1. Never Trust Client Input
-Always validate and sanitize all client input, including:
-- Request body
-- Query parameters
-- URL parameters
-- Headers
-- Cookies
+This rule applies to:
+- `src/middleware.ts` - Authentication middleware
+- `src/lib/hooks/useAuth.ts` - Authentication hooks
+- `src/app/(auth)/**/*.tsx` - Authentication pages
+- `src/app/(admin)/**/*.tsx` - Protected admin pages
 
-### 2. Never Expose Sensitive Data
-- Don't return password hashes in API responses
-- Don't log sensitive data (passwords, tokens, secrets)
-- Use `select` to exclude sensitive fields
-- Sanitize error messages
+## Related Rules
 
-### 3. Always Use HTTPS in Production
-```typescript
-if (process.env.NODE_ENV === 'production' && !req.headers.get('x-forwarded-proto')?.includes('https')) {
-  const httpsUrl = new URL(req.url);
-  httpsUrl.protocol = 'https:';
-  return NextResponse.redirect(httpsUrl);
-}
-```
-
-### 4. Implement Proper Error Handling
-```typescript
-// Good: Generic error message
-return NextResponse.json(
-  { error: 'authentication_failed' },
-  { status: 401 }
-);
-
-// Bad: Reveals internal details
-return NextResponse.json(
-  { error: `User ${email} not found in database` },
-  { status: 401 }
-);
-```
-
-### 5. Use Parameterized Queries
-Prisma handles this automatically, but if using raw SQL:
-
-```typescript
-// Good: Parameterized
-await prisma.$queryRaw`SELECT * FROM users WHERE email = ${email}`;
-
-// Bad: String interpolation
-await prisma.$queryRawUnsafe(`SELECT * FROM users WHERE email = '${email}'`);
-```
+- `api-client.mdc` - API client patterns
+- `react-query.mdc` - React Query patterns
+- `frontend-types.mdc` - TypeScript type organization
