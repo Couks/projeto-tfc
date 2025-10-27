@@ -68,6 +68,22 @@ async function bootstrap() {
     app.use(cookieParser());
 
     // ============================================
+    // CONFIGURAÇÃO DE CORS
+    // ============================================
+    // Permite requisições cross-origin para produção
+    app.enableCors({
+      origin: [
+        'https://insighthouse.matheuscastroks.com.br',
+        'https://insighthouse.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3002',
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Site-Key'],
+    });
+
+    // ============================================
     // VALIDAÇÃO GLOBAL DE DTOs
     // ============================================
     // ValidationPipe aplica validação automática em todos os DTOs
