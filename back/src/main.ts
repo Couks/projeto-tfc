@@ -85,6 +85,7 @@ async function bootstrap() {
         frontendUrl || 'http://localhost:3000',
         'http://localhost:3000',
         'https://insighthouse.vercel.app',
+        'https://insighthouse.matheuscastroks.com.br',
       ], // Origens permitidas
       credentials: true, // Permite cookies
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
