@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { SdkService } from './sdk.service';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Controller('sdk')
 export class SdkController {
@@ -46,6 +48,85 @@ export class SdkController {
    */
   @Options('loader')
   handleOptions(@Res() res: Response) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(HttpStatus.OK).send();
+  }
+
+  /**
+   * Test endpoint to verify controller is working
+   * @param res Express response
+   */
+  @Get('test')
+  testEndpoint(@Res() res: Response) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.status(HttpStatus.OK).json({ message: 'SDK controller is working' });
+  }
+
+  /**
+   * Serve the capture-filters.js file directly
+   * @param res Express response
+   */
+  @Get('capture-filters.js')
+  serveCaptureFilters(@Res() res: Response) {
+    try {
+      // Try multiple possible paths
+      const possiblePaths = [
+        join(__dirname, '..', '..', 'public', 'static', 'capture-filters.js'),
+        join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'public',
+          'static',
+          'capture-filters.js',
+        ),
+        join(process.cwd(), 'public', 'static', 'capture-filters.js'),
+        join(process.cwd(), 'dist', 'public', 'static', 'capture-filters.js'),
+      ];
+
+      let fileContent = '';
+      let found = false;
+
+      for (const filePath of possiblePaths) {
+        try {
+          fileContent = readFileSync(filePath, 'utf8');
+          found = true;
+          break;
+        } catch {
+          // Try next path
+        }
+      }
+
+      if (!found) {
+        res.status(HttpStatus.NOT_FOUND).json({
+          error: 'File not found',
+          triedPaths: possiblePaths,
+        });
+        return;
+      }
+
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.status(HttpStatus.OK).send(fileContent);
+    } catch {
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Handle OPTIONS requests for capture-filters.js
+   * @param res Express response
+   */
+  @Options('capture-filters.js')
+  handleCaptureFiltersOptions(@Res() res: Response) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

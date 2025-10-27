@@ -105,20 +105,20 @@ async function bootstrap() {
     );
 
     // ============================================
+    // ARQUIVOS ESTÁTICOS (ANTES DO PREFIXO GLOBAL)
+    // ============================================
+    // Serve arquivos estáticos da pasta public/
+    // Permite servir o SDK JavaScript diretamente do backend
+    app.useStaticAssets(join(__dirname, 'public'), {
+      prefix: '/static/', // URLs: /static/capture-filters.js
+    });
+
+    // ============================================
     // PREFIXO GLOBAL DE ROTAS
     // ============================================
     // Todas as rotas terão o prefixo /api
     // Exemplo: AuthController /auth vira /api/auth
     app.setGlobalPrefix('api');
-
-    // ============================================
-    // ARQUIVOS ESTÁTICOS
-    // ============================================
-    // Serve arquivos estáticos da pasta public/
-    // Permite servir o SDK JavaScript diretamente do backend
-    app.useStaticAssets(join(__dirname, '..', 'public'), {
-      prefix: '/static/', // URLs: /static/capture-filters.js
-    });
 
     // ============================================
     // INTERCEPTOR GLOBAL DE LOGGING
