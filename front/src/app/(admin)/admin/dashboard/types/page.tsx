@@ -15,13 +15,10 @@ export default function TypesPage() {
 
   // Calculate metrics from real data
   const totalSearches =
-    data?.tipos?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-      0
-    ) || 0;
+    data?.reduce((sum: number, item) => sum + item.value, 0) || 0;
 
   // Get top 3 types
-  const topTypes = data?.tipos?.slice(0, 3) || [];
+  const topTypes = data?.slice(0, 3) || [];
 
   if (isLoading) {
     return (
@@ -77,9 +74,9 @@ export default function TypesPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {topTypes.map((type: any[], index: number) => {
-            const typeName = type[0] || "N/A";
-            const typeCount = parseInt(type[1]) || 0;
+          {topTypes.map((type, index: number) => {
+            const typeName = type.name || "N/A";
+            const typeCount = type.value || 0;
             const typePercentage =
               totalSearches > 0
                 ? ((typeCount / totalSearches) * 100).toFixed(1)

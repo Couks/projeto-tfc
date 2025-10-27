@@ -1,19 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
 import { apiClient } from '../api';
-
-export interface Site {
-  id: string;
-  name: string;
-  siteKey: string;
-  status: string;
-  createdAt: string;
-  domains: Array<{
-    id: string;
-    host: string;
-    isPrimary: boolean;
-  }>;
-}
+import { Site } from "../types";
 
 // Query para listar sites
 export function useSites() {

@@ -17,7 +17,12 @@ import {
   Settings,
   User,
 } from "lucide-react";
-import { useSites, useOverview, useConversions, useJourneys } from '@/lib/hooks';
+import {
+  useSites,
+  useOverview,
+  useConversions,
+  useJourneys,
+} from "@/lib/hooks";
 
 export function AdminDashboardClient() {
   const { data: sites } = useSites();
@@ -29,36 +34,23 @@ export function AdminDashboardClient() {
 
   // Calculate metrics from real data with proper type checking
   const totalConversions =
-    (conversionsData as any)?.conversion_types?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
+    conversionsData?.conversions?.reduce(
+      (sum: number, item) => sum + item.count,
       0
     ) || 0;
 
-  const totalSessions =
-    (journeysData as any)?.session_metrics?.total_sessions || 0;
-
-  const conversionRate =
-    totalSessions > 0
-      ? ((totalConversions / totalSessions) * 100).toFixed(2)
-      : "0";
-
-  const bounceRate =
-    (journeysData as any)?.bounce_metrics?.total_sessions > 0
-      ? (
-          ((journeysData as any).bounce_metrics.bounced_sessions /
-            (journeysData as any).bounce_metrics.total_sessions) *
-          100
-        ).toFixed(1)
-      : "0";
+  const totalSessions = 0; // Not available in current backend response
+  const conversionRate = "0"; // Calculate when session data is available
+  const bounceRate = "0"; // Calculate when bounce data is available
 
   const metrics = {
-    totalVisitors: (journeysData as any)?.session_metrics?.total_users || 0,
+    totalVisitors: 0, // Not available in current backend response
     totalSites: sites?.length || 0,
     conversionRate: conversionRate,
     bounceRate: bounceRate,
     totalConversions: totalConversions,
-    topCity: (overviewData as any)?.cidades?.[0]?.[0] || "N/A",
-    topPropertyType: (overviewData as any)?.tipos?.[0]?.[0] || "N/A",
+    topCity: overviewData?.cidades?.[0]?.[0] || "N/A",
+    topPropertyType: overviewData?.tipos?.[0]?.[0] || "N/A",
     topPurpose: overviewData?.finalidade?.[0]?.[0] || "N/A",
     avgPriceRange: overviewData?.preco_venda_ranges?.[0]?.[0] || "N/A",
   };

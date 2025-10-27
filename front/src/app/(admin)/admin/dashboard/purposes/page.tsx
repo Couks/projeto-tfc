@@ -17,13 +17,10 @@ export default function PurposesPage() {
 
   // Calculate metrics from real data
   const totalSearches =
-    data?.finalidade?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-      0
-    ) || 0;
+    data?.reduce((sum: number, item) => sum + item.value, 0) || 0;
 
   // Get top 3 purposes
-  const topPurposes = data?.finalidade?.slice(0, 3) || [];
+  const topPurposes = data?.slice(0, 3) || [];
 
   if (isLoading) {
     return (
@@ -79,9 +76,9 @@ export default function PurposesPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {topPurposes.map((purpose: any[], index: number) => {
-            const purposeName = purpose[0] || "N/A";
-            const purposeCount = parseInt(purpose[1]) || 0;
+          {topPurposes.map((purpose, index: number) => {
+            const purposeName = purpose.name || "N/A";
+            const purposeCount = purpose.value || 0;
             const purposePercentage =
               totalSearches > 0
                 ? ((purposeCount / totalSearches) * 100).toFixed(1)

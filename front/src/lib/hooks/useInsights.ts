@@ -1,28 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
 import { apiClient } from '../api';
-
-export interface OverviewData {
-  finalidade: Array<[string, number]>;
-  tipos: Array<[string, number]>;
-  cidades: Array<[string, number]>;
-  bairros: Array<[string, number]>;
-  preco_venda_ranges: Array<[string, number]>;
-  preco_aluguel_ranges: Array<[string, number]>;
-  area_ranges: Array<[string, number]>;
-  dormitorios: Array<[string, number]>;
-  suites: Array<[string, number]>;
-  banheiros: Array<[string, number]>;
-  vagas: Array<[string, number]>;
-  flags: Array<[string, number]>;
-}
+import { OverviewData, ConversionsData, JourneysData } from "../types";
 
 export function useOverview(siteKey: string) {
   return useQuery<OverviewData>({
     queryKey: queryKeys.insights.overview(siteKey),
     queryFn: async () => {
       return apiClient.get<OverviewData>(
-        `/api/insights/overview?site=${encodeURIComponent(siteKey)}`,
+        `/api/insights/overview?site=${encodeURIComponent(siteKey)}`
       );
     },
     enabled: !!siteKey,
@@ -32,11 +18,11 @@ export function useOverview(siteKey: string) {
 }
 
 export function useConversions(siteKey: string) {
-  return useQuery({
+  return useQuery<ConversionsData>({
     queryKey: queryKeys.insights.conversions(siteKey),
     queryFn: async () => {
-      return apiClient.get(
-        `/api/insights/conversions?site=${encodeURIComponent(siteKey)}`,
+      return apiClient.get<ConversionsData>(
+        `/api/insights/conversions?site=${encodeURIComponent(siteKey)}`
       );
     },
     enabled: !!siteKey,
@@ -45,11 +31,11 @@ export function useConversions(siteKey: string) {
 }
 
 export function useJourneys(siteKey: string) {
-  return useQuery({
+  return useQuery<JourneysData>({
     queryKey: queryKeys.insights.journeys(siteKey),
     queryFn: async () => {
-      return apiClient.get(
-        `/api/insights/journeys?site=${encodeURIComponent(siteKey)}`,
+      return apiClient.get<JourneysData>(
+        `/api/insights/journeys?site=${encodeURIComponent(siteKey)}`
       );
     },
     enabled: !!siteKey,

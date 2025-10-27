@@ -15,13 +15,10 @@ export default function PricesPage() {
 
   // Calculate metrics from real data (sale prices)
   const totalSearches =
-    data?.preco_venda_ranges?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-      0
-    ) || 0;
+    data?.reduce((sum: number, item) => sum + item.searches, 0) || 0;
 
   // Get top 3 price ranges
-  const topPrices = data?.preco_venda_ranges?.slice(0, 3) || [];
+  const topPrices = data?.slice(0, 3) || [];
 
   if (isLoading) {
     return (
@@ -77,9 +74,9 @@ export default function PricesPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {topPrices.map((price: any[], index: number) => {
-            const priceRange = price[0] || "N/A";
-            const priceCount = parseInt(price[1]) || 0;
+          {topPrices.map((price, index: number) => {
+            const priceRange = price.range || "N/A";
+            const priceCount = price.searches || 0;
             const pricePercentage =
               totalSearches > 0
                 ? ((priceCount / totalSearches) * 100).toFixed(1)

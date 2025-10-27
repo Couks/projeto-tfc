@@ -14,17 +14,8 @@ export default function FunnelPage() {
   const isLoading = sitesLoading || dataLoading;
 
   // Calculate funnel metrics from real data
-  const totalSearches =
-    data?.cidades?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-      0
-    ) || 0;
-
-  const filterActivity =
-    data?.tipos?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-      0
-    ) || 0;
+  const totalSearches = data?.[0]?.value || 0;
+  const filterActivity = data?.[1]?.value || 0;
 
   const conversions = Math.floor(filterActivity * 0.15); // Estimate conversions
 
