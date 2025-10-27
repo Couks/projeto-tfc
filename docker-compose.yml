@@ -1,6 +1,8 @@
 services:
   db:
     image: postgres:16
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ih
       POSTGRES_PASSWORD: ih
@@ -24,6 +26,8 @@ services:
     build:
       context: ./back
       dockerfile: Dockerfile
+    ports:
+    - "3001:3001"
     environment:
       # Database Configuration
       - DATABASE_URL=postgresql://ih:ih@db:5432/insighthouse
