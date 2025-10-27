@@ -8,7 +8,6 @@
  * - port: Porta do servidor HTTP
  * - nodeEnv: Ambiente de execução (development, production, test)
  * - database: URLs de conexão com PostgreSQL
- * - frontend: URL do frontend Next.js (usado para CORS)
  * - auth: Secret para assinatura de session cookies
  * - api: URL base da API (usado para gerar links)
  *
@@ -32,11 +31,6 @@ export default () => ({
   database: {
     url: process.env.DATABASE_URL, // URL de conexão via connection pooler
     directUrl: process.env.DIRECT_URL, // URL de conexão direta (para migrations)
-  },
-
-  // Configurações do frontend
-  frontend: {
-    url: process.env.FRONTEND_URL || 'http://localhost:3000', // URL do Next.js (para CORS)
   },
 
   // Configurações de autenticação

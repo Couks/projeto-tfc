@@ -3,7 +3,7 @@
  *
  * Este arquivo é responsável por:
  * - Inicializar a aplicação NestJS
- * - Configurar middlewares de segurança (Helmet, CORS)
+ * - Configurar middlewares de segurança (Helmet)
  * - Configurar compressão e parsing de cookies
  * - Configurar validação global de DTOs
  * - Configurar documentação Swagger/OpenAPI
@@ -46,19 +46,12 @@ async function bootstrap() {
     // Obtém o serviço de configuração para acessar variáveis de ambiente
     const configService = app.get(ConfigService);
     const port = configService.get<number>('PORT') || 3001;
-    const frontendUrl = configService.get<string>('frontend.url');
 
     // ============================================
     // MIDDLEWARE DE SEGURANÇA - HELMET
     // ============================================
     // Helmet adiciona headers HTTP de segurança automaticamente
-    // crossOriginResourcePolicy permite recursos de outras origens (necessário para CORS)
-
-    app.use(
-      helmet({
-        crossOriginResourcePolicy: { policy: 'cross-origin' },
-      }),
-    );
+    app.use(helmet());
 
     // ============================================
     // MIDDLEWARE DE COMPRESSÃO
@@ -73,24 +66,6 @@ async function bootstrap() {
     // Parseia cookies HTTP para torná-los acessíveis via request.cookies
     // Usado para ler o cookie de sessão 'admin_session'
     app.use(cookieParser());
-
-    // ============================================
-    // CONFIGURAÇÃO DE CORS
-    // ============================================
-    // Permite requisições cross-origin apenas de origens específicas
-    // credentials: true permite envio de cookies entre domínios
-    // allowedHeaders inclui X-Site-Key para multi-tenancy
-    app.enableCors({
-      origin: [
-        frontendUrl || 'http://localhost:3000',
-        'http://localhost:3000',
-        'https://insighthouse.vercel.app',
-        'https://insighthouse.matheuscastroks.com.br',
-      ], // Origens permitidas
-      credentials: true, // Permite cookies
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Site-Key'],
-    });
 
     // ============================================
     // VALIDAÇÃO GLOBAL DE DTOs
@@ -217,7 +192,6 @@ async function bootstrap() {
     // Logs informativos sobre URLs e configurações
     logger.log(`Application is running on: http://localhost:${port}`);
     logger.log(`API Documentation: http://localhost:${port}/api/docs`);
-    logger.log(`Frontend URL: ${frontendUrl}`);
     logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
     logger.log(`Swagger JSON: http://localhost:${port}/api/docs-json`);
   } catch (error) {
