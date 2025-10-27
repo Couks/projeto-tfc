@@ -38,8 +38,6 @@ COPY --from=build /app/public ./public
 COPY --from=deps /app/prisma ./prisma
 COPY --from=deps /app/package.json ./package.json
 
-EXPOSE 3001
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD curl -fsS http://localhost:3001/api/health || exit 1
 
