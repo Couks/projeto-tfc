@@ -1,13 +1,10 @@
 services:
   db:
     image: postgres:16
-    container_name: ih-postgres
     environment:
       POSTGRES_USER: ih
       POSTGRES_PASSWORD: ih
       POSTGRES_DB: insighthouse
-    ports:
-      - "5432:5432"
     # Use *named volumes* (melhor performance que bind mount no Windows/Mac)
     volumes:
       - ih_pg_data:/var/lib/postgresql/data
@@ -27,12 +24,9 @@ services:
     build:
       context: ./back
       dockerfile: Dockerfile
-    container_name: ih-backend
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://ih:ih@db:5432/insighthouse
-    ports:
-      - "3001:3001"
     depends_on:
       db:
         condition: service_healthy
@@ -45,12 +39,9 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: ih-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: matheuscastroks@gmail.com
       PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
     depends_on:
       - db
 
