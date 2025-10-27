@@ -18,11 +18,20 @@ export class SdkController {
   /**
    * Returns site configuration for SDK
    * @param site Site key
+   * @param res Express response
    * @returns Site configuration object
    */
   @Get('site-config')
-  async getSiteConfig(@Query('site') site: string) {
-    return this.sdkService.getSiteConfig(site);
+  async getSiteConfig(@Query('site') site: string, @Res() res: Response) {
+    const config = await this.sdkService.getSiteConfig(site);
+
+    // Set CORS headers for cross-origin requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
+
+    res.status(HttpStatus.OK).json(config);
   }
 
   /**
@@ -47,7 +56,19 @@ export class SdkController {
    * @param res Express response
    */
   @Options('loader')
-  handleOptions(@Res() res: Response) {
+  handleLoaderOptions(@Res() res: Response) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(HttpStatus.OK).send();
+  }
+
+  /**
+   * Handle OPTIONS requests for site-config CORS preflight
+   * @param res Express response
+   */
+  @Options('site-config')
+  handleSiteConfigOptions(@Res() res: Response) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
