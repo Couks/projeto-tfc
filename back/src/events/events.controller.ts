@@ -6,6 +6,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -53,11 +54,15 @@ export class EventsController {
   @Post('track/batch')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 req/min for batch
-  async trackBatch(
-    @SiteKey() siteKey: string,
-    @Req() req: Request,
-    @Body() trackBatchDto: TrackBatchDto,
-  ) {
+  async trackBatch(@Req() req: Request, @Body() trackBatchDto: TrackBatchDto) {
+    // Extrai siteKey do header ou query para validação manual
+    const siteKey =
+      (req.headers['x-site-key'] as string) || (req.query.site as string);
+
+    if (!siteKey) {
+      throw new BadRequestException('Missing site key');
+    }
+
     const metadata = {
       ip: req.ip || req.headers['x-forwarded-for']?.toString(),
       userAgent: req.headers['user-agent'],

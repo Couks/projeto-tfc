@@ -223,12 +223,8 @@
       sessionId = `session_${now}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem(STORAGE_KEY, sessionId);
 
-      // Rastreia nova sessão
-      capture('session_start', {
-        session_id: sessionId,
-        referrer: document.referrer,
-        landing_page: window.location.href,
-      });
+      // Marca que uma nova sessão foi criada (sem chamar capture para evitar loop)
+      localStorage.setItem('ih_new_session_created', 'true');
     }
 
     // Atualiza última atividade
@@ -270,7 +266,7 @@
 
     return {
       user_id: getUserId(),
-      session_id: getSessionId(),
+      session_id: localStorage.getItem('ih_session_id') || 'unknown',
       page_depth: journey.length,
       time_on_site: calculateTimeOnSite(),
       returning_visitor: journey.length > 1,
@@ -399,6 +395,16 @@
     log('Inicializando analytics avançado...');
     log('API URL:', API_URL);
     log('Site Key:', SITE_KEY);
+
+    // Verifica se uma nova sessão foi criada e envia evento uma única vez
+    if (localStorage.getItem('ih_new_session_created') === 'true') {
+      localStorage.removeItem('ih_new_session_created');
+      capture('session_start', {
+        session_id: getSessionId(),
+        referrer: document.referrer,
+        landing_page: window.location.href,
+      });
+    }
 
     // ===== FILTROS BÁSICOS =====
 
