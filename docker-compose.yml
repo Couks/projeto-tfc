@@ -26,15 +26,16 @@ services:
       dockerfile: Dockerfile
     environment:
       # Database Configuration
-      - DATABASE_URL=${DATABASE_URL}
-      - DIRECT_URL=${DIRECT_URL}
+      - DATABASE_URL=postgresql://ih:ih@db:5432/insighthouse
+      - DIRECT_URL=postgresql://ih:ih@db:5432/insighthouse
       # Application Environment
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
+      - PORT=3001
+      - NODE_ENV=production
+      - FRONTEND_URL=https://insighthouse.matheuscastroks.com.br
       # Authentication
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_SECRET=CDJUGsX+5nKNX3ikSf1qQ/35jwxeG/+kya6T6zKP+cs=
       # API Configuration
-      - API_BASE_URL=${API_BASE_URL}
+      - API_BASE_URL=https://api.matheuscastroks.com.br
     depends_on:
       db:
         condition: service_healthy
