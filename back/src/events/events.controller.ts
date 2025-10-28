@@ -21,7 +21,7 @@ import { EventsListResponse } from './interfaces/events.interface';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { SiteKey } from '../common/decorators/site-key.decorator';
 
-@ApiTags('events')
+@ApiTags('Events')
 @Controller('events')
 @UseGuards(TenantGuard)
 export class EventsController {

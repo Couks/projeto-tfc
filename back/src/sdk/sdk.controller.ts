@@ -6,7 +6,12 @@ import {
   HttpStatus,
   Options,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SdkService } from './sdk.service';
 import { readFileSync } from 'fs';
@@ -64,6 +69,7 @@ export class SdkController {
    * @param res Express response
    */
   @Options('loader')
+  @ApiExcludeEndpoint()
   handleLoaderOptions(@Res() res: Response) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -76,6 +82,7 @@ export class SdkController {
    * @param res Express response
    */
   @Options('site-config')
+  @ApiExcludeEndpoint()
   handleSiteConfigOptions(@Res() res: Response) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -148,6 +155,7 @@ export class SdkController {
    * @param res Express response
    */
   @Options('capture-filters.js')
+  @ApiExcludeEndpoint()
   handleCaptureFiltersOptions(@Res() res: Response) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
