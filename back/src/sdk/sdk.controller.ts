@@ -6,11 +6,13 @@ import {
   HttpStatus,
   Options,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { SdkService } from './sdk.service';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+@ApiTags('SDK')
 @Controller('sdk')
 export class SdkController {
   constructor(private readonly sdkService: SdkService) {}
@@ -22,6 +24,9 @@ export class SdkController {
    * @returns Site configuration object
    */
   @Get('site-config')
+  @ApiOperation({ summary: 'Get site configuration for SDK' })
+  @ApiResponse({ status: 200, description: 'Return site configuration.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
   async getSiteConfig(@Query('site') site: string, @Res() res: Response) {
     const config = await this.sdkService.getSiteConfig(site);
 
@@ -40,6 +45,9 @@ export class SdkController {
    * @param res Express response
    */
   @Get('loader')
+  @ApiOperation({ summary: 'Get SDK loader JavaScript' })
+  @ApiResponse({ status: 200, description: 'Return SDK loader script.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
   async getLoader(@Query('site') site: string, @Res() res: Response) {
     const script = await this.sdkService.getLoader(site);
 
@@ -80,6 +88,9 @@ export class SdkController {
    * @param res Express response
    */
   @Get('capture-filters.js')
+  @ApiOperation({ summary: 'Serve capture-filters.js file' })
+  @ApiResponse({ status: 200, description: 'Return capture-filters.js file.' })
+  @ApiResponse({ status: 404, description: 'File not found.' })
   serveCaptureFilters(@Res() res: Response) {
     try {
       // Try multiple possible paths

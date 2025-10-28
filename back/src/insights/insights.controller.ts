@@ -6,9 +6,11 @@ import {
   Delete,
   Param,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { InsightsService } from './insights.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 
+@ApiTags('Insights')
 @Controller('insights')
 @UseGuards(AuthGuard)
 export class InsightsController {
