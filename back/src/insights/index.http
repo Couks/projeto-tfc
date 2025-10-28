@@ -1,91 +1,110 @@
 @apiUrl = http://localhost:3001
 @siteKey = sk_5xjk338oj46hcvdqmsj2gfqh
-@sessionCookie = admin_session=your_session_cookie_here
 
 ### ============================================
-### INSIGHTS & ANALYTICS ENDPOINTS
+### INSIGHTS & ANALYTICS ENDPOINTS (Materialized Views)
 ### ============================================
 
-# Get Overview Analytics
-GET {{apiUrl}}/api/insights/overview?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Get Overview Analytics (last 30 days by default)
+GET {{apiUrl}}/api/insights/overview
+X-Site-Key: {{siteKey}}
+
+### Get Overview Analytics - Today
+GET {{apiUrl}}/api/insights/overview?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Overview Analytics - This Week
+GET {{apiUrl}}/api/insights/overview?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+### Get Overview Analytics - This Month
+GET {{apiUrl}}/api/insights/overview?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+### Get Overview Analytics - This Year
+GET {{apiUrl}}/api/insights/overview?dateFilter=year
+X-Site-Key: {{siteKey}}
+
+### Get Overview Analytics - Custom Date Range
+GET {{apiUrl}}/api/insights/overview?dateFilter=custom&startDate=2024-01-01T00:00:00Z&endDate=2024-01-31T23:59:59Z
+X-Site-Key: {{siteKey}}
 
 ###
 
-# Get Conversion Analytics
-GET {{apiUrl}}/api/insights/conversions?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Get Top Events (last 30 days by default)
+GET {{apiUrl}}/api/insights/top-events
+X-Site-Key: {{siteKey}}
+
+### Get Top Events - Today (limit 5)
+GET {{apiUrl}}/api/insights/top-events?dateFilter=day&limit=5
+X-Site-Key: {{siteKey}}
+
+### Get Top Events - This Week (limit 20)
+GET {{apiUrl}}/api/insights/top-events?dateFilter=week&limit=20
+X-Site-Key: {{siteKey}}
+
+### Get Top Events - Custom Date Range
+GET {{apiUrl}}/api/insights/top-events?dateFilter=custom&startDate=2024-01-01T00:00:00Z&endDate=2024-01-31T23:59:59Z&limit=15
+X-Site-Key: {{siteKey}}
 
 ###
 
-# Get User Journey Analytics
-GET {{apiUrl}}/api/insights/journeys?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Get Top Cities (last 30 days by default)
+GET {{apiUrl}}/api/insights/cities
+X-Site-Key: {{siteKey}}
+
+### Get Top Cities - Today (limit 5)
+GET {{apiUrl}}/api/insights/cities?dateFilter=day&limit=5
+X-Site-Key: {{siteKey}}
+
+### Get Top Cities - This Month (limit 20)
+GET {{apiUrl}}/api/insights/cities?dateFilter=month&limit=20
+X-Site-Key: {{siteKey}}
+
+### Get Top Cities - Custom Date Range
+GET {{apiUrl}}/api/insights/cities?dateFilter=custom&startDate=2024-01-01T00:00:00Z&endDate=2024-01-31T23:59:59Z&limit=10
+X-Site-Key: {{siteKey}}
 
 ###
 
-# Get Top Cities Analytics
-GET {{apiUrl}}/api/insights/cities?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Get Device Analytics (last 30 days by default)
+GET {{apiUrl}}/api/insights/devices
+X-Site-Key: {{siteKey}}
+
+### Get Device Analytics - Today (limit 5)
+GET {{apiUrl}}/api/insights/devices?dateFilter=day&limit=5
+X-Site-Key: {{siteKey}}
+
+### Get Device Analytics - This Week (limit 15)
+GET {{apiUrl}}/api/insights/devices?dateFilter=week&limit=15
+X-Site-Key: {{siteKey}}
+
+### Get Device Analytics - Custom Date Range
+GET {{apiUrl}}/api/insights/devices?dateFilter=custom&startDate=2024-01-01T00:00:00Z&endDate=2024-01-31T23:59:59Z&limit=20
+X-Site-Key: {{siteKey}}
 
 ###
 
-# Get Device Analytics
-GET {{apiUrl}}/api/insights/devices?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Admin: Refresh Materialized Views
+POST {{apiUrl}}/api/insights/admin/refresh
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "fromDate": "2024-01-01T00:00:00Z",
+  "toDate": "2024-01-31T23:59:59Z"
+}
 
 ###
 
-# Get Browser Analytics
-GET {{apiUrl}}/api/insights/browsers?site={{siteKey}}
-Cookie: {{sessionCookie}}
+# Admin: Refresh Materialized Views - Last 7 Days
+POST {{apiUrl}}/api/insights/admin/refresh
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
 
-###
-
-# Get Operating System Analytics
-GET {{apiUrl}}/api/insights/os?site={{siteKey}}
-Cookie: {{sessionCookie}}
-
-###
-
-# Get Referrer Analytics
-GET {{apiUrl}}/api/insights/referrers?site={{siteKey}}
-Cookie: {{sessionCookie}}
-
-###
-
-# Get Page Analytics
-GET {{apiUrl}}/api/insights/pages?site={{siteKey}}
-Cookie: {{sessionCookie}}
-
-###
-
-# Get Event Analytics
-GET {{apiUrl}}/api/insights/events?site={{siteKey}}
-Cookie: {{sessionCookie}}
-
-###
-
-# Get Real-time Analytics
-GET {{apiUrl}}/api/insights/realtime?site={{siteKey}}
-Cookie: {{sessionCookie}}
-
-###
-
-# Get Custom Date Range Analytics
-GET {{apiUrl}}/api/insights/overview?site={{siteKey}}&startDate=2024-01-01&endDate=2024-01-31
-Cookie: {{sessionCookie}}
-
-###
-
-# Export Analytics Data
-GET {{apiUrl}}/api/insights/export?site={{siteKey}}&format=csv&startDate=2024-01-01&endDate=2024-01-31
-Cookie: {{sessionCookie}}
-
-###
-
-# Delete Analytics Data (Cleanup)
-DELETE {{apiUrl}}/api/insights/cleanup?site={{siteKey}}&olderThan=2024-01-01
-Cookie: {{sessionCookie}}
+{
+  "fromDate": "2024-01-24T00:00:00Z",
+  "toDate": "2024-01-31T23:59:59Z"
+}
 
 ###
