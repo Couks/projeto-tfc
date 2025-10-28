@@ -17,42 +17,32 @@ import {
   Settings,
   User,
 } from "lucide-react";
-import {
-  useSites,
-  useOverview,
-  useConversions,
-  useJourneys,
-} from "@/lib/hooks";
+import { useSites } from "@/lib/hooks";
+import { useOverview } from "@/lib/hooks/useInsights";
 
 export function AdminDashboardClient() {
   const { data: sites } = useSites();
   const firstSite = sites?.[0];
 
   const { data: overviewData } = useOverview(firstSite?.siteKey || "");
-  const { data: conversionsData } = useConversions(firstSite?.siteKey || "");
-  const { data: journeysData } = useJourneys(firstSite?.siteKey || "");
 
   // Calculate metrics from real data with proper type checking
-  const totalConversions =
-    conversionsData?.conversions?.reduce(
-      (sum: number, item) => sum + item.count,
-      0
-    ) || 0;
+  const totalConversions = overviewData?.eventsCount || 0;
 
   const totalSessions = 0; // Not available in current backend response
   const conversionRate = "0"; // Calculate when session data is available
   const bounceRate = "0"; // Calculate when bounce data is available
 
   const metrics = {
-    totalVisitors: 0, // Not available in current backend response
+    totalVisitors: overviewData?.usersCount || 0,
     totalSites: sites?.length || 0,
     conversionRate: conversionRate,
     bounceRate: bounceRate,
     totalConversions: totalConversions,
-    topCity: overviewData?.cidades?.[0]?.[0] || "N/A",
-    topPropertyType: overviewData?.tipos?.[0]?.[0] || "N/A",
-    topPurpose: overviewData?.finalidade?.[0]?.[0] || "N/A",
-    avgPriceRange: overviewData?.preco_venda_ranges?.[0]?.[0] || "N/A",
+    topCity: "N/A",
+    topPropertyType: "N/A",
+    topPurpose: "N/A",
+    avgPriceRange: "N/A",
   };
 
   return (
@@ -96,8 +86,8 @@ export function AdminDashboardClient() {
               {metrics.totalSites === 0
                 ? "Nenhum site configurado"
                 : metrics.totalSites === 1
-                  ? "Site funcionando"
-                  : "Sites funcionando"}
+                ? "Site funcionando"
+                : "Sites funcionando"}
             </p>
           </CardContent>
         </Card>
@@ -139,8 +129,8 @@ export function AdminDashboardClient() {
                 ? parseFloat(metrics.bounceRate) < 25
                   ? "Excelente ✅"
                   : parseFloat(metrics.bounceRate) < 40
-                    ? "Normal"
-                    : "Precisa melhorar ⚠️"
+                  ? "Normal"
+                  : "Precisa melhorar ⚠️"
                 : "Aguardando dados"}
             </p>
           </CardContent>
@@ -153,11 +143,7 @@ export function AdminDashboardClient() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.topCity}</div>
-            <p className="text-xs text-muted-foreground">
-              {overviewData?.cidades?.[0]?.[1]
-                ? `${overviewData.cidades[0][1]} pesquisas`
-                : "Aguardando dados"}
-            </p>
+            <p className="text-xs text-muted-foreground">Aguardando dados</p>
           </CardContent>
         </Card>
       </div>
@@ -224,9 +210,9 @@ export function AdminDashboardClient() {
               variant="outline"
               className="w-full justify-start"
             >
-              <Link href="/admin/conversions">
+              <Link href="/admin/insights/top-events">
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Todas Conversões
+                Top Events
               </Link>
             </Button>
             <Button
@@ -235,9 +221,9 @@ export function AdminDashboardClient() {
               variant="outline"
               className="w-full justify-start"
             >
-              <Link href="/admin/journeys">
+              <Link href="/admin/insights/cities">
                 <Users className="h-4 w-4 mr-2" />
-                Jornadas de Usuários
+                Cities
               </Link>
             </Button>
             <div className="pt-2 border-t">
@@ -352,11 +338,7 @@ export function AdminDashboardClient() {
               <span className="text-2xl font-bold">
                 {metrics.topPropertyType}
               </span>
-              {overviewData?.tipos?.[0]?.[1] && (
-                <Badge variant="secondary">
-                  {overviewData.tipos[0][1]} pesquisas
-                </Badge>
-              )}
+              <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {metrics.topPropertyType !== "N/A"
@@ -373,11 +355,7 @@ export function AdminDashboardClient() {
           <CardContent>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold">{metrics.topPurpose}</span>
-              {overviewData?.finalidade?.[0]?.[1] && (
-                <Badge variant="secondary">
-                  {overviewData.finalidade[0][1]} pesquisas
-                </Badge>
-              )}
+              <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {metrics.topPurpose !== "N/A"
@@ -396,11 +374,7 @@ export function AdminDashboardClient() {
               <span className="text-2xl font-bold">
                 {metrics.avgPriceRange}
               </span>
-              {overviewData?.preco_venda_ranges?.[0]?.[1] && (
-                <Badge variant="secondary">
-                  {overviewData.preco_venda_ranges[0][1]} pesquisas
-                </Badge>
-              )}
+              <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {metrics.avgPriceRange !== "N/A"

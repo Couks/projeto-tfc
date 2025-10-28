@@ -9,7 +9,7 @@ import {
 } from "@ui/chart";
 import { PieChart, Pie, Cell } from "recharts";
 import { Skeleton } from "@ui/skeleton";
-import { useSites, useTypes } from "@/lib/hooks";
+import { useSites } from "@/lib/hooks";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -28,11 +28,9 @@ const chartConfig = {
 export function TypesChart() {
   const { data: sites } = useSites();
   const firstSite = sites?.[0];
-  const {
-    data: typesData,
-    isLoading,
-    error,
-  } = useTypes(firstSite?.siteKey || "");
+  const typesData: Array<{ name: string; value: number }> = [];
+  const isLoading = false;
+  const error: Error | null = null;
 
   // Add colors to the data
   const typesDataWithColors = typesData.map((item, index) => ({

@@ -1,14 +1,25 @@
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from './queryKeys';
-import { apiClient } from '../api';
-import { OverviewData, ConversionsData, JourneysData } from "../types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "./queryKeys";
+import { apiClient } from "../api";
+import type {
+  OverviewResponse,
+  TopEventsResponse,
+  TopCitiesResponse,
+  DevicesResponse,
+  InsightsQuery,
+} from "../types/insights";
 
-export function useOverview(siteKey: string) {
-  return useQuery<OverviewData>({
+export function useOverview(siteKey: string, query?: InsightsQuery) {
+  const qs = new URLSearchParams({ site: siteKey });
+  if (query?.dateFilter) qs.set("dateFilter", query.dateFilter);
+  if (query?.startDate) qs.set("startDate", query.startDate);
+  if (query?.endDate) qs.set("endDate", query.endDate);
+
+  return useQuery<OverviewResponse>({
     queryKey: queryKeys.insights.overview(siteKey),
     queryFn: async () => {
-      return apiClient.get<OverviewData>(
-        `/api/insights/overview?site=${encodeURIComponent(siteKey)}`
+      return apiClient.get<OverviewResponse>(
+        `/api/insights/overview?${qs.toString()}`
       );
     },
     enabled: !!siteKey,
@@ -17,12 +28,19 @@ export function useOverview(siteKey: string) {
   });
 }
 
-export function useConversions(siteKey: string) {
-  return useQuery<ConversionsData>({
+export function useTopEvents(siteKey: string, query?: InsightsQuery) {
+  const qs = new URLSearchParams({ site: siteKey });
+  if (query?.dateFilter) qs.set("dateFilter", query.dateFilter);
+  if (query?.startDate) qs.set("startDate", query.startDate);
+  if (query?.endDate) qs.set("endDate", query.endDate);
+  if (query?.limit !== undefined) qs.set("limit", String(query.limit));
+  if (query?.offset !== undefined) qs.set("offset", String(query.offset));
+
+  return useQuery<TopEventsResponse>({
     queryKey: queryKeys.insights.conversions(siteKey),
     queryFn: async () => {
-      return apiClient.get<ConversionsData>(
-        `/api/insights/conversions?site=${encodeURIComponent(siteKey)}`
+      return apiClient.get<TopEventsResponse>(
+        `/api/insights/top-events?${qs.toString()}`
       );
     },
     enabled: !!siteKey,
@@ -30,123 +48,58 @@ export function useConversions(siteKey: string) {
   });
 }
 
-export function useJourneys(siteKey: string) {
-  return useQuery<JourneysData>({
-    queryKey: queryKeys.insights.journeys(siteKey),
+export function useTopCities(siteKey: string, query?: InsightsQuery) {
+  const qs = new URLSearchParams({ site: siteKey });
+  if (query?.dateFilter) qs.set("dateFilter", query.dateFilter);
+  if (query?.startDate) qs.set("startDate", query.startDate);
+  if (query?.endDate) qs.set("endDate", query.endDate);
+  if (query?.limit !== undefined) qs.set("limit", String(query.limit));
+  if (query?.offset !== undefined) qs.set("offset", String(query.offset));
+
+  return useQuery<TopCitiesResponse>({
+    queryKey: queryKeys.insights.cities(siteKey),
     queryFn: async () => {
-      return apiClient.get<JourneysData>(
-        `/api/insights/journeys?site=${encodeURIComponent(siteKey)}`
+      return apiClient.get<TopCitiesResponse>(
+        `/api/insights/cities?${qs.toString()}`
       );
     },
     enabled: !!siteKey,
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useDevices(siteKey: string, query?: InsightsQuery) {
+  const qs = new URLSearchParams({ site: siteKey });
+  if (query?.dateFilter) qs.set("dateFilter", query.dateFilter);
+  if (query?.startDate) qs.set("startDate", query.startDate);
+  if (query?.endDate) qs.set("endDate", query.endDate);
+
+  return useQuery<DevicesResponse>({
+    queryKey: queryKeys.insights.types(siteKey),
+    queryFn: async () => {
+      return apiClient.get<DevicesResponse>(
+        `/api/insights/devices?${qs.toString()}`
+      );
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useRefreshInsights() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { fromDate: string; toDate: string }) => {
+      return apiClient.post<{ success: boolean; message: string }>(
+        `/api/insights/admin/refresh`,
+        payload
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.insights.all });
+    },
   });
 }
 
 // Hooks específicos para dados transformados
-export function useCities(siteKey: string) {
-  const { data: overview, isLoading, error } = useOverview(siteKey);
-
-  return {
-    data: overview?.cidades?.map(([city, count]) => ({
-      city,
-      searches: count,
-    })) || [],
-    isLoading,
-    error,
-  };
-}
-
-export function usePrices(siteKey: string) {
-  const { data: overview, isLoading, error } = useOverview(siteKey);
-
-  return {
-    data: overview?.preco_venda_ranges?.map(([range, count]) => ({
-      range,
-      searches: count,
-    })) || [],
-    isLoading,
-    error,
-  };
-}
-
-export function useTypes(siteKey: string) {
-  const { data: overview, isLoading, error } = useOverview(siteKey);
-
-  return {
-    data: overview?.tipos?.map(([type, count]) => ({
-      name: type,
-      value: count,
-    })) || [],
-    isLoading,
-    error,
-  };
-}
-
-export function usePurposes(siteKey: string) {
-  const { data: overview, isLoading, error } = useOverview(siteKey);
-
-  return {
-    data: overview?.finalidade?.map(([purpose, count]) => ({
-      name: purpose,
-      value: count,
-    })) || [],
-    isLoading,
-    error,
-  };
-}
-
-export function useFunnel(siteKey: string) {
-  const { data: overview, isLoading, error } = useOverview(siteKey);
-
-  if (!overview) {
-    return {
-      data: [],
-      isLoading,
-      error,
-    };
-  }
-
-  // Calculate funnel stages from available data
-  const totalSearches = (overview.cidades || []).reduce(
-    (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-    0
-  ) || 100;
-
-  const filterActivity = (overview.tipos || []).reduce(
-    (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
-    0
-  ) || Math.floor(totalSearches * 0.45);
-
-  const searchSubmissions = Math.floor(filterActivity * 0.4);
-  const conversions = Math.floor(searchSubmissions * 0.15);
-
-  const funnel = [
-    {
-      stage: "Visitantes",
-      value: totalSearches,
-      color: "hsl(var(--chart-1))",
-    },
-    {
-      stage: "Filtraram Busca",
-      value: filterActivity,
-      color: "hsl(var(--chart-2))",
-    },
-    {
-      stage: "Pesquisaram",
-      value: searchSubmissions,
-      color: "hsl(var(--chart-3))",
-    },
-    {
-      stage: "Converteram",
-      value: conversions,
-      color: "hsl(var(--primary))",
-    },
-  ];
-
-  return {
-    data: funnel,
-    isLoading,
-    error,
-  };
-}
+// legacy-derived hooks removed in favor of direct endpoints

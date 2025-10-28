@@ -1,49 +1,58 @@
 /**
- * Type definitions for insights API responses
- * Based on actual backend response structures from insights.service.ts
+ * Type definitions for Insights API responses (materialized views)
  */
 
-export interface OverviewData {
-  finalidade: Array<[string, number]>;
-  tipos: Array<[string, number]>;
-  cidades: Array<[string, number]>;
-  bairros: Array<[string, number]>;
-  preco_venda_ranges: Array<[string, number]>;
-  preco_aluguel_ranges: Array<[string, number]>;
-  area_ranges: Array<[string, number]>;
-  dormitorios: Array<[string, number]>;
-  suites: Array<[string, number]>;
-  banheiros: Array<[string, number]>;
-  vagas: Array<[string, number]>;
-  flags: Array<[string, number]>;
+export interface InsightsDateRange {
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
 }
 
-export interface ConversionsData {
-  conversions: Array<{
-    type: string;
-    count: number;
-  }>;
-  funnel: Array<{
-    step: string;
-    count: number;
-  }>;
+export interface OverviewResponse {
+  eventsCount: number;
+  sessionsCount: number;
+  usersCount: number;
+  avgTimeOnSite: number; // seconds
+  dateRange: InsightsDateRange;
 }
 
-export interface JourneysData {
-  pageDepth: Array<{
-    depth: number;
-    count: number;
-  }>;
-  scrollDepth: Array<{
-    depth: number;
-    count: number;
-  }>;
-  timeOnPage: Array<{
-    range: string;
-    count: number;
-  }>;
-  visitorType: Array<{
-    type: string;
-    count: number;
-  }>;
+export interface TopEventsResponseItem {
+  name: string;
+  count: number;
+}
+
+export interface TopEventsResponse {
+  topEvents: TopEventsResponseItem[];
+  dateRange: InsightsDateRange;
+}
+
+export interface TopCityItem {
+  city: string;
+  count: number;
+}
+
+export interface TopCitiesResponse {
+  topCities: TopCityItem[];
+  dateRange: InsightsDateRange;
+}
+
+export interface DeviceItem {
+  deviceType: string;
+  os: string;
+  browser: string;
+  count: number;
+}
+
+export interface DevicesResponse {
+  deviceDistribution: DeviceItem[];
+  dateRange: InsightsDateRange;
+}
+
+export type DateFilter = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
+
+export interface InsightsQuery {
+  dateFilter?: DateFilter;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  limit?: number;
+  offset?: number;
 }
