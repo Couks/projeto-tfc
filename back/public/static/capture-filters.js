@@ -16,7 +16,7 @@
   MyAnalytics.debug = true;
 
   // Configuração - Atualize estes valores
-  const API_URL = window.IH_API_URL || 'http://localhost:3001/api';
+  const API_URL = window.IH_API_URL || 'http://localhost:3001';
   const SITE_KEY = window.IH_SITE_KEY || '';
 
   // Verifica se a chave do site está configurada

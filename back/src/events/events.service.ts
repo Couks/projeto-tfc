@@ -1,6 +1,8 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TrackEventDto } from './dto/track-event.dto';
+import { GetEventsDto, DateFilter } from './dto/get-events.dto';
+import { EventsListResponse } from './interfaces/events.interface';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -118,6 +120,186 @@ export class EventsService {
       success: true,
       count: totalInserted,
     };
+  }
+
+  /**
+   * Gets events for a specific site with filtering and pagination
+   * @param siteKey Site key from tenant guard
+   * @param queryDto Query parameters for filtering
+   * @returns Paginated events list
+   */
+  async getEvents(
+    siteKey: string,
+    queryDto: GetEventsDto,
+  ): Promise<EventsListResponse> {
+    try {
+      const {
+        name,
+        userId,
+        sessionId,
+        dateFilter,
+        startDate,
+        endDate,
+        limit = 100,
+        offset = 0,
+        orderBy = 'ts',
+        order = 'desc',
+      } = queryDto;
+
+      // Build where clause
+      const where: Prisma.EventWhereInput = {
+        siteKey,
+      };
+
+      // Filter by event name
+      if (name) {
+        where.name = {
+          contains: name,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by user ID
+      if (userId) {
+        where.userId = userId;
+      }
+
+      // Filter by session ID
+      if (sessionId) {
+        where.sessionId = sessionId;
+      }
+
+      // Apply date filters
+      const dateRange = this.getDateRange(dateFilter, startDate, endDate);
+      if (dateRange.start && dateRange.end) {
+        where.ts = {
+          gte: dateRange.start,
+          lte: dateRange.end,
+        };
+      }
+
+      // Build orderBy clause
+      const orderByClause: Prisma.EventOrderByWithRelationInput = {};
+      orderByClause[orderBy] = order;
+
+      // Execute query with pagination
+      const [events, totalCount] = await Promise.all([
+        this.prisma.event.findMany({
+          where,
+          orderBy: orderByClause,
+          take: limit,
+          skip: offset,
+          select: {
+            id: true,
+            name: true,
+            userId: true,
+            sessionId: true,
+            properties: true,
+            context: true,
+            ts: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.event.count({ where }),
+      ]);
+
+      this.logger.log(
+        `Retrieved ${events.length} events for site: ${siteKey} (total: ${totalCount})`,
+      );
+
+      return {
+        events: events.map((event) => ({
+          id: event.id.toString(),
+          name: event.name,
+          userId: event.userId,
+          sessionId: event.sessionId,
+          properties: event.properties,
+          context: event.context,
+          ts: event.ts.toISOString(),
+          createdAt: event.createdAt.toISOString(),
+        })),
+        pagination: {
+          total: totalCount,
+          limit,
+          offset,
+          hasMore: offset + limit < totalCount,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error retrieving events for site ${siteKey}:`,
+        error instanceof Error ? error.stack : 'Unknown error',
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Gets date range based on filter type
+   * @param dateFilter Filter type
+   * @param startDate Custom start date
+   * @param endDate Custom end date
+   * @returns Date range object
+   */
+  private getDateRange(
+    dateFilter?: DateFilter,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const now = new Date();
+
+    if (dateFilter === DateFilter.CUSTOM && startDate && endDate) {
+      return {
+        start: new Date(startDate),
+        end: new Date(endDate),
+      };
+    }
+
+    if (dateFilter === DateFilter.DAY) {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+
+    if (dateFilter === DateFilter.WEEK) {
+      const start = new Date(now);
+      start.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+
+    if (dateFilter === DateFilter.MONTH) {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      return { start, end };
+    }
+
+    if (dateFilter === DateFilter.YEAR) {
+      const start = new Date(now.getFullYear(), 0, 1);
+      const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    // Default: last 30 days
+    const start = new Date(now);
+    start.setDate(now.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
   }
 
   /**
