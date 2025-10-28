@@ -43,7 +43,7 @@
 
     try {
       // Faz requisição POST para o endpoint de eventos em lote
-      const response = await fetch(`${API_URL}/events/track/batch`, {
+      const response = await fetch(`${API_URL}/api/events/track/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

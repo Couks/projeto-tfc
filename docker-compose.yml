@@ -30,8 +30,8 @@ services:
     - "3001:3001"
     environment:
       # Database Configuration
-      - DATABASE_URL=postgresql://ih:ih@db:5432/insighthouse
-      - DIRECT_URL=postgresql://ih:ih@db:5432/insighthouse
+      - DATABASE_URL=postgresql://ih:ih@db:5432/insighthouse?schema=public
+      - DIRECT_URL=postgresql://ih:ih@db:5432/insighthouse?schema=public
       # Application Environment
       - PORT=3001
       - NODE_ENV=production
