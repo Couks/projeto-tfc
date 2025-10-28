@@ -1,0 +1,45 @@
+@apiUrl = http://localhost:3001
+
+### ============================================
+### HEALTH CHECK ENDPOINTS
+### ============================================
+
+# Basic Health Check
+GET {{apiUrl}}/api/health
+
+###
+
+# Database Health Check
+GET {{apiUrl}}/api/health/db
+
+###
+
+# Detailed Health Status
+GET {{apiUrl}}/api/health/detailed
+
+###
+
+# System Metrics
+GET {{apiUrl}}/api/health/metrics
+
+###
+
+# Memory Usage
+GET {{apiUrl}}/api/health/memory
+
+###
+
+# Disk Usage
+GET {{apiUrl}}/api/health/disk
+
+###
+
+# Database Connection Pool Status
+GET {{apiUrl}}/api/health/db/pool
+
+###
+
+# API Response Time Test
+GET {{apiUrl}}/api/health/response-time
+
+###

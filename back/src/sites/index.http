@@ -1,0 +1,113 @@
+@apiUrl = http://localhost:3001
+@siteKey = sk_5xjk338oj46hcvdqmsj2gfqh
+@sessionCookie = admin_session=your_session_cookie_here
+
+### ============================================
+### SITES MANAGEMENT ENDPOINTS
+### ============================================
+
+# Get All Sites for Current User
+GET {{apiUrl}}/api/sites
+Cookie: {{sessionCookie}}
+
+###
+
+# Create New Site
+POST {{apiUrl}}/api/sites
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "name": "My New Site",
+  "domains": [
+    {
+      "host": "example.com",
+      "isPrimary": true
+    },
+    {
+      "host": "www.example.com",
+      "isPrimary": false
+    }
+  ]
+}
+
+###
+
+# Get Site by ID
+GET {{apiUrl}}/api/sites/site_id_here
+Cookie: {{sessionCookie}}
+
+###
+
+# Update Site
+PUT {{apiUrl}}/api/sites/site_id_here
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "name": "Updated Site Name",
+  "status": "active"
+}
+
+###
+
+# Delete Site
+DELETE {{apiUrl}}/api/sites/site_id_here
+Cookie: {{sessionCookie}}
+
+###
+
+# Add Domain to Site
+POST {{apiUrl}}/api/sites/site_id_here/domains
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "host": "subdomain.example.com",
+  "isPrimary": false
+}
+
+###
+
+# Update Domain
+PUT {{apiUrl}}/api/sites/site_id_here/domains/domain_id_here
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "host": "updated.example.com",
+  "isPrimary": true
+}
+
+###
+
+# Delete Domain
+DELETE {{apiUrl}}/api/sites/site_id_here/domains/domain_id_here
+Cookie: {{sessionCookie}}
+
+###
+
+# Get Site Settings
+GET {{apiUrl}}/api/sites/site_id_here/settings
+Cookie: {{sessionCookie}}
+
+###
+
+# Update Site Settings
+PUT {{apiUrl}}/api/sites/site_id_here/settings
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "trackingEnabled": true,
+  "anonymizeIp": true,
+  "retentionDays": 365
+}
+
+###
+
+# Regenerate Site Key
+POST {{apiUrl}}/api/sites/site_id_here/regenerate-key
+Cookie: {{sessionCookie}}
+
+###

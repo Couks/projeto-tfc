@@ -1,0 +1,56 @@
+@apiUrl = http://localhost:3001
+
+### ============================================
+### APP ROOT ENDPOINTS
+### ============================================
+
+# Root endpoint - Hello World
+GET {{apiUrl}}/api/
+
+###
+
+# API Documentation (Swagger UI)
+GET {{apiUrl}}/api/docs
+
+###
+
+# API JSON Schema
+GET {{apiUrl}}/api/docs-json
+
+###
+
+# API YAML Schema
+GET {{apiUrl}}/api/docs-yaml
+
+###
+
+# Static files test
+GET {{apiUrl}}/static/capture-filters.js
+
+###
+
+# Test CORS headers
+OPTIONS {{apiUrl}}/api/
+Origin: https://example.com
+Access-Control-Request-Method: GET
+
+###
+
+# Test with different HTTP methods
+POST {{apiUrl}}/api/
+Content-Type: application/json
+
+{
+  "test": "data"
+}
+
+###
+
+# Test rate limiting
+GET {{apiUrl}}/api/
+GET {{apiUrl}}/api/
+GET {{apiUrl}}/api/
+GET {{apiUrl}}/api/
+GET {{apiUrl}}/api/
+
+###

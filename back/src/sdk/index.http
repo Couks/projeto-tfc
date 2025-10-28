@@ -1,0 +1,63 @@
+@apiUrl = http://localhost:3001
+@siteKey = sk_5xjk338oj46hcvdqmsj2gfqh
+
+### ============================================
+### SDK ENDPOINTS
+### ============================================
+
+# Get Site Configuration for SDK
+GET {{apiUrl}}/api/sdk/site-config?site={{siteKey}}
+
+###
+
+# Get SDK Loader Script
+GET {{apiUrl}}/api/sdk/loader?site={{siteKey}}
+
+###
+
+# Serve capture-filters.js file
+GET {{apiUrl}}/api/sdk/capture-filters.js
+
+###
+
+# OPTIONS request for site-config (CORS preflight)
+OPTIONS {{apiUrl}}/api/sdk/site-config
+Origin: https://example.com
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type
+
+###
+
+# OPTIONS request for loader (CORS preflight)
+OPTIONS {{apiUrl}}/api/sdk/loader
+Origin: https://example.com
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type
+
+###
+
+# OPTIONS request for capture-filters.js (CORS preflight)
+OPTIONS {{apiUrl}}/api/sdk/capture-filters.js
+Origin: https://example.com
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type
+
+###
+
+# Test SDK Integration (simulate browser request)
+GET {{apiUrl}}/api/sdk/loader?site={{siteKey}}
+Origin: https://example.com
+Referer: https://example.com/page
+
+###
+
+# Test with different site key
+GET {{apiUrl}}/api/sdk/site-config?site=sk_invalid_key
+
+###
+
+# Test SDK with custom domain
+GET {{apiUrl}}/api/sdk/site-config?site={{siteKey}}
+Origin: https://custom-domain.com
+
+###

@@ -1,0 +1,83 @@
+@apiUrl = http://localhost:3001
+@email = user@example.com
+@password = password123
+
+### ============================================
+### AUTHENTICATION ENDPOINTS
+### ============================================
+
+# User Registration
+POST {{apiUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "name": "Test User"
+}
+
+###
+
+# User Login
+POST {{apiUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+# Get Current User Profile
+GET {{apiUrl}}/api/auth/profile
+Cookie: admin_session=your_session_cookie_here
+
+###
+
+# User Logout
+POST {{apiUrl}}/api/auth/logout
+Cookie: admin_session=your_session_cookie_here
+
+###
+
+# Update User Profile
+PUT {{apiUrl}}/api/auth/profile
+Content-Type: application/json
+Cookie: admin_session=your_session_cookie_here
+
+{
+  "name": "Updated Name",
+  "notificationsEnabled": true
+}
+
+###
+
+# Change Password
+PUT {{apiUrl}}/api/auth/password
+Content-Type: application/json
+Cookie: admin_session=your_session_cookie_here
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "newpassword123"
+}
+
+###
+
+# Enable/Disable Two-Factor Authentication
+POST {{apiUrl}}/api/auth/2fa/enable
+Cookie: admin_session=your_session_cookie_here
+
+###
+
+# Disable Two-Factor Authentication
+POST {{apiUrl}}/api/auth/2fa/disable
+Content-Type: application/json
+Cookie: admin_session=your_session_cookie_here
+
+{
+  "token": "123456"
+}
+
+###
