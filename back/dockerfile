@@ -6,40 +6,39 @@
   RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-  # Habilita pnpm via Corepack (não instalar pnpm global!)
+  # Habilita pnpm via Corepack
   RUN corepack enable && corepack prepare pnpm@latest --activate
 
   # ------------ deps (prod: node_modules + prisma client) ------------
   FROM base AS deps
-  # Copiamos apenas manifestos + lockfile + prisma (camadas estáveis)
+  # Manifests e schema primeiro (importante p/ prisma)
   COPY package.json pnpm-lock.yaml ./
   COPY prisma ./prisma
-
-  # Cache do store do pnpm para builds rápidos (BuildKit)
+  # Ignora scripts do pnpm e gera prisma manualmente
   RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-      pnpm install --prod --frozen-lockfile \
+      pnpm install --prod --frozen-lockfile --ignore-scripts \
    && pnpm prisma generate
 
   # ------------ builder (dev: compila a app) ------------
   FROM base AS builder
   COPY package.json pnpm-lock.yaml ./
-  # deps de dev para compilar
+  # Copie prisma ANTES do install (para postinstall, se existir, não quebrar)
+  COPY prisma ./prisma
+  # Instala dev deps sem scripts e gera prisma manualmente
   RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile --ignore-scripts \
+   && pnpm prisma generate
 
   # Código e assets
   COPY tsconfig*.json nest-cli.json* ./
   COPY src ./src
   COPY public ./public
-  COPY prisma ./prisma
 
-  # Gera client (se necessário no build) e compila
-  RUN pnpm prisma generate \
-   && pnpm run build
-  # se você ainda tiver um postbuild "Windows", troque por:
-  # mkdir -p dist/public/static && cp -r public/static/* dist/public/static/ || true
+  # Build (se tiver postbuild, garanta sintaxe Linux no package.json)
+  RUN pnpm run build
+  # Ex.: "postbuild": "mkdir -p dist/public/static && cp -r public/static/* dist/public/static/ || true"
 
-  # ------------ runner (imagem final, mínima) ------------
+  # ------------ runner (final) ------------
   FROM node:22-slim AS runner
   WORKDIR /app
 
@@ -51,17 +50,15 @@
   ENV PORT=3001
   EXPOSE 3001
 
-  # Usuário não-root para segurança
+  # Usuário não-root
   RUN groupadd --gid 1001 nodejs \
    && useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home appuser
 
-  # Copiamos artefatos já prontos do build
-  # (usa UID:GID para não depender de nomes na fase de build)
-  COPY --from=deps --chown=1001:1001 /app/node_modules ./node_modules
-  COPY --from=builder --chown=1001:1001 /app/dist ./dist
-  # (Opcional) manter schema/migrations se você roda `prisma migrate deploy` no start/ação
+  # Artefatos prontos do build, já com ownership
+  COPY --from=deps    --chown=1001:1001 /app/node_modules ./node_modules
+  COPY --from=builder --chown=1001:1001 /app/dist         ./dist
+  # (Opcional) manter schema/migrations se você roda prisma migrate no deploy
   COPY --chown=1001:1001 prisma ./prisma
 
   USER 1001
-
   CMD ["node", "dist/main.js"]
