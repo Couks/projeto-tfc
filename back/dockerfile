@@ -1,59 +1,67 @@
 # ------------ base ------------
-FROM node:22-slim AS base
-WORKDIR /app
+  FROM node:22-slim AS base
+  WORKDIR /app
 
-# Instala pnpm globalmente
-RUN npm install -g pnpm
-
-# Dependência de runtime do Prisma Client
-RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  # Dependência de runtime do Prisma Client
+  RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# ------------ deps (prod deps + prisma client) ------------
-FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
-COPY prisma ./prisma
-# Instala só as deps de produção e gera o Prisma Client nelas
-RUN pnpm install --frozen-lockfile --prod \
-    && pnpm prisma generate
+  # Habilita pnpm via Corepack (não instalar pnpm global!)
+  RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ------------ builder (dev deps para compilar) ------------
-FROM base AS builder
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-COPY tsconfig*.json nest-cli.json* ./
-COPY src ./src
-COPY public ./public
-COPY prisma ./prisma
-# Gera client para o ambiente de build também
-RUN pnpm prisma generate
-# Compila
-RUN pnpm run build
+  # ------------ deps (prod: node_modules + prisma client) ------------
+  FROM base AS deps
+  # Copiamos apenas manifestos + lockfile + prisma (camadas estáveis)
+  COPY package.json pnpm-lock.yaml ./
+  COPY prisma ./prisma
 
-# ------------ runner (imagem final) ------------
-FROM node:22-slim AS runner
-WORKDIR /app
+  # Cache do store do pnpm para builds rápidos (BuildKit)
+  RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+      pnpm install --prod --frozen-lockfile \
+   && pnpm prisma generate
 
-# Instala pnpm globalmente
-RUN npm install -g pnpm
+  # ------------ builder (dev: compila a app) ------------
+  FROM base AS builder
+  COPY package.json pnpm-lock.yaml ./
+  # deps de dev para compilar
+  RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+      pnpm install --frozen-lockfile
 
-# Só runtime necessário para Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  # Código e assets
+  COPY tsconfig*.json nest-cli.json* ./
+  COPY src ./src
+  COPY public ./public
+  COPY prisma ./prisma
+
+  # Gera client (se necessário no build) e compila
+  RUN pnpm prisma generate \
+   && pnpm run build
+  # se você ainda tiver um postbuild "Windows", troque por:
+  # mkdir -p dist/public/static && cp -r public/static/* dist/public/static/ || true
+
+  # ------------ runner (imagem final, mínima) ------------
+  FROM node:22-slim AS runner
+  WORKDIR /app
+
+  # Só o necessário para Prisma no runtime
+  RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production
-ENV PORT=3001
-EXPOSE 3001
+  ENV NODE_ENV=production
+  ENV PORT=3001
+  EXPOSE 3001
 
-# Copia node_modules de produção (com Prisma Client) e o build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-# Copia schema para migrations em runtime (se necessário)
-COPY prisma ./prisma
+  # Usuário não-root para segurança
+  RUN groupadd --gid 1001 nodejs \
+   && useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home appuser
 
-# Usuário não-root para segurança
-RUN groupadd --gid 1001 nodejs
-RUN useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nextjs
-USER nextjs
+  # Copiamos artefatos já prontos do build
+  # (usa UID:GID para não depender de nomes na fase de build)
+  COPY --from=deps --chown=1001:1001 /app/node_modules ./node_modules
+  COPY --from=builder --chown=1001:1001 /app/dist ./dist
+  # (Opcional) manter schema/migrations se você roda `prisma migrate deploy` no start/ação
+  COPY --chown=1001:1001 prisma ./prisma
 
-CMD ["node", "dist/main.js"]
+  USER 1001
+
+  CMD ["node", "dist/main.js"]
