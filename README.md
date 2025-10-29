@@ -67,8 +67,8 @@ graph TB
     subgraph "Utils & Decorators"
         AuthUtils[Auth Utils<br/>Hash, Verify, Sign]
         SiteKeyUtils[Site Key Utils<br/>Generate, Validate]
-        CurrentUserDec[@CurrentUser<br/>Decorator]
-        SiteKeyDec[@SiteKey<br/>Decorator]
+        CurrentUserDec[CurrentUser<br/>Decorator]
+        SiteKeyDec[SiteKey<br/>Decorator]
     end
 
     subgraph "Database"
