@@ -1,45 +1,49 @@
-# syntax=docker/dockerfile:1
+# ------------ base ------------
+  FROM node:22-slim AS base
+  WORKDIR /app
 
-FROM node:22-slim AS base
-WORKDIR /app
+  # Dependência de runtime do Prisma Client
+  RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-FROM base AS deps
-RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 \
-  && rm -rf /var/lib/apt/lists/*
+  # ------------ deps (prod deps + prisma client) ------------
+  FROM base AS deps
+  COPY package*.json ./
+  COPY prisma ./prisma
+  # Instala só as deps de produção e gera o Prisma Client nelas
+  RUN npm ci --omit=dev \
+   && npx prisma generate
 
-COPY package.json ./
-COPY prisma ./prisma
+  # ------------ builder (dev deps para compilar) ------------
+  FROM base AS builder
+  COPY package*.json ./
+  RUN npm ci
+  COPY tsconfig*.json nest-cli.json* ./
+  COPY src ./src
+  COPY public ./public
+  COPY prisma ./prisma
+  # Gera client para o ambiente de build também
+  RUN npx prisma generate
+  # Compila
+  RUN npm run build
+  # Se não usar o postbuild, copie manualmente os estáticos:
+  # RUN mkdir -p dist/public/static && cp -r public/static/* dist/public/static/ || true
 
-RUN npm install --omit=dev
-RUN npm install -g prisma@5.17.0
-RUN npx prisma generate
+  # ------------ runner (imagem final) ------------
+  FROM node:22-slim AS runner
+  WORKDIR /app
+  # Só runtime necessário para Prisma
+  RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-FROM deps AS build
-COPY tsconfig*.json nest-cli.json* ./
-COPY src ./src
-COPY public ./public
+  ENV NODE_ENV=production
+  ENV PORT=3001
+  EXPOSE 3001
 
-RUN npm install
-RUN npm run build
-RUN npm prune --omit=dev
+  # Copia node_modules de produção (com Prisma Client) e o build
+  COPY --from=deps /app/node_modules ./node_modules
+  COPY --from=builder /app/dist ./dist
+  # (opcional) Copia schema para migrations em runtime (se você usa prisma migrate deploy via ação)
+  COPY prisma ./prisma
 
-FROM node:22-slim AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-
-RUN apt-get update && apt-get install -y --no-install-recommends openssl curl \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN npm install -g prisma@5.17.0
-
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/public ./public
-COPY --from=deps /app/prisma ./prisma
-COPY --from=deps /app/package.json ./package.json
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-  CMD curl -fsS http://localhost:3001/api/health || exit 1
-
-CMD ["sh","-c","prisma migrate deploy && node dist/main"]
-
+  CMD ["node", "dist/main.js"]
