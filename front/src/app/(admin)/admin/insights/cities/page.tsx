@@ -48,7 +48,7 @@ export default function TopCitiesPage() {
             <Skeleton className="h-48 w-full" />
           ) : (
             <div className="text-sm">
-              {data?.topCities?.length ? (
+              {data?.cities?.length ? (
                 <table className="w-full">
                   <thead>
                     <tr className="text-left border-b">
@@ -57,7 +57,7 @@ export default function TopCitiesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.topCities.map((c) => (
+                    {data.cities.map((c) => (
                       <tr key={c.city} className="border-b">
                         <td className="py-2">{c.city}</td>
                         <td className="py-2 text-right font-medium">

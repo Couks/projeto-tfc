@@ -2,17 +2,22 @@
  * Type definitions for Insights API responses (materialized views)
  */
 
+// Legacy type - kept for compatibility, but backend uses period in OverviewResponse
 export interface InsightsDateRange {
   startDate: string // YYYY-MM-DD
   endDate: string // YYYY-MM-DD
 }
 
+// Matches backend response structure
 export interface OverviewResponse {
-  eventsCount: number
-  sessionsCount: number
-  usersCount: number
+  totalEvents: number
+  totalSessions: number
+  totalUsers: number
   avgTimeOnSite: number // seconds
-  dateRange: InsightsDateRange
+  period: {
+    start: string
+    end: string
+  }
 }
 
 export interface TopEventsResponseItem {
@@ -20,9 +25,9 @@ export interface TopEventsResponseItem {
   count: number
 }
 
+// Matches backend response structure
 export interface TopEventsResponse {
-  topEvents: TopEventsResponseItem[]
-  dateRange: InsightsDateRange
+  events: TopEventsResponseItem[]
 }
 
 export interface TopCityItem {
@@ -30,9 +35,9 @@ export interface TopCityItem {
   count: number
 }
 
+// Matches backend response structure
 export interface TopCitiesResponse {
-  topCities: TopCityItem[]
-  dateRange: InsightsDateRange
+  cities: TopCityItem[]
 }
 
 export interface DeviceItem {
@@ -42,9 +47,9 @@ export interface DeviceItem {
   count: number
 }
 
+// Matches backend response structure
 export interface DevicesResponse {
-  deviceDistribution: DeviceItem[]
-  dateRange: InsightsDateRange
+  devices: DeviceItem[]
 }
 
 export type DateFilter = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM'

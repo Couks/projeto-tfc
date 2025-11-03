@@ -27,22 +27,15 @@ export function AdminDashboardClient() {
   const { data: overviewData } = useOverview(firstSite?.siteKey || '')
 
   // Calculate metrics from real data with proper type checking
-  const totalConversions = overviewData?.eventsCount || 0
-
-  const totalSessions = 0 // Not available in current backend response
-  const conversionRate = '0' // Calculate when session data is available
-  const bounceRate = '0' // Calculate when bounce data is available
+  const totalEvents = overviewData?.totalEvents || 0
+  const totalSessions = overviewData?.totalSessions || 0
+  const totalUsers = overviewData?.totalUsers || 0
 
   const metrics = {
-    totalVisitors: overviewData?.usersCount || 0,
+    totalVisitors: totalUsers,
+    totalSessions: totalSessions,
+    totalEvents: totalEvents,
     totalSites: sites?.length || 0,
-    conversionRate: conversionRate,
-    bounceRate: bounceRate,
-    totalConversions: totalConversions,
-    topCity: 'N/A',
-    topPropertyType: 'N/A',
-    topPurpose: 'N/A',
-    avgPriceRange: 'N/A',
   }
 
   return (
@@ -94,18 +87,18 @@ export function AdminDashboardClient() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
-            <CardTitle className="text-sm font-medium">Conversões</CardTitle>
+            <CardTitle className="text-sm font-medium">Eventos</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.totalConversions > 0
-                ? metrics.totalConversions.toLocaleString()
+              {metrics.totalEvents > 0
+                ? metrics.totalEvents.toLocaleString()
                 : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {parseFloat(metrics.conversionRate) > 0
-                ? `Taxa: ${metrics.conversionRate}%`
+              {metrics.totalEvents > 0
+                ? 'Total de eventos registrados'
                 : 'Aguardando dados'}
             </p>
           </CardContent>
@@ -113,37 +106,20 @@ export function AdminDashboardClient() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Rejeição
-            </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Sessões</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {parseFloat(metrics.bounceRate) > 0
-                ? `${metrics.bounceRate}%`
+              {metrics.totalSessions > 0
+                ? metrics.totalSessions.toLocaleString()
                 : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {parseFloat(metrics.bounceRate) > 0
-                ? parseFloat(metrics.bounceRate) < 25
-                  ? 'Excelente ✅'
-                  : parseFloat(metrics.bounceRate) < 40
-                    ? 'Normal'
-                    : 'Precisa melhorar ⚠️'
+              {metrics.totalSessions > 0
+                ? 'Sessões únicas registradas'
                 : 'Aguardando dados'}
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 ">
-            <CardTitle className="text-sm font-medium">Cidade Líder</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.topCity}</div>
-            <p className="text-xs text-muted-foreground">Aguardando dados</p>
           </CardContent>
         </Card>
       </div>
@@ -168,17 +144,6 @@ export function AdminDashboardClient() {
               <Link href="/admin/dashboard">
                 <BarChart2 className="h-4 w-4 mr-2" />
                 Métricas Principais
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="w-full justify-start"
-            >
-              <Link href="/admin/dashboard/funnel">
-                <Activity className="h-4 w-4 mr-2" />
-                Funil de Conversão
               </Link>
             </Button>
             <Button
@@ -228,8 +193,8 @@ export function AdminDashboardClient() {
             </Button>
             <div className="pt-2 border-t">
               <div className="text-sm text-muted-foreground">
-                {metrics.totalConversions > 0
-                  ? `${metrics.totalConversions} conversões`
+                {metrics.totalEvents > 0
+                  ? `${metrics.totalEvents} eventos`
                   : 'Sem dados ainda'}
               </div>
             </div>
@@ -254,28 +219,6 @@ export function AdminDashboardClient() {
               <Link href="/admin/dashboard/types">
                 <Building2 className="h-4 w-4 mr-2" />
                 Tipos de Imóveis
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="w-full justify-start"
-            >
-              <Link href="/admin/dashboard/purposes">
-                <Target className="h-4 w-4 mr-2" />
-                Finalidades
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="w-full justify-start"
-            >
-              <Link href="/admin/dashboard/prices">
-                <CircleDollarSign className="h-4 w-4 mr-2" />
-                Faixas de Preço
               </Link>
             </Button>
           </CardContent>
@@ -323,64 +266,6 @@ export function AdminDashboardClient() {
                 Minha Conta
               </Link>
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Tipo Mais Buscado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">
-                {metrics.topPropertyType}
-              </span>
-              <Badge variant="secondary">Aguardando</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {metrics.topPropertyType !== 'N/A'
-                ? 'Tipo mais procurado pelos usuários'
-                : 'Aguardando dados de pesquisa'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Finalidade Principal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{metrics.topPurpose}</span>
-              <Badge variant="secondary">Aguardando</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {metrics.topPurpose !== 'N/A'
-                ? 'Finalidade mais procurada'
-                : 'Aguardando dados de pesquisa'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Faixa de Preço Popular</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">
-                {metrics.avgPriceRange}
-              </span>
-              <Badge variant="secondary">Aguardando</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {metrics.avgPriceRange !== 'N/A'
-                ? 'Faixa mais popular nas pesquisas'
-                : 'Aguardando dados de pesquisa'}
-            </p>
           </CardContent>
         </Card>
       </div>

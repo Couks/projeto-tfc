@@ -2,32 +2,34 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { CitiesChart } from './_components/CitiesChart'
-import { useSites, useOverview } from '@/lib/hooks'
+import { useSites, useTopCities } from '@/lib/hooks'
 import { Skeleton } from '@ui/skeleton'
 
 export default function CitiesPage() {
   const { data: sites, isLoading: sitesLoading } = useSites()
   const firstSite = sites?.[0]
 
-  const { data: data, isLoading: dataLoading } = useOverview(
+  const { data: citiesData, isLoading: dataLoading } = useTopCities(
     firstSite?.siteKey || ''
   )
 
   const isLoading = sitesLoading || dataLoading
 
-  // Calculate real metrics from data
+  // Calculate real metrics from cities data
   const totalSearches =
-    data?.cidades?.reduce(
-      (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
+    citiesData?.cities?.reduce(
+      (sum: number, item: { city: string; count: number }) => sum + item.count,
       0
     ) || 0
 
-  const uniqueCities = data?.cidades?.length || 0
+  const uniqueCities = citiesData?.cities?.length || 0
 
-  const topCity = data?.cidades?.[0]?.[0] || 'N/A'
-  const topCitySearches = data?.cidades?.[0]?.[1] || 0
+  const topCity = citiesData?.cities?.[0]?.city || 'N/A'
+  const topCitySearches = citiesData?.cities?.[0]?.count || 0
   const topCityPercentage =
-    totalSearches > 0 ? ((topCitySearches / totalSearches) * 100).toFixed(1) : 0
+    totalSearches > 0
+      ? ((topCitySearches / totalSearches) * 100).toFixed(1)
+      : '0'
 
   if (isLoading) {
     return (

@@ -50,7 +50,7 @@ export default function TopEventsPage() {
             <Skeleton className="h-48 w-full" />
           ) : (
             <div className="text-sm">
-              {data?.topEvents?.length ? (
+              {data?.events?.length ? (
                 <table className="w-full">
                   <thead>
                     <tr className="text-left border-b">
@@ -59,7 +59,7 @@ export default function TopEventsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.topEvents.map((e) => (
+                    {data.events.map((e) => (
                       <tr key={e.name} className="border-b">
                         <td className="py-2">{e.name}</td>
                         <td className="py-2 text-right font-medium">

@@ -37,7 +37,7 @@ export function useTopEvents(siteKey: string, query?: InsightsQuery) {
   if (query?.offset !== undefined) qs.set('offset', String(query.offset))
 
   return useQuery<TopEventsResponse>({
-    queryKey: queryKeys.insights.conversions(siteKey),
+    queryKey: [...queryKeys.insights.all, 'top-events', siteKey],
     queryFn: async () => {
       return apiClient.get<TopEventsResponse>(
         `/api/insights/top-events?${qs.toString()}`
@@ -102,4 +102,19 @@ export function useRefreshInsights() {
 }
 
 // Hooks específicos para dados transformados
-// legacy-derived hooks removed in favor of direct endpoints
+// Alias para compatibilidade com componentes
+
+/**
+ * Alias para useTopCities - retorna array formatado para componentes de chart
+ */
+export function useCities(siteKey: string, query?: InsightsQuery) {
+  const result = useTopCities(siteKey, query)
+  return {
+    ...result,
+    data:
+      result.data?.cities.map((item) => ({
+        city: item.city,
+        searches: item.count,
+      })) || [],
+  }
+}

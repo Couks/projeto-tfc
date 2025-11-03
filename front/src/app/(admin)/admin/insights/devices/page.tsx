@@ -49,7 +49,7 @@ export default function DevicesPage() {
             <Skeleton className="h-48 w-full" />
           ) : (
             <div className="text-sm">
-              {data?.deviceDistribution?.length ? (
+              {data?.devices?.length ? (
                 <table className="w-full">
                   <thead>
                     <tr className="text-left border-b">
@@ -60,7 +60,7 @@ export default function DevicesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.deviceDistribution.map((d, idx) => (
+                    {data.devices.map((d, idx) => (
                       <tr
                         key={`${d.deviceType}-${d.os}-${d.browser}-${idx}`}
                         className="border-b"

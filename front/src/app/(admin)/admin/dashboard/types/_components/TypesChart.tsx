@@ -50,12 +50,11 @@ export function TypesChart() {
     )
   }
 
-  if (error || typesDataWithColors.length === 0) {
+  if (typesDataWithColors.length === 0) {
     return (
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
-          {error?.message ||
-            'Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.'}
+          Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.
         </p>
       </div>
     )

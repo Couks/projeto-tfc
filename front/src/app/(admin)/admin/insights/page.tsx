@@ -74,17 +74,17 @@ export default function InsightsOverviewPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Events"
-            value={overview?.eventsCount?.toLocaleString() ?? '0'}
+            value={overview?.totalEvents?.toLocaleString() ?? '0'}
             description="Últimos 30 dias"
           />
           <MetricCard
             title="Sessions"
-            value={overview?.sessionsCount?.toLocaleString() ?? '0'}
+            value={overview?.totalSessions?.toLocaleString() ?? '0'}
             description="Últimos 30 dias"
           />
           <MetricCard
             title="Users"
-            value={overview?.usersCount?.toLocaleString() ?? '0'}
+            value={overview?.totalUsers?.toLocaleString() ?? '0'}
             description="Últimos 30 dias"
           />
           <MetricCard
@@ -105,9 +105,9 @@ export default function InsightsOverviewPage() {
               <Skeleton className="h-40 w-full" />
             ) : (
               <div className="text-sm">
-                {topEvents?.topEvents?.length ? (
+                {topEvents?.events?.length ? (
                   <ul className="space-y-2">
-                    {topEvents.topEvents.map((e) => (
+                    {topEvents.events.map((e) => (
                       <li
                         key={e.name}
                         className="flex justify-between border-b py-1"
@@ -136,9 +136,9 @@ export default function InsightsOverviewPage() {
               <Skeleton className="h-40 w-full" />
             ) : (
               <div className="text-sm">
-                {topCities?.topCities?.length ? (
+                {topCities?.cities?.length ? (
                   <ul className="space-y-2">
-                    {topCities.topCities.map((c) => (
+                    {topCities.cities.map((c) => (
                       <li
                         key={c.city}
                         className="flex justify-between border-b py-1"
@@ -168,9 +168,9 @@ export default function InsightsOverviewPage() {
             <Skeleton className="h-40 w-full" />
           ) : (
             <div className="text-sm">
-              {devices?.deviceDistribution?.length ? (
+              {devices?.devices?.length ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {devices.deviceDistribution.map((d, idx) => (
+                  {devices.devices.map((d, idx) => (
                     <div
                       key={`${d.deviceType}-${d.os}-${d.browser}-${idx}`}
                       className="flex justify-between border-b py-1"
