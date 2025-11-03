@@ -1,18 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { LucideIcon } from "lucide-react";
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { LucideIcon } from 'lucide-react'
+import { Skeleton } from '@ui/skeleton'
 
 interface MetricCardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon?: LucideIcon;
+  title: string
+  value: string | number
+  description?: string
+  icon?: LucideIcon
   trend?: {
-    value: number;
-    isPositive: boolean;
-  };
-  isLoading?: boolean;
-  className?: string;
+    value: number
+    isPositive: boolean
+  }
+  isLoading?: boolean
+  className?: string
 }
 
 export function MetricCard({
@@ -35,7 +35,7 @@ export function MetricCard({
           {description && <Skeleton className="h-4 w-32 mt-2" />}
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -52,17 +52,16 @@ export function MetricCard({
         {trend && (
           <div
             className={`text-xs mt-2 ${
-              trend.isPositive ? "text-green-600" : "text-red-600"
+              trend.isPositive ? 'text-green-600' : 'text-red-600'
             }`}
           >
-            {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
-            {trend.isPositive ? " aumento" : " redução"}
+            {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+            {trend.isPositive ? ' aumento' : ' redução'}
           </div>
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
 
-MetricCard.displayName = "MetricCard";
-
+MetricCard.displayName = 'MetricCard'

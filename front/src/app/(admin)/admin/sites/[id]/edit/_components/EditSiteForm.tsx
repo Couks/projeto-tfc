@@ -1,43 +1,41 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import * as React from "react";
-import { Input } from "@ui/input";
-import { Button } from "@ui/button";
+import * as React from 'react'
+import { Input } from '@ui/input'
+import { Button } from '@ui/button'
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@ui/select";
-import Link from "next/link";
-import { useUpdateSite } from "@/lib/hooks";
+} from '@ui/select'
+import Link from 'next/link'
+import { useUpdateSite } from '@/lib/hooks'
 
 export function EditSiteForm({
   site,
 }: {
-  site: { id: string; name: string; status: "active" | "inactive" };
+  site: { id: string; name: string; status: 'active' | 'inactive' }
 }) {
-  const router = useRouter();
-  const updateSiteMutation = useUpdateSite();
-  const [status, setStatus] = React.useState<"active" | "inactive">(
-    site.status
-  );
+  const router = useRouter()
+  const updateSiteMutation = useUpdateSite()
+  const [status, setStatus] = React.useState<'active' | 'inactive'>(site.status)
 
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const name = fd.get("name") as string;
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const name = fd.get('name') as string
 
     try {
       await updateSiteMutation.mutateAsync({
         siteId: site.id,
         data: { name, status },
-      });
-      router.push("/admin/sites");
+      })
+      router.push('/admin/sites')
     } catch (error) {
-      console.error("Failed to update site:", error);
+      console.error('Failed to update site:', error)
     }
   }
   return (
@@ -61,7 +59,7 @@ export function EditSiteForm({
         <div className="mt-1">
           <Select
             value={status}
-            onValueChange={(v) => setStatus(v as "active" | "inactive")}
+            onValueChange={(v) => setStatus(v as 'active' | 'inactive')}
           >
             <SelectTrigger id="site-status">
               <SelectValue placeholder="Select status" />
@@ -76,7 +74,7 @@ export function EditSiteForm({
       </div>
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={updateSiteMutation.isPending}>
-          {updateSiteMutation.isPending ? "Salvando..." : "Salvar"}
+          {updateSiteMutation.isPending ? 'Salvando...' : 'Salvar'}
         </Button>
         <Button asChild variant="ghost" size="sm">
           <Link href="/admin/sites">Cancelar</Link>
@@ -87,11 +85,9 @@ export function EditSiteForm({
         <div className="text-sm text-red-600">
           {updateSiteMutation.error instanceof Error
             ? updateSiteMutation.error.message
-            : "Falha ao atualizar site"}
+            : 'Falha ao atualizar site'}
         </div>
       )}
     </form>
-  );
+  )
 }
-
-

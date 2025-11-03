@@ -1,30 +1,41 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Skeleton } from "@ui/skeleton";
-import { SiteSelector } from "@/lib/components/SiteSelector";
-import { DateFilter as DateFilterPicker } from "@/lib/components/DateFilter";
-import { DateFilter } from "@/lib/types/insights";
-import { useState } from "react";
-import { useSiteContext } from "@/lib/providers/SiteProvider";
-import { useDevices } from "@/lib/hooks/useInsights";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Skeleton } from '@ui/skeleton'
+import { SiteSelector } from '@/lib/components/SiteSelector'
+import { DateFilter as DateFilterPicker } from '@/lib/components/DateFilter'
+import { DateFilter } from '@/lib/types/insights'
+import { useState } from 'react'
+import { useSiteContext } from '@/lib/providers/SiteProvider'
+import { useDevices } from '@/lib/hooks/useInsights'
 
 export default function DevicesPage() {
-  const [dateFilter, setDateFilter] = useState<DateFilter>("MONTH");
-  const { selectedSiteKey, setSelectedSiteKey, isLoading: sitesLoading } = useSiteContext();
-  const { data, isLoading } = useDevices(selectedSiteKey || "", { dateFilter });
+  const [dateFilter, setDateFilter] = useState<DateFilter>('MONTH')
+  const {
+    selectedSiteKey,
+    setSelectedSiteKey,
+    isLoading: sitesLoading,
+  } = useSiteContext()
+  const { data, isLoading } = useDevices(selectedSiteKey || '', {
+    dateFilter,
+  })
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Devices</h1>
-          <p className="text-muted-foreground">Distribuição por dispositivo, sistema e navegador</p>
+          <p className="text-muted-foreground">
+            Distribuição por dispositivo, sistema e navegador
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <DateFilterPicker value={dateFilter} onChange={setDateFilter} />
           <div className="w-64">
-            <SiteSelector value={selectedSiteKey} onValueChange={setSelectedSiteKey} />
+            <SiteSelector
+              value={selectedSiteKey}
+              onValueChange={setSelectedSiteKey}
+            />
           </div>
         </div>
       </div>
@@ -50,11 +61,16 @@ export default function DevicesPage() {
                   </thead>
                   <tbody>
                     {data.deviceDistribution.map((d, idx) => (
-                      <tr key={`${d.deviceType}-${d.os}-${d.browser}-${idx}`} className="border-b">
+                      <tr
+                        key={`${d.deviceType}-${d.os}-${d.browser}-${idx}`}
+                        className="border-b"
+                      >
                         <td className="py-2">{d.deviceType}</td>
                         <td className="py-2">{d.os}</td>
                         <td className="py-2">{d.browser}</td>
-                        <td className="py-2 text-right font-medium">{d.count.toLocaleString()}</td>
+                        <td className="py-2 text-right font-medium">
+                          {d.count.toLocaleString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -67,7 +83,5 @@ export default function DevicesPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
-
-

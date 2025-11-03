@@ -1,36 +1,38 @@
-'use client';
+'use client'
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@ui/chart'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
 interface JourneysData {
-  name: string;
-  value: number;
+  name: string
+  value: number
 }
 
 interface JourneysChartProps {
-  data: JourneysData[];
-  title: string;
-  description?: string;
+  data: JourneysData[]
+  title: string
+  description?: string
 }
 
-export function JourneysChart({ data, title, description }: JourneysChartProps) {
+export function JourneysChart({
+  data,
+  title,
+  description,
+}: JourneysChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          Nenhum dado disponível
-        </p>
+        <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
       </div>
-    );
+    )
   }
 
   return (
     <ChartContainer
       config={{
         value: {
-          label: "Sessões",
-          color: "hsl(var(--primary))",
+          label: 'Sessões',
+          color: 'hsl(var(--primary))',
         },
       }}
       className="h-[300px] w-full"
@@ -43,5 +45,5 @@ export function JourneysChart({ data, title, description }: JourneysChartProps) 
         <Bar dataKey="value" fill="var(--color-value)" radius={4} />
       </BarChart>
     </ChartContainer>
-  );
+  )
 }

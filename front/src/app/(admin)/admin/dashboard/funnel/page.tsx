@@ -1,26 +1,26 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { FunnelChart } from "./_components/FunnelChart";
-import { useSites, useFunnel } from "@/lib/hooks";
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { FunnelChart } from './_components/FunnelChart'
+import { useSites, useFunnel } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export default function FunnelPage() {
-  const { data: sites, isLoading: sitesLoading } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites, isLoading: sitesLoading } = useSites()
+  const firstSite = sites?.[0]
 
-  const { data, isLoading: dataLoading } = useFunnel(firstSite?.siteKey || "");
+  const { data, isLoading: dataLoading } = useFunnel(firstSite?.siteKey || '')
 
-  const isLoading = sitesLoading || dataLoading;
+  const isLoading = sitesLoading || dataLoading
 
   // Calculate funnel metrics from real data
-  const totalSearches = data?.[0]?.value || 0;
-  const filterActivity = data?.[1]?.value || 0;
+  const totalSearches = data?.[0]?.value || 0
+  const filterActivity = data?.[1]?.value || 0
 
-  const conversions = Math.floor(filterActivity * 0.15); // Estimate conversions
+  const conversions = Math.floor(filterActivity * 0.15) // Estimate conversions
 
   const conversionRate =
-    totalSearches > 0 ? ((conversions / totalSearches) * 100).toFixed(1) : "0";
+    totalSearches > 0 ? ((conversions / totalSearches) * 100).toFixed(1) : '0'
 
   if (isLoading) {
     return (
@@ -53,7 +53,7 @@ export default function FunnelPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -82,12 +82,12 @@ export default function FunnelPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {parseFloat(conversionRate) > 0 ? `${conversionRate}%` : "N/A"}
+                {parseFloat(conversionRate) > 0 ? `${conversionRate}%` : 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {totalSearches > 0
-                  ? "Calculado a partir de dados reais"
-                  : "Aguardando dados"}
+                  ? 'Calculado a partir de dados reais'
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
@@ -98,12 +98,12 @@ export default function FunnelPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {totalSearches > 0 ? totalSearches.toLocaleString() : "N/A"}
+                {totalSearches > 0 ? totalSearches.toLocaleString() : 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {totalSearches > 0
-                  ? "Pesquisas de cidades únicas"
-                  : "Aguardando dados"}
+                  ? 'Pesquisas de cidades únicas'
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
@@ -114,17 +114,17 @@ export default function FunnelPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {conversions > 0 ? conversions.toLocaleString() : "N/A"}
+                {conversions > 0 ? conversions.toLocaleString() : 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {conversions > 0
-                  ? "Baseado em filtros aplicados"
-                  : "Aguardando dados"}
+                  ? 'Baseado em filtros aplicados'
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

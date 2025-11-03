@@ -1,25 +1,25 @@
-"use client";
+'use client'
 
-import { Alert, AlertDescription } from "@ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Button } from "@ui/button";
+import { Alert, AlertDescription } from '@ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Button } from '@ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@ui/tooltip";
-import { Skeleton } from "@ui/skeleton";
-import { CopySnippetButton } from "./_components/CopySnippetButton";
-import { useSites } from "@/lib/hooks";
+} from '@ui/tooltip'
+import { Skeleton } from '@ui/skeleton'
+import { CopySnippetButton } from './_components/CopySnippetButton'
+import { useSites } from '@/lib/hooks'
 
 export default function InstallPage() {
-  const { data: sites, isLoading, error } = useSites();
-  const firstSite = sites?.[0];
-  const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "";
+  const { data: sites, isLoading, error } = useSites()
+  const firstSite = sites?.[0]
+  const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || ''
   const loaderUrl = firstSite
     ? `${base}/api/sdk/loader?site=${encodeURIComponent(firstSite.siteKey)}`
-    : "";
+    : ''
 
   if (isLoading) {
     return (
@@ -27,7 +27,7 @@ export default function InstallPage() {
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-32 w-full" />
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -40,7 +40,7 @@ export default function InstallPage() {
           </AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   return (
@@ -80,5 +80,5 @@ export default function InstallPage() {
         </Alert>
       )}
     </div>
-  );
+  )
 }

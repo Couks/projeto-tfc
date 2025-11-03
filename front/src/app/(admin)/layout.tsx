@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import type { ReactNode } from "react";
-import Link from "next/link";
+import type { ReactNode } from 'react'
+import Link from 'next/link'
 import {
   SidebarProvider,
   Sidebar,
@@ -15,7 +15,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
   SidebarRail,
-} from "@ui/sidebar";
+} from '@ui/sidebar'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -23,20 +23,20 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-} from "@ui/sidebar";
+} from '@ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@ui/avatar";
+} from '@ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@ui/tooltip";
+} from '@ui/tooltip'
 import {
   ChevronUp,
   LayoutGrid,
@@ -55,30 +55,30 @@ import {
   Activity,
   CircleDollarSign,
   User,
-} from "lucide-react";
-import { ThemeToggle } from "@/lib/components/ThemeToggle";
-import { SiteProvider } from "@/lib/providers/SiteProvider";
+} from 'lucide-react'
+import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { SiteProvider } from '@/lib/providers/SiteProvider'
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-} from "@/lib/components/ui/collapsible";
-import { useUser, useLogout } from "@/lib/hooks";
-import { useRouter } from "next/navigation";
+} from '@/lib/components/ui/collapsible'
+import { useUser, useLogout } from '@/lib/hooks'
+import { useRouter } from 'next/navigation'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { data: user, isLoading } = useUser();
-  const logoutMutation = useLogout();
-  const router = useRouter();
+  const { data: user, isLoading } = useUser()
+  const logoutMutation = useLogout()
+  const router = useRouter()
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
-      router.push("/login");
+      await logoutMutation.mutateAsync()
+      router.push('/login')
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Logout failed:', error)
     }
-  };
+  }
 
   return (
     <SiteProvider>
@@ -269,19 +269,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       <Avatar className="h-6 w-6">
                         <AvatarImage src="https://github.com/shadcn.png" />
                         <AvatarFallback className="text-xs">
-                          {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                          {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col text-left">
                         <span className="text-xs font-medium leading-tight">
                           {isLoading
-                            ? "Carregando..."
-                            : user?.name || "Usuário"}
+                            ? 'Carregando...'
+                            : user?.name || 'Usuário'}
                         </span>
                         <span className="text-[10px] text-sidebar-foreground/70 leading-tight">
                           {isLoading
-                            ? "..."
-                            : user?.email || "user@example.com"}
+                            ? '...'
+                            : user?.email || 'user@example.com'}
                         </span>
                       </div>
                       <ChevronUp className="ml-auto" />
@@ -301,7 +301,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       onClick={handleLogout}
                       disabled={logoutMutation.isPending}
                     >
-                      {logoutMutation.isPending ? "Saindo..." : "Sair"}
+                      {logoutMutation.isPending ? 'Saindo...' : 'Sair'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -366,5 +366,5 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </SidebarInset>
       </SidebarProvider>
     </SiteProvider>
-  );
+  )
 }

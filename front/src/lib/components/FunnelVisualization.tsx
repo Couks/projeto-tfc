@@ -1,35 +1,35 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { ChevronRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { ChevronRight } from 'lucide-react'
 
 interface FunnelStage {
-  name: string;
-  value: number;
-  color?: string;
+  name: string
+  value: number
+  color?: string
 }
 
 interface FunnelVisualizationProps {
-  stages: FunnelStage[];
-  title?: string;
-  className?: string;
+  stages: FunnelStage[]
+  title?: string
+  className?: string
 }
 
 export function FunnelVisualization({
   stages,
-  title = "Funil de Conversão",
+  title = 'Funil de Conversão',
   className,
 }: FunnelVisualizationProps) {
-  const maxValue = stages[0]?.value || 1;
+  const maxValue = stages[0]?.value || 1
 
   const calculatePercentage = (value: number) => {
-    return ((value / maxValue) * 100).toFixed(1);
-  };
+    return ((value / maxValue) * 100).toFixed(1)
+  }
 
   const calculateDropOff = (current: number, previous: number) => {
-    if (!previous) return null;
-    return (((previous - current) / previous) * 100).toFixed(1);
-  };
+    if (!previous) return null
+    return (((previous - current) / previous) * 100).toFixed(1)
+  }
 
   return (
     <Card className={className}>
@@ -39,9 +39,11 @@ export function FunnelVisualization({
       <CardContent>
         <div className="space-y-4">
           {stages.map((stage, index) => {
-            const percentage = calculatePercentage(stage.value);
+            const percentage = calculatePercentage(stage.value)
             const dropOff =
-              index > 0 ? calculateDropOff(stage.value, stages[index - 1].value) : null;
+              index > 0
+                ? calculateDropOff(stage.value, stages[index - 1].value)
+                : null
 
             return (
               <div key={index}>
@@ -72,13 +74,13 @@ export function FunnelVisualization({
                       className="h-full transition-all duration-500"
                       style={{
                         width: `${percentage}%`,
-                        backgroundColor: stage.color || "hsl(var(--primary))",
+                        backgroundColor: stage.color || 'hsl(var(--primary))',
                       }}
                     />
                   </div>
                 </div>
               </div>
-            );
+            )
           })}
         </div>
 
@@ -98,8 +100,7 @@ export function FunnelVisualization({
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
 
-FunnelVisualization.displayName = "FunnelVisualization";
-
+FunnelVisualization.displayName = 'FunnelVisualization'

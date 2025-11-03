@@ -1,24 +1,24 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { PricesChart } from "./_components/PricesChart";
-import { useSites, usePrices } from "@/lib/hooks";
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { PricesChart } from './_components/PricesChart'
+import { useSites, usePrices } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export default function PricesPage() {
-  const { data: sites, isLoading: sitesLoading } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites, isLoading: sitesLoading } = useSites()
+  const firstSite = sites?.[0]
 
-  const { data, isLoading: dataLoading } = usePrices(firstSite?.siteKey || "");
+  const { data, isLoading: dataLoading } = usePrices(firstSite?.siteKey || '')
 
-  const isLoading = sitesLoading || dataLoading;
+  const isLoading = sitesLoading || dataLoading
 
   // Calculate metrics from real data (sale prices)
   const totalSearches =
-    data?.reduce((sum: number, item) => sum + item.searches, 0) || 0;
+    data?.reduce((sum: number, item) => sum + item.searches, 0) || 0
 
   // Get top 3 price ranges
-  const topPrices = data?.slice(0, 3) || [];
+  const topPrices = data?.slice(0, 3) || []
 
   if (isLoading) {
     return (
@@ -51,7 +51,7 @@ export default function PricesPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -75,18 +75,18 @@ export default function PricesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {topPrices.map((price, index: number) => {
-            const priceRange = price.range || "N/A";
-            const priceCount = price.searches || 0;
+            const priceRange = price.range || 'N/A'
+            const priceCount = price.searches || 0
             const pricePercentage =
               totalSearches > 0
                 ? ((priceCount / totalSearches) * 100).toFixed(1)
-                : "0";
+                : '0'
 
             const labels = [
-              "mais popular",
-              "segunda mais popular",
-              "terceira mais popular",
-            ];
+              'mais popular',
+              'segunda mais popular',
+              'terceira mais popular',
+            ]
 
             return (
               <Card key={index}>
@@ -97,36 +97,36 @@ export default function PricesPage() {
                   <div className="text-2xl font-bold">
                     {parseFloat(pricePercentage) > 0
                       ? `${pricePercentage}%`
-                      : "N/A"}
+                      : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {priceCount > 0
                       ? `${labels[index]} (${priceCount} pesquisas)`
-                      : "Aguardando dados"}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          {/* Fill with empty cards if less than 3 price ranges */}
-          {Array.from({ length: Math.max(0, 3 - topPrices.length) }).map(
-            (_, i) => (
-              <Card key={`empty-${i}`}>
-                <CardHeader>
-                  <CardTitle className="text-base">-</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">N/A</div>
-                  <p className="text-xs text-muted-foreground">
-                    Aguardando dados
+                      : 'Aguardando dados'}
                   </p>
                 </CardContent>
               </Card>
             )
-          )}
+          })}
+
+          {/* Fill with empty cards if less than 3 price ranges */}
+          {Array.from({
+            length: Math.max(0, 3 - topPrices.length),
+          }).map((_, i) => (
+            <Card key={`empty-${i}`}>
+              <CardHeader>
+                <CardTitle className="text-base">-</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">N/A</div>
+                <p className="text-xs text-muted-foreground">
+                  Aguardando dados
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
-  );
+  )
 }

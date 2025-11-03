@@ -1,30 +1,30 @@
-'use client';
-import { useState } from 'react';
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/lib/components/ui/button";
-import { Input } from "@/lib/components/ui/input";
-import { ThemeToggle } from "@/lib/components/ThemeToggle";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { useLogin } from "@/lib/hooks";
+'use client'
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/lib/components/ui/button'
+import { Input } from '@/lib/components/ui/input'
+import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { useLogin } from '@/lib/hooks'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
-  const loginMutation = useLogin();
+  const loginMutation = useLogin()
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      await loginMutation.mutateAsync({ email, password });
-      router.push("/admin");
+      await loginMutation.mutateAsync({ email, password })
+      router.push('/admin')
     } catch (err) {
       // Error is handled by React Query and displayed via mutation state
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -70,7 +70,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       placeholder="Senha"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -95,7 +95,7 @@ export default function LoginPage() {
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
                   {loginMutation.error instanceof Error
                     ? loginMutation.error.message
-                    : "Falha no login"}
+                    : 'Falha no login'}
                 </div>
               )}
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
                 size="lg"
                 disabled={loginMutation.isPending}
               >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                {loginMutation.isPending ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
 
@@ -124,7 +124,7 @@ export default function LoginPage() {
             {/* Sign Up Link */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Não tem uma conta?{" "}
+                Não tem uma conta?{' '}
                 <Link
                   href="/register"
                   className="text-foreground hover:text-foreground/80 transition-colors font-medium"
@@ -144,7 +144,5 @@ export default function LoginPage() {
         </p>
       </footer>
     </div>
-  );
+  )
 }
-
-

@@ -1,13 +1,13 @@
-import Link from "next/link";
+import Link from 'next/link'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
-import { Button } from "@/lib/components/ui/button";
-import { Badge } from "@/lib/components/ui/badge";
+} from '@/lib/components/ui/card'
+import { Button } from '@/lib/components/ui/button'
+import { Badge } from '@/lib/components/ui/badge'
 import {
   BarChart3,
   MapPin,
@@ -16,19 +16,12 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  Eye,
-  MousePointer,
-  Globe,
   Zap,
   Shield,
-  CheckCircle,
   ArrowRight,
-  Star,
   Activity,
-  Menu,
-  X,
-} from "lucide-react";
-import { ThemeToggle } from "@/lib/components/ThemeToggle";
+} from 'lucide-react'
+import { ThemeToggle } from '@/lib/components/ThemeToggle'
 
 export default function HomePage() {
   return (
@@ -430,6 +423,5 @@ export default function HomePage() {
         </div>
       </footer>
     </main>
-  );
+  )
 }
-

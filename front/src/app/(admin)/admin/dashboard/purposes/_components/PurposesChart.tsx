@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   ChartContainer,
@@ -6,37 +6,37 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-} from "@ui/chart";
-import { PieChart, Pie, Cell } from "recharts";
-import { Skeleton } from "@ui/skeleton";
-import { useSites, usePurposes } from "@/lib/hooks";
+} from '@ui/chart'
+import { PieChart, Pie, Cell } from 'recharts'
+import { Skeleton } from '@ui/skeleton'
+import { useSites, usePurposes } from '@/lib/hooks'
 
 const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--secondary))",
-  "hsl(var(--accent))",
-];
+  'hsl(var(--primary))',
+  'hsl(var(--secondary))',
+  'hsl(var(--accent))',
+]
 
 const chartConfig = {
   value: {
-    label: "Pesquisas",
+    label: 'Pesquisas',
   },
-};
+}
 
 export function PurposesChart() {
-  const { data: sites } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites } = useSites()
+  const firstSite = sites?.[0]
   const {
     data: purposesData,
     isLoading,
     error,
-  } = usePurposes(firstSite?.siteKey || "");
+  } = usePurposes(firstSite?.siteKey || '')
 
   // Add colors to the data
   const purposesDataWithColors = purposesData.map((item, index) => ({
     ...item,
     color: COLORS[index % COLORS.length],
-  }));
+  }))
 
   if (isLoading) {
     return (
@@ -47,7 +47,7 @@ export function PurposesChart() {
           <Skeleton className="h-8 w-[180px]" />
         </div>
       </div>
-    );
+    )
   }
 
   if (error || purposesDataWithColors.length === 0) {
@@ -55,10 +55,10 @@ export function PurposesChart() {
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
           {error?.message ||
-            "Nenhum dado disponível. Configure um site e aguarde dados de pesquisa."}
+            'Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.'}
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -82,5 +82,5 @@ export function PurposesChart() {
         <ChartLegend content={<ChartLegendContent />} />
       </PieChart>
     </ChartContainer>
-  );
+  )
 }

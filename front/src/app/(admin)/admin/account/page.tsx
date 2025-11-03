@@ -1,17 +1,17 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Button } from "@ui/button";
-import { Input } from "@ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@ui/avatar";
-import { Separator } from "@ui/separator";
-import { Badge } from "@ui/badge";
-import { User, Mail, Calendar, Shield, Bell, Key } from "lucide-react";
-import { useUser } from "@/lib/hooks";
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Button } from '@ui/button'
+import { Input } from '@ui/input'
+import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
+import { Separator } from '@ui/separator'
+import { Badge } from '@ui/badge'
+import { User, Mail, Calendar, Shield, Bell, Key } from 'lucide-react'
+import { useUser } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export default function AccountPage() {
-  const { data: user, isLoading, error } = useUser();
+  const { data: user, isLoading, error } = useUser()
 
   if (isLoading) {
     return (
@@ -52,7 +52,7 @@ export default function AccountPage() {
           </Card>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !user) {
@@ -65,20 +65,20 @@ export default function AccountPage() {
           </p>
         </div>
       </div>
-    );
+    )
   }
 
   // User data - simplified for the hook structure
   const userData = {
-    name: user.name || "User",
+    name: user.name || 'User',
     email: user.email,
-    createdAt: new Date(user.createdAt).toISOString().split("T")[0],
-    plan: "Free", // Default plan since plan is not in the hook
+    createdAt: new Date(user.createdAt).toISOString().split('T')[0],
+    plan: 'Free', // Default plan since plan is not in the hook
     notifications: true, // Default value
     twoFactor: false, // Default value
     sitesCount: 0, // Will be fetched separately if needed
-    lastLogin: "Primeiro acesso", // Default value
-  };
+    lastLogin: 'Primeiro acesso', // Default value
+  }
 
   return (
     <div className="space-y-6">
@@ -114,8 +114,8 @@ export default function AccountPage() {
                 <div className="flex gap-2">
                   <Badge variant="secondary">{userData.plan}</Badge>
                   <Badge variant="outline">
-                    {userData.sitesCount}{" "}
-                    {userData.sitesCount === 1 ? "site" : "sites"}
+                    {userData.sitesCount}{' '}
+                    {userData.sitesCount === 1 ? 'site' : 'sites'}
                   </Badge>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export default function AccountPage() {
                   Membro desde
                 </span>
                 <span className="text-sm font-medium">
-                  {new Date(userData.createdAt).toLocaleDateString("pt-BR")}
+                  {new Date(userData.createdAt).toLocaleDateString('pt-BR')}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -194,8 +194,8 @@ export default function AccountPage() {
                 <span className="text-sm text-muted-foreground">
                   Autenticação 2FA
                 </span>
-                <Badge variant={userData.twoFactor ? "default" : "secondary"}>
-                  {userData.twoFactor ? "Ativado" : "Desativado"}
+                <Badge variant={userData.twoFactor ? 'default' : 'secondary'}>
+                  {userData.twoFactor ? 'Ativado' : 'Desativado'}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
@@ -232,9 +232,9 @@ export default function AccountPage() {
               </div>
               <Button
                 size="sm"
-                variant={userData.notifications ? "default" : "outline"}
+                variant={userData.notifications ? 'default' : 'outline'}
               >
-                {userData.notifications ? "Ativado" : "Desativado"}
+                {userData.notifications ? 'Ativado' : 'Desativado'}
               </Button>
             </div>
 
@@ -274,5 +274,5 @@ export default function AccountPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

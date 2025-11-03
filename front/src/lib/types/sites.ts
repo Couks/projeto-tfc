@@ -3,14 +3,14 @@
  */
 
 export interface Site {
-  id: string;
-  name: string;
-  siteKey: string;
-  status: string;
-  createdAt: string;
+  id: string
+  name: string
+  siteKey: string
+  status: string
+  createdAt: string
   domains: Array<{
-    id: string;
-    host: string;
-    isPrimary: boolean;
-  }>;
+    id: string
+    host: string
+    isPrimary: boolean
+  }>
 }

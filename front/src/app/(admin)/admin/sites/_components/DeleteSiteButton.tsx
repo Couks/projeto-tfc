@@ -1,25 +1,25 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Button } from "@ui/button";
-import { Trash2 } from "lucide-react";
-import { useDeleteSite } from '@/lib/hooks/useSites';
+import { Button } from '@ui/button'
+import { Trash2 } from 'lucide-react'
+import { useDeleteSite } from '@/lib/hooks/useSites'
 
 export function DeleteSiteButton({ siteId }: { siteId: string }) {
-  const router = useRouter();
-  const deleteSiteMutation = useDeleteSite();
+  const router = useRouter()
+  const deleteSiteMutation = useDeleteSite()
 
   const handleDelete = async () => {
-    if (!confirm("Delete this site? This cannot be undone.")) return;
+    if (!confirm('Delete this site? This cannot be undone.')) return
 
     try {
-      await deleteSiteMutation.mutateAsync(siteId);
-      router.refresh();
+      await deleteSiteMutation.mutateAsync(siteId)
+      router.refresh()
     } catch (error) {
-      console.error('Failed to delete site:', error);
-      alert("Failed to delete site");
+      console.error('Failed to delete site:', error)
+      alert('Failed to delete site')
     }
-  };
+  }
 
   return (
     <Button
@@ -34,7 +34,5 @@ export function DeleteSiteButton({ siteId }: { siteId: string }) {
     >
       <Trash2 />
     </Button>
-  );
+  )
 }
-
-

@@ -1,5 +1,5 @@
-import { AdminDashboardClient } from "./_components/AdminDashboardClient";
+import { AdminDashboardClient } from './_components/AdminDashboardClient'
 
 export default function AdminHome() {
-  return <AdminDashboardClient />;
+  return <AdminDashboardClient />
 }

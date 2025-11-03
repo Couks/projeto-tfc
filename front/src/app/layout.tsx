@@ -1,11 +1,11 @@
-import './globals.css';
-import type { ReactNode } from 'react';
-import { QueryProvider } from "@/lib/providers/QueryProvider";
+import './globals.css'
+import type { ReactNode } from 'react'
+import { QueryProvider } from '@/lib/providers/QueryProvider'
 
 export const metadata = {
-  title: "Insight House",
-  description: "Analytics for real estate websites",
-};
+  title: 'Insight House',
+  description: 'Analytics for real estate websites',
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,7 +16,5 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </div>
       </body>
     </html>
-  );
+  )
 }
-
-

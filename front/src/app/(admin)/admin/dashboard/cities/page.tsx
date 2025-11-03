@@ -1,35 +1,33 @@
-"use client";
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { CitiesChart } from "./_components/CitiesChart";
-import { useSites, useOverview } from "@/lib/hooks";
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { CitiesChart } from './_components/CitiesChart'
+import { useSites, useOverview } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export default function CitiesPage() {
-  const { data: sites, isLoading: sitesLoading } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites, isLoading: sitesLoading } = useSites()
+  const firstSite = sites?.[0]
 
   const { data: data, isLoading: dataLoading } = useOverview(
-    firstSite?.siteKey || ""
-  );
+    firstSite?.siteKey || ''
+  )
 
-  const isLoading = sitesLoading || dataLoading;
+  const isLoading = sitesLoading || dataLoading
 
   // Calculate real metrics from data
   const totalSearches =
     data?.cidades?.reduce(
       (sum: number, item: any[]) => sum + (parseInt(item[1]) || 0),
       0
-    ) || 0;
+    ) || 0
 
-  const uniqueCities = data?.cidades?.length || 0;
+  const uniqueCities = data?.cidades?.length || 0
 
-  const topCity = data?.cidades?.[0]?.[0] || "N/A";
-  const topCitySearches = data?.cidades?.[0]?.[1] || 0;
+  const topCity = data?.cidades?.[0]?.[0] || 'N/A'
+  const topCitySearches = data?.cidades?.[0]?.[1] || 0
   const topCityPercentage =
-    totalSearches > 0
-      ? ((topCitySearches / totalSearches) * 100).toFixed(1)
-      : 0;
+    totalSearches > 0 ? ((topCitySearches / totalSearches) * 100).toFixed(1) : 0
 
   if (isLoading) {
     return (
@@ -62,7 +60,7 @@ export default function CitiesPage() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -91,12 +89,12 @@ export default function CitiesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {totalSearches > 0 ? totalSearches.toLocaleString() : "N/A"}
+                {totalSearches > 0 ? totalSearches.toLocaleString() : 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {totalSearches > 0
-                  ? "Pesquisas por cidade registradas"
-                  : "Aguardando dados"}
+                  ? 'Pesquisas por cidade registradas'
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
@@ -107,12 +105,12 @@ export default function CitiesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {uniqueCities > 0 ? uniqueCities : "N/A"}
+                {uniqueCities > 0 ? uniqueCities : 'N/A'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {uniqueCities > 0
-                  ? "Cidades diferentes pesquisadas"
-                  : "Aguardando dados"}
+                  ? 'Cidades diferentes pesquisadas'
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
@@ -126,12 +124,12 @@ export default function CitiesPage() {
               <p className="text-xs text-muted-foreground">
                 {topCitySearches > 0
                   ? `${topCitySearches} pesquisas (${topCityPercentage}%)`
-                  : "Aguardando dados"}
+                  : 'Aguardando dados'}
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

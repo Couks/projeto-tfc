@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { RefreshButton } from "./RefreshButton";
-import { Table, TableBody, TableCell, TableRow } from "@ui/table";
-import { ChartBarDefault } from "./ChartBarDefault";
-import { useSites, useOverview, type OverviewData } from '@/lib/hooks';
-import { Skeleton } from "@ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { RefreshButton } from './RefreshButton'
+import { Table, TableBody, TableCell, TableRow } from '@ui/table'
+import { ChartBarDefault } from './ChartBarDefault'
+import { useSites, useOverview, type OverviewData } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export function DashboardClient() {
-  const { data: sites } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites } = useSites()
+  const firstSite = sites?.[0]
   const { data, isLoading, error } = useOverview(firstSite?.siteKey || '') as {
-    data: OverviewData | undefined;
-    isLoading: boolean;
-    error: Error | null;
-  };
+    data: OverviewData | undefined
+    isLoading: boolean
+    error: Error | null
+  }
 
   if (isLoading) {
     return (
@@ -36,7 +36,7 @@ export function DashboardClient() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !data) {
@@ -47,10 +47,10 @@ export function DashboardClient() {
           <RefreshButton />
         </div>
         <div className="text-sm text-muted-foreground">
-          {error?.message || "Sem dados ainda."}
+          {error?.message || 'Sem dados ainda.'}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -370,5 +370,5 @@ export function DashboardClient() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

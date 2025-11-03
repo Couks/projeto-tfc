@@ -1,12 +1,18 @@
-"use client";
+'use client'
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui/select'
 
-export type DateFilterValue = "DAY" | "WEEK" | "MONTH" | "YEAR" | "CUSTOM";
+export type DateFilterValue = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM'
 
 interface DateFilterProps {
-  value: DateFilterValue;
-  onChange: (value: DateFilterValue) => void;
+  value: DateFilterValue
+  onChange: (value: DateFilterValue) => void
 }
 
 export function DateFilter({ value, onChange }: DateFilterProps) {
@@ -20,10 +26,10 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
         <SelectItem value="WEEK">This Week</SelectItem>
         <SelectItem value="MONTH">This Month</SelectItem>
         <SelectItem value="YEAR">This Year</SelectItem>
-        <SelectItem value="CUSTOM" disabled>Custom (soon)</SelectItem>
+        <SelectItem value="CUSTOM" disabled>
+          Custom (soon)
+        </SelectItem>
       </SelectContent>
     </Select>
-  );
+  )
 }
-
-

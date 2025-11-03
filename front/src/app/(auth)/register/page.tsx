@@ -1,38 +1,38 @@
-'use client';
-import { useState } from 'react';
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/lib/components/ui/button";
-import { Input } from "@/lib/components/ui/input";
-import { ThemeToggle } from "@/lib/components/ThemeToggle";
-import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
-import { useRegister } from "@/lib/hooks";
+'use client'
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/lib/components/ui/button'
+import { Input } from '@/lib/components/ui/input'
+import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react'
+import { useRegister } from '@/lib/hooks'
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
-  const registerMutation = useRegister();
+  const registerMutation = useRegister()
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      await registerMutation.mutateAsync({ email, password, name });
-      router.push("/login");
+      await registerMutation.mutateAsync({ email, password, name })
+      router.push('/login')
     } catch (err) {
       // Error is handled by React Query and displayed via mutation state
     }
-  };
+  }
 
   // Password strength indicators
   const passwordChecks = [
-    { label: "Pelo menos 8 caracteres", met: password.length >= 8 },
-    { label: "Contém uma letra maiúscula", met: /[A-Z]/.test(password) },
-    { label: "Contém um número", met: /\d/.test(password) },
-  ];
+    { label: 'Pelo menos 8 caracteres', met: password.length >= 8 },
+    { label: 'Contém uma letra maiúscula', met: /[A-Z]/.test(password) },
+    { label: 'Contém um número', met: /\d/.test(password) },
+  ]
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -88,7 +88,7 @@ export default function RegisterPage() {
                   <div className="relative">
                     <Input
                       placeholder="Senha"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -118,7 +118,7 @@ export default function RegisterPage() {
                           <div key={index} className="flex items-center gap-2">
                             <div
                               className={`w-3 h-3 rounded-full flex items-center justify-center ${
-                                check.met ? "bg-green-500" : "bg-muted"
+                                check.met ? 'bg-green-500' : 'bg-muted'
                               }`}
                             >
                               {check.met && (
@@ -128,8 +128,8 @@ export default function RegisterPage() {
                             <span
                               className={`text-xs ${
                                 check.met
-                                  ? "text-green-600"
-                                  : "text-muted-foreground"
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
                               }`}
                             >
                               {check.label}
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
                   {registerMutation.error instanceof Error
                     ? registerMutation.error.message
-                    : "Falha no registro"}
+                    : 'Falha no registro'}
                 </div>
               )}
 
@@ -157,8 +157,8 @@ export default function RegisterPage() {
                 disabled={registerMutation.isPending}
               >
                 {registerMutation.isPending
-                  ? "Criando conta..."
-                  : "Criar conta"}
+                  ? 'Criando conta...'
+                  : 'Criar conta'}
               </Button>
             </form>
 
@@ -177,7 +177,7 @@ export default function RegisterPage() {
             {/* Sign In Link */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Já tem uma conta?{" "}
+                Já tem uma conta?{' '}
                 <Link
                   href="/login"
                   className="text-foreground hover:text-foreground/80 transition-colors font-medium"
@@ -197,7 +197,5 @@ export default function RegisterPage() {
         </p>
       </footer>
     </div>
-  );
+  )
 }
-
-

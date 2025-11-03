@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Button } from "@ui/button";
-import { Badge } from "@ui/badge";
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Button } from '@ui/button'
+import { Badge } from '@ui/badge'
 import {
   BarChart2,
   Activity,
@@ -16,22 +16,22 @@ import {
   Globe,
   Settings,
   User,
-} from "lucide-react";
-import { useSites } from "@/lib/hooks";
-import { useOverview } from "@/lib/hooks/useInsights";
+} from 'lucide-react'
+import { useSites } from '@/lib/hooks'
+import { useOverview } from '@/lib/hooks/useInsights'
 
 export function AdminDashboardClient() {
-  const { data: sites } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites } = useSites()
+  const firstSite = sites?.[0]
 
-  const { data: overviewData } = useOverview(firstSite?.siteKey || "");
+  const { data: overviewData } = useOverview(firstSite?.siteKey || '')
 
   // Calculate metrics from real data with proper type checking
-  const totalConversions = overviewData?.eventsCount || 0;
+  const totalConversions = overviewData?.eventsCount || 0
 
-  const totalSessions = 0; // Not available in current backend response
-  const conversionRate = "0"; // Calculate when session data is available
-  const bounceRate = "0"; // Calculate when bounce data is available
+  const totalSessions = 0 // Not available in current backend response
+  const conversionRate = '0' // Calculate when session data is available
+  const bounceRate = '0' // Calculate when bounce data is available
 
   const metrics = {
     totalVisitors: overviewData?.usersCount || 0,
@@ -39,11 +39,11 @@ export function AdminDashboardClient() {
     conversionRate: conversionRate,
     bounceRate: bounceRate,
     totalConversions: totalConversions,
-    topCity: "N/A",
-    topPropertyType: "N/A",
-    topPurpose: "N/A",
-    avgPriceRange: "N/A",
-  };
+    topCity: 'N/A',
+    topPropertyType: 'N/A',
+    topPurpose: 'N/A',
+    avgPriceRange: 'N/A',
+  }
 
   return (
     <div className="space-y-6">
@@ -65,12 +65,12 @@ export function AdminDashboardClient() {
             <div className="text-2xl font-bold">
               {metrics.totalVisitors > 0
                 ? metrics.totalVisitors.toLocaleString()
-                : "N/A"}
+                : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
               {metrics.totalSites > 0
-                ? "Últimos 30 dias"
-                : "Configure um site primeiro"}
+                ? 'Últimos 30 dias'
+                : 'Configure um site primeiro'}
             </p>
           </CardContent>
         </Card>
@@ -84,10 +84,10 @@ export function AdminDashboardClient() {
             <div className="text-2xl font-bold">{metrics.totalSites}</div>
             <p className="text-xs text-muted-foreground">
               {metrics.totalSites === 0
-                ? "Nenhum site configurado"
+                ? 'Nenhum site configurado'
                 : metrics.totalSites === 1
-                ? "Site funcionando"
-                : "Sites funcionando"}
+                  ? 'Site funcionando'
+                  : 'Sites funcionando'}
             </p>
           </CardContent>
         </Card>
@@ -101,12 +101,12 @@ export function AdminDashboardClient() {
             <div className="text-2xl font-bold">
               {metrics.totalConversions > 0
                 ? metrics.totalConversions.toLocaleString()
-                : "N/A"}
+                : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
               {parseFloat(metrics.conversionRate) > 0
                 ? `Taxa: ${metrics.conversionRate}%`
-                : "Aguardando dados"}
+                : 'Aguardando dados'}
             </p>
           </CardContent>
         </Card>
@@ -122,16 +122,16 @@ export function AdminDashboardClient() {
             <div className="text-2xl font-bold">
               {parseFloat(metrics.bounceRate) > 0
                 ? `${metrics.bounceRate}%`
-                : "N/A"}
+                : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
               {parseFloat(metrics.bounceRate) > 0
                 ? parseFloat(metrics.bounceRate) < 25
-                  ? "Excelente ✅"
+                  ? 'Excelente ✅'
                   : parseFloat(metrics.bounceRate) < 40
-                  ? "Normal"
-                  : "Precisa melhorar ⚠️"
-                : "Aguardando dados"}
+                    ? 'Normal'
+                    : 'Precisa melhorar ⚠️'
+                : 'Aguardando dados'}
             </p>
           </CardContent>
         </Card>
@@ -230,7 +230,7 @@ export function AdminDashboardClient() {
               <div className="text-sm text-muted-foreground">
                 {metrics.totalConversions > 0
                   ? `${metrics.totalConversions} conversões`
-                  : "Sem dados ainda"}
+                  : 'Sem dados ainda'}
               </div>
             </div>
           </CardContent>
@@ -341,9 +341,9 @@ export function AdminDashboardClient() {
               <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {metrics.topPropertyType !== "N/A"
-                ? "Tipo mais procurado pelos usuários"
-                : "Aguardando dados de pesquisa"}
+              {metrics.topPropertyType !== 'N/A'
+                ? 'Tipo mais procurado pelos usuários'
+                : 'Aguardando dados de pesquisa'}
             </p>
           </CardContent>
         </Card>
@@ -358,9 +358,9 @@ export function AdminDashboardClient() {
               <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {metrics.topPurpose !== "N/A"
-                ? "Finalidade mais procurada"
-                : "Aguardando dados de pesquisa"}
+              {metrics.topPurpose !== 'N/A'
+                ? 'Finalidade mais procurada'
+                : 'Aguardando dados de pesquisa'}
             </p>
           </CardContent>
         </Card>
@@ -377,13 +377,13 @@ export function AdminDashboardClient() {
               <Badge variant="secondary">Aguardando</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {metrics.avgPriceRange !== "N/A"
-                ? "Faixa mais popular nas pesquisas"
-                : "Aguardando dados de pesquisa"}
+              {metrics.avgPriceRange !== 'N/A'
+                ? 'Faixa mais popular nas pesquisas'
+                : 'Aguardando dados de pesquisa'}
             </p>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+  )
 }

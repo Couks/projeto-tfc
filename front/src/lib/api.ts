@@ -5,23 +5,23 @@
 
 // Get API base URL from environment
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
 
 /**
  * API client class for making requests to the NestJS backend
  */
 class ApiClient {
-  private baseUrl: string;
+  private baseUrl: string
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+    this.baseUrl = baseUrl
   }
 
   /**
    * Make a GET request
    */
   async get<T>(path: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
+    const url = `${this.baseUrl}${path}`
     const response = await fetch(url, {
       ...options,
       method: 'GET',
@@ -30,20 +30,20 @@ class ApiClient {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
-    });
+    })
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`)
     }
 
-    return response.json();
+    return response.json()
   }
 
   /**
    * Make a POST request
    */
   async post<T>(path: string, data?: any, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
+    const url = `${this.baseUrl}${path}`
     const response = await fetch(url, {
       ...options,
       method: 'POST',
@@ -53,23 +53,23 @@ class ApiClient {
         ...options?.headers,
       },
       body: data ? JSON.stringify(data) : undefined,
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({}))
       throw new Error(
-        errorData.message || `API request failed: ${response.statusText}`,
-      );
+        errorData.message || `API request failed: ${response.statusText}`
+      )
     }
 
-    return response.json();
+    return response.json()
   }
 
   /**
    * Make a PUT request
    */
   async put<T>(path: string, data?: any, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
+    const url = `${this.baseUrl}${path}`
     const response = await fetch(url, {
       ...options,
       method: 'PUT',
@@ -79,23 +79,23 @@ class ApiClient {
         ...options?.headers,
       },
       body: data ? JSON.stringify(data) : undefined,
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({}))
       throw new Error(
-        errorData.message || `API request failed: ${response.statusText}`,
-      );
+        errorData.message || `API request failed: ${response.statusText}`
+      )
     }
 
-    return response.json();
+    return response.json()
   }
 
   /**
    * Make a DELETE request
    */
   async delete<T>(path: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
+    const url = `${this.baseUrl}${path}`
     const response = await fetch(url, {
       ...options,
       method: 'DELETE',
@@ -104,34 +104,33 @@ class ApiClient {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({}))
       throw new Error(
-        errorData.message || `API request failed: ${response.statusText}`,
-      );
+        errorData.message || `API request failed: ${response.statusText}`
+      )
     }
 
     // DELETE may return no content
     if (response.status === 204) {
-      return {} as T;
+      return {} as T
     }
 
-    return response.json();
+    return response.json()
   }
 
   /**
    * Get the base URL
    */
   getBaseUrl(): string {
-    return this.baseUrl;
+    return this.baseUrl
   }
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(API_BASE_URL)
 
 // Export API base URL for direct use
-export const API_URL = API_BASE_URL;
-
+export const API_URL = API_BASE_URL

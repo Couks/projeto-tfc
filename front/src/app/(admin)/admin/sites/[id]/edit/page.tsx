@@ -1,25 +1,25 @@
-"use client";
+'use client'
 
-import React from "react";
-import Link from "next/link";
-import { Button } from "@ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { EditSiteForm } from "./_components/EditSiteForm";
-import { useSite } from "@/lib/hooks";
-import { Skeleton } from "@ui/skeleton";
+import React from 'react'
+import Link from 'next/link'
+import { Button } from '@ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { EditSiteForm } from './_components/EditSiteForm'
+import { useSite } from '@/lib/hooks'
+import { Skeleton } from '@ui/skeleton'
 
 export default function EditSitePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }) {
-  const [siteId, setSiteId] = React.useState<string | null>(null);
+  const [siteId, setSiteId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    params.then(({ id }) => setSiteId(id));
-  }, [params]);
+    params.then(({ id }) => setSiteId(id))
+  }, [params])
 
-  const { data: site, isLoading, error } = useSite(siteId || "");
+  const { data: site, isLoading, error } = useSite(siteId || '')
 
   if (isLoading) {
     return (
@@ -37,7 +37,7 @@ export default function EditSitePage({
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   if (error || !site) {
@@ -48,7 +48,7 @@ export default function EditSitePage({
           <Link href="/admin/sites">Back</Link>
         </Button>
       </div>
-    );
+    )
   }
 
   return (
@@ -68,11 +68,11 @@ export default function EditSitePage({
             site={{
               id: site.id,
               name: site.name,
-              status: site.status as "active" | "inactive",
+              status: site.status as 'active' | 'inactive',
             }}
           />
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

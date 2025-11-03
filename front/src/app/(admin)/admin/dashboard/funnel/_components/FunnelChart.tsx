@@ -1,25 +1,25 @@
-'use client';
+'use client'
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { Skeleton } from "@ui/skeleton";
-import { useSites, useFunnel } from "@/lib/hooks";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@ui/chart'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { Skeleton } from '@ui/skeleton'
+import { useSites, useFunnel } from '@/lib/hooks'
 
 const chartConfig = {
   value: {
-    label: "Usuários",
-    color: "hsl(var(--primary))",
+    label: 'Usuários',
+    color: 'hsl(var(--primary))',
   },
-};
+}
 
 export function FunnelChart() {
-  const { data: sites } = useSites();
-  const firstSite = sites?.[0];
+  const { data: sites } = useSites()
+  const firstSite = sites?.[0]
   const {
     data: funnelData,
     isLoading,
     error,
-  } = useFunnel(firstSite?.siteKey || "");
+  } = useFunnel(firstSite?.siteKey || '')
 
   if (isLoading) {
     return (
@@ -30,7 +30,7 @@ export function FunnelChart() {
           <Skeleton className="h-8 w-[180px]" />
         </div>
       </div>
-    );
+    )
   }
 
   if (error || funnelData.length === 0) {
@@ -38,10 +38,10 @@ export function FunnelChart() {
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
           {error?.message ||
-            "Nenhum dado disponível. Configure um site e aguarde dados de pesquisa."}
+            'Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.'}
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -54,5 +54,5 @@ export function FunnelChart() {
         <Bar dataKey="value" fill="var(--color-value)" radius={4} />
       </BarChart>
     </ChartContainer>
-  );
+  )
 }

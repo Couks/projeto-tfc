@@ -1,15 +1,15 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { DeleteSiteButton } from "./DeleteSiteButton";
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Button } from "@ui/button";
-import { Pencil } from "lucide-react";
-import { Skeleton } from "@ui/skeleton";
-import { useSites } from '@/lib/hooks';
+import Link from 'next/link'
+import { DeleteSiteButton } from './DeleteSiteButton'
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Button } from '@ui/button'
+import { Pencil } from 'lucide-react'
+import { Skeleton } from '@ui/skeleton'
+import { useSites } from '@/lib/hooks'
 
 export function SitesClient() {
-  const { data: sites, isLoading, error } = useSites();
+  const { data: sites, isLoading, error } = useSites()
 
   if (isLoading) {
     return (
@@ -34,7 +34,7 @@ export function SitesClient() {
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -50,7 +50,7 @@ export function SitesClient() {
           Erro ao carregar sites. Tente novamente.
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -73,7 +73,7 @@ export function SitesClient() {
                     {s.siteKey}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Primário: {s.domains?.find((d) => d.isPrimary)?.host || "-"}
+                    Primário: {s.domains?.find((d) => d.isPrimary)?.host || '-'}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -108,5 +108,5 @@ export function SitesClient() {
         )}
       </div>
     </div>
-  );
+  )
 }

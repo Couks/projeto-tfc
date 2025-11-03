@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   ChartContainer,
@@ -6,37 +6,37 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-} from "@ui/chart";
-import { PieChart, Pie, Cell } from "recharts";
-import { Skeleton } from "@ui/skeleton";
-import { useSites } from "@/lib/hooks";
+} from '@ui/chart'
+import { PieChart, Pie, Cell } from 'recharts'
+import { Skeleton } from '@ui/skeleton'
+import { useSites } from '@/lib/hooks'
 
 const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--secondary))",
-  "hsl(var(--accent))",
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-];
+  'hsl(var(--primary))',
+  'hsl(var(--secondary))',
+  'hsl(var(--accent))',
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+]
 
 const chartConfig = {
   value: {
-    label: "Pesquisas",
+    label: 'Pesquisas',
   },
-};
+}
 
 export function TypesChart() {
-  const { data: sites } = useSites();
-  const firstSite = sites?.[0];
-  const typesData: Array<{ name: string; value: number }> = [];
-  const isLoading = false;
-  const error: Error | null = null;
+  const { data: sites } = useSites()
+  const firstSite = sites?.[0]
+  const typesData: Array<{ name: string; value: number }> = []
+  const isLoading = false
+  const error: Error | null = null
 
   // Add colors to the data
   const typesDataWithColors = typesData.map((item, index) => ({
     ...item,
     color: COLORS[index % COLORS.length],
-  }));
+  }))
 
   if (isLoading) {
     return (
@@ -47,7 +47,7 @@ export function TypesChart() {
           <Skeleton className="h-8 w-[180px]" />
         </div>
       </div>
-    );
+    )
   }
 
   if (error || typesDataWithColors.length === 0) {
@@ -55,10 +55,10 @@ export function TypesChart() {
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
           {error?.message ||
-            "Nenhum dado disponível. Configure um site e aguarde dados de pesquisa."}
+            'Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.'}
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -82,5 +82,5 @@ export function TypesChart() {
         <ChartLegend content={<ChartLegendContent />} />
       </PieChart>
     </ChartContainer>
-  );
+  )
 }

@@ -1,45 +1,48 @@
-'use client';
-import { useState } from 'react';
-import { useRouter } from "next/navigation";
-import { Input } from "@ui/input";
-import { Button } from "@ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
-import { Alert, AlertDescription } from "@ui/alert";
-import { useCreateSite } from "@/lib/hooks";
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Input } from '@ui/input'
+import { Button } from '@ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Alert, AlertDescription } from '@ui/alert'
+import { useCreateSite } from '@/lib/hooks'
 
 export default function NewSitePage() {
-  const [name, setName] = useState("");
-  const [domain, setDomain] = useState("");
-  const [loaderUrl, setLoaderUrl] = useState<string | null>(null);
-  const [siteKey, setSiteKey] = useState<string | null>(null);
-  const router = useRouter();
+  const [name, setName] = useState('')
+  const [domain, setDomain] = useState('')
+  const [loaderUrl, setLoaderUrl] = useState<string | null>(null)
+  const [siteKey, setSiteKey] = useState<string | null>(null)
+  const router = useRouter()
 
-  const createSiteMutation = useCreateSite();
+  const createSiteMutation = useCreateSite()
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoaderUrl(null);
-    setSiteKey(null);
+    e.preventDefault()
+    setLoaderUrl(null)
+    setSiteKey(null)
     try {
-      const data = (await createSiteMutation.mutateAsync({ name, domain })) as {
-        loaderUrl: string;
-        siteKey: string;
-      };
-      setLoaderUrl(data.loaderUrl);
-      setSiteKey(data.siteKey);
+      const data = (await createSiteMutation.mutateAsync({
+        name,
+        domain,
+      })) as {
+        loaderUrl: string
+        siteKey: string
+      }
+      setLoaderUrl(data.loaderUrl)
+      setSiteKey(data.siteKey)
 
       // Redirect to sites list after successful creation
       setTimeout(() => {
-        router.push("/admin/sites");
-      }, 2000); // Give user time to see the snippet
+        router.push('/admin/sites')
+      }, 2000) // Give user time to see the snippet
     } catch (err) {
       // Error is handled by React Query and displayed via mutation state
     }
-  };
+  }
 
   const htmlSnippet = loaderUrl
     ? `<script async src="${loaderUrl}"></script>`
-    : "";
+    : ''
 
   return (
     <div className="space-y-6">
@@ -73,14 +76,14 @@ export default function NewSitePage() {
               size="sm"
               disabled={createSiteMutation.isPending}
             >
-              {createSiteMutation.isPending ? "Criando..." : "Criar"}
+              {createSiteMutation.isPending ? 'Criando...' : 'Criar'}
             </Button>
             {createSiteMutation.isError && (
               <Alert variant="destructive">
                 <AlertDescription>
                   {createSiteMutation.error instanceof Error
                     ? createSiteMutation.error.message
-                    : "Falha ao criar site"}
+                    : 'Falha ao criar site'}
                 </AlertDescription>
               </Alert>
             )}
@@ -122,7 +125,7 @@ export default function NewSitePage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push("/admin/sites")}
+                onClick={() => router.push('/admin/sites')}
               >
                 Ver Lista de Sites
               </Button>
@@ -130,10 +133,10 @@ export default function NewSitePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setName("");
-                  setDomain("");
-                  setLoaderUrl(null);
-                  setSiteKey(null);
+                  setName('')
+                  setDomain('')
+                  setLoaderUrl(null)
+                  setSiteKey(null)
                 }}
               >
                 Criar Outro Site
@@ -143,7 +146,5 @@ export default function NewSitePage() {
         </Card>
       )}
     </div>
-  );
+  )
 }
-
-
