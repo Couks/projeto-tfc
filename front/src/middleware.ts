@@ -44,7 +44,10 @@ async function verifySignedCookie(
 
     // Separa dados (antes do .) e assinatura (depois do .)
     const raw = signed.slice(0, lastDot);
-    const sig = signed.slice(lastDot + 1);
+    const sigFromCookie = signed.slice(lastDot + 1);
+
+    // Valida que a assinatura do cookie está em formato hex
+    if (!/^[0-9a-f]+$/i.test(sigFromCookie)) return null;
 
     // Cria chave HMAC usando Web Crypto API
     const key = await crypto.subtle.importKey(
@@ -52,7 +55,7 @@ async function verifySignedCookie(
       new TextEncoder().encode(getSecret()),
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign", "verify"]
+      ["sign"]
     );
 
     // Gera assinatura HMAC-SHA256 dos dados
@@ -61,17 +64,23 @@ async function verifySignedCookie(
       key,
       new TextEncoder().encode(raw)
     );
+
+    // Converte assinatura calculada para hex (mesmo formato do backend)
     const expectedSig = Array.from(new Uint8Array(signature))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
     // Compara assinaturas usando constant-time comparison
-    const isValid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      new Uint8Array(signature),
-      new TextEncoder().encode(raw)
-    );
+    // Ambas devem ter o mesmo tamanho (64 caracteres hex = 32 bytes)
+    if (expectedSig.length !== sigFromCookie.length) return null;
+
+    // Timing-safe comparison para prevenir timing attacks
+    let isValid = true;
+    for (let i = 0; i < expectedSig.length; i++) {
+      if (expectedSig[i] !== sigFromCookie[i]) {
+        isValid = false;
+      }
+    }
 
     if (!isValid) return null;
 

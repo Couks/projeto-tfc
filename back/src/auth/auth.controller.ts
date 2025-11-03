@@ -74,6 +74,7 @@ export class AuthController {
     res.cookie('admin_session', signedSession, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax', // Permite cookies em navegação cross-site
@@ -125,8 +126,10 @@ export class AuthController {
     res.cookie('admin_session', signedSession, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax', // Permite cookies em navegação cross-site
     });
 
     return { ok: true };
@@ -157,6 +160,7 @@ export class AuthController {
     res.clearCookie('admin_session', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      domain: '.matheuscastroks.com.br',
       path: '/',
     });
 
