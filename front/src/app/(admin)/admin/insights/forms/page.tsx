@@ -45,7 +45,9 @@ export default function FormsAnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Form Starts</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Inícios de Formulário
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {performanceLoading ? (
@@ -60,7 +62,7 @@ export default function FormsAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Submissions</CardTitle>
+            <CardTitle className="text-sm font-medium">Envios</CardTitle>
           </CardHeader>
           <CardContent>
             {performanceLoading ? (
@@ -76,7 +78,7 @@ export default function FormsAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Completion Rate
+              Taxa de Conclusão
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -99,7 +101,7 @@ export default function FormsAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Abandonment Rate
+              Taxa de Abandono
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -122,7 +124,7 @@ export default function FormsAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Avg Completion Time
+              Tempo Médio de Conclusão
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -133,9 +135,7 @@ export default function FormsAnalyticsPage() {
                 <div className="text-2xl font-bold">
                   {performanceData?.avgCompletionTime.toFixed(0)}s
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  per submission
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">por envio</p>
               </>
             )}
           </CardContent>
@@ -145,8 +145,10 @@ export default function FormsAnalyticsPage() {
       {/* Form Abandonment by Stage */}
       <Card>
         <CardHeader>
-          <CardTitle>Abandonment by Stage</CardTitle>
-          <CardDescription>Where users leave the form</CardDescription>
+          <CardTitle>Abandono por Estágio</CardTitle>
+          <CardDescription>
+            Onde os usuários abandonam o formulário
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {abandonmentLoading ? (
@@ -167,27 +169,27 @@ export default function FormsAnalyticsPage() {
                       <div>
                         <p className="font-medium">{item.stage}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% of all abandonments
+                          {item.percentage.toFixed(1)}% de todos os abandonos
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">
-                        abandonments
-                      </p>
+                      <p className="text-xs text-muted-foreground">abandonos</p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
 
               {abandonmentData && (
                 <div className="mt-6 p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Total Abandonments
+                        Total de Abandonos
                       </p>
                       <p className="text-2xl font-bold mt-1">
                         {abandonmentData.totalAbandons.toLocaleString()}
@@ -204,9 +206,9 @@ export default function FormsAnalyticsPage() {
       {/* Commonly Abandoned Fields */}
       <Card>
         <CardHeader>
-          <CardTitle>Commonly Abandoned Fields</CardTitle>
+          <CardTitle>Campos Frequentemente Abandonados</CardTitle>
           <CardDescription>
-            Fields where users most often drop off
+            Campos onde os usuários mais frequentemente desistem
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -235,10 +237,14 @@ export default function FormsAnalyticsPage() {
                     <p className="font-bold">
                       {item.abandonCount.toLocaleString()}
                     </p>
-                    <p className="text-xs text-muted-foreground">drop-offs</p>
+                    <p className="text-xs text-muted-foreground">
+                      desistências
+                    </p>
                   </div>
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>
@@ -247,9 +253,9 @@ export default function FormsAnalyticsPage() {
       {/* Field Analytics */}
       <Card>
         <CardHeader>
-          <CardTitle>Field-Level Analytics</CardTitle>
+          <CardTitle>Análise por Campo</CardTitle>
           <CardDescription>
-            User interaction with individual form fields
+            Interação do usuário com campos individuais do formulário
           </CardDescription>
         </CardHeader>
         <CardContent>

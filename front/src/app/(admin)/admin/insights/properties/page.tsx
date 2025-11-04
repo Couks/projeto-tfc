@@ -52,7 +52,9 @@ export default function PropertiesAnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total de Visualizações
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {engagementLoading ? (
@@ -68,7 +70,7 @@ export default function PropertiesAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Favorites
+              Total de Favoritos
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -84,7 +86,9 @@ export default function PropertiesAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Shares</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total de Compartilhamentos
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {engagementLoading ? (
@@ -100,7 +104,7 @@ export default function PropertiesAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Avg Time on Property
+              Tempo Médio no Imóvel
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +115,9 @@ export default function PropertiesAnalyticsPage() {
                 <div className="text-2xl font-bold">
                   {engagementData?.avgTimeOnProperty.toFixed(0)}s
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">per view</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  por visualização
+                </p>
               </>
             )}
           </CardContent>
@@ -121,9 +127,9 @@ export default function PropertiesAnalyticsPage() {
       {/* CTA Performance */}
       <Card>
         <CardHeader>
-          <CardTitle>Call-to-Action Performance</CardTitle>
+          <CardTitle>Desempenho de Chamadas para Ação</CardTitle>
           <CardDescription>
-            How users interact with property CTAs
+            Como os usuários interagem com CTAs de imóveis
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,7 +153,9 @@ export default function PropertiesAnalyticsPage() {
                       {engagementData?.ctaPerformance.fazerProposta.toLocaleString() ||
                         0}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">clicks</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      cliques
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -162,7 +170,9 @@ export default function PropertiesAnalyticsPage() {
                       {engagementData?.ctaPerformance.alugarImovel.toLocaleString() ||
                         0}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">clicks</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      cliques
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -177,7 +187,9 @@ export default function PropertiesAnalyticsPage() {
                       {engagementData?.ctaPerformance.maisInformacoes.toLocaleString() ||
                         0}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">clicks</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      cliques
+                    </p>
                   </CardContent>
                 </Card>
               </>
@@ -189,9 +201,9 @@ export default function PropertiesAnalyticsPage() {
       {/* CTA Conversion Rates */}
       <Card>
         <CardHeader>
-          <CardTitle>CTA Click & Conversion Rates</CardTitle>
+          <CardTitle>Taxa de Cliques e Conversão de CTAs</CardTitle>
           <CardDescription>
-            Performance metrics for each CTA type
+            Métricas de desempenho para cada tipo de CTA
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -215,16 +227,18 @@ export default function PropertiesAnalyticsPage() {
                     <div>
                       <p className="font-medium">{item.ctaType}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.conversionRate.toFixed(2)}% conversion rate
+                        {item.conversionRate.toFixed(2)}% taxa de conversão
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">{item.clicks.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">clicks</p>
+                    <p className="text-xs text-muted-foreground">cliques</p>
                   </div>
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>

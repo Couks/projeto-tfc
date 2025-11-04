@@ -49,7 +49,9 @@ export default function EngagementAnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bounce Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Taxa de Rejeição
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {bounceLoading ? (
@@ -70,7 +72,9 @@ export default function EngagementAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bounces</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total de Rejeições
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {bounceLoading ? (
@@ -86,7 +90,7 @@ export default function EngagementAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Avg Scroll Depth
+              Profundidade Média de Scroll
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -109,7 +113,7 @@ export default function EngagementAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Top Bounce Type
+              Tipo de Rejeição Principal
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -121,7 +125,7 @@ export default function EngagementAnalyticsPage() {
                   {bounceData?.bouncesByType[0]?.type || 'N/A'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {bounceData?.bouncesByType[0]?.count || 0} bounces
+                  {bounceData?.bouncesByType[0]?.count || 0} rejeições
                 </p>
               </>
             )}
@@ -132,8 +136,10 @@ export default function EngagementAnalyticsPage() {
       {/* Bounce by Type */}
       <Card>
         <CardHeader>
-          <CardTitle>Bounces by Type</CardTitle>
-          <CardDescription>Breakdown of bounce reasons</CardDescription>
+          <CardTitle>Rejeições por Tipo</CardTitle>
+          <CardDescription>
+            Distribuição dos motivos de rejeição
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {bounceLoading ? (
@@ -154,18 +160,20 @@ export default function EngagementAnalyticsPage() {
                       <div>
                         <p className="font-medium">{item.type}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% of all bounces
+                          {item.percentage.toFixed(1)}% de todas as rejeições
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">bounces</p>
+                      <p className="text-xs text-muted-foreground">rejeições</p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>
@@ -174,8 +182,10 @@ export default function EngagementAnalyticsPage() {
       {/* Top Bounce Pages */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Bounce Pages</CardTitle>
-          <CardDescription>Pages with highest bounce rates</CardDescription>
+          <CardTitle>Páginas com Maior Rejeição</CardTitle>
+          <CardDescription>
+            Páginas com maiores taxas de rejeição
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {bounceLoading ? (
@@ -193,8 +203,10 @@ export default function EngagementAnalyticsPage() {
       {/* Scroll Depth Distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>Scroll Depth Distribution</CardTitle>
-          <CardDescription>How far users scroll on pages</CardDescription>
+          <CardTitle>Distribuição de Profundidade de Scroll</CardTitle>
+          <CardDescription>
+            Quão longe os usuários fazem scroll nas páginas
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {scrollLoading ? (
@@ -214,21 +226,23 @@ export default function EngagementAnalyticsPage() {
                       </div>
                       <div>
                         <p className="font-medium">
-                          {item.depth}% Scroll Depth
+                          Profundidade de {item.depth}%
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% of all scrolls
+                          {item.percentage.toFixed(1)}% de todos os scrolls
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">users</p>
+                      <p className="text-xs text-muted-foreground">usuários</p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>
@@ -237,9 +251,9 @@ export default function EngagementAnalyticsPage() {
       {/* Top Engaged Pages */}
       <Card>
         <CardHeader>
-          <CardTitle>Most Engaged Pages</CardTitle>
+          <CardTitle>Páginas Mais Engajadas</CardTitle>
           <CardDescription>
-            Pages with highest scroll engagement
+            Páginas com maior engajamento de scroll
           </CardDescription>
         </CardHeader>
         <CardContent>

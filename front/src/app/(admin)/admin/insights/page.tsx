@@ -39,8 +39,6 @@ export default function InsightsOverviewPage() {
         'Entenda o que seus clientes procuram e como usam os filtros',
       icon: Search,
       href: '/admin/insights/search',
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-950',
       priority: 'high',
     },
     {
@@ -48,8 +46,6 @@ export default function InsightsOverviewPage() {
       description: 'Descubra quais imóveis geram mais interesse e engajamento',
       icon: Building2,
       href: '/admin/insights/properties',
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-950',
       priority: 'high',
     },
     {
@@ -58,8 +54,6 @@ export default function InsightsOverviewPage() {
         'Acompanhe taxas de conversão, funil de vendas e fontes de leads',
       icon: Target,
       href: '/admin/insights/conversion',
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-950',
       priority: 'high',
     },
     {
@@ -68,8 +62,6 @@ export default function InsightsOverviewPage() {
         'Monitore taxas de rejeição, profundidade de scroll e tempo no site',
       icon: MousePointer,
       href: '/admin/insights/engagement',
-      color: 'text-pink-600 dark:text-pink-400',
-      bgColor: 'bg-pink-50 dark:bg-pink-950',
       priority: 'medium',
     },
     {
@@ -78,8 +70,6 @@ export default function InsightsOverviewPage() {
         'Otimize formulários identificando campos problemáticos e abandono',
       icon: FormInput,
       href: '/admin/insights/forms',
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-950',
       priority: 'medium',
     },
   ]
@@ -94,7 +84,7 @@ export default function InsightsOverviewPage() {
           Insights estratégicos para impulsionar suas campanhas imobiliárias
         </p>
       </div>
-      {/* Métricas Prioritárias */};
+      {/* Métricas Prioritárias */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="h-5 w-5 text-primary" />
@@ -110,9 +100,7 @@ export default function InsightsOverviewPage() {
                   <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2">
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div className={`p-3 rounded-lg ${category.bgColor}`}>
-                          <Icon className={`h-6 w-6 ${category.color}`} />
-                        </div>
+                        <Icon className="h-6 w-6 text-muted-foreground" />
                         <ArrowRight className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <CardTitle className="mt-4">{category.title}</CardTitle>
@@ -129,7 +117,7 @@ export default function InsightsOverviewPage() {
             })}
         </div>
       </div>
-      {/* Análises Complementares */};
+      {/* Análises Complementares */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
         <div className="grid gap-4 md:grid-cols-2">
@@ -142,9 +130,7 @@ export default function InsightsOverviewPage() {
                   <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer">
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div className={`p-3 rounded-lg ${category.bgColor}`}>
-                          <Icon className={`h-6 w-6 ${category.color}`} />
-                        </div>
+                        <Icon className="h-6 w-6 text-muted-foreground" />
                         <ArrowRight className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <CardTitle className="mt-4">{category.title}</CardTitle>
