@@ -1,13 +1,12 @@
 /**
- * InsightHouse Analytics (reformulado)
+ * InsightHouse Analytics
  *
- * Principais melhorias:
+ * Melhorias principais:
  * - Fila com flush por timer, por tamanho e por visibilitychange
- * - Fallback para navigator.sendBeacon em beforeunload/fechamento
- * - Retry com backoff e persistência no localStorage (limite configurável)
- * - Captura confiável de sliders: escuta change + slideStop (bootstrapSlider)
- * - Helpers resistentes (null-safe) e logs padronizados
- * - Pequenos guards de performance (Set, debounces leves) e limpeza de timers
+ * - Fallback para navigator.sendBeacon no fechamento/ocultação
+ * - Retry com backoff exponencial + persistência local
+ * - Captura confiável de sliders (change + slideStop do bootstrapSlider)
+ * - Bloco para PÁGINA DE OBRIGADO com leitura de query params e conversão final
  */
 
 (() => {
@@ -322,7 +321,6 @@
     });
 
     // 2) bootstrapSlider: slideStop (se presente)
-    // Suporta jQuery bootstrap-slider e variantes do tema
     const bindSlideStop = () => {
       try {
         const $ = window.jQuery || window.$;
@@ -338,7 +336,6 @@
       } catch { return false; }
     };
 
-    // Tenta imediatamente e mais tarde (caso plugin carregue depois)
     if (!bindSlideStop()) setTimeout(bindSlideStop, 1500);
   };
 
@@ -490,7 +487,6 @@
     const a = e.target && e.target.closest ? e.target.closest('a') : null;
     if (!a) return;
     const href = String(a.getAttribute('href') || '');
-
     if (!href) return;
 
     if (href.includes('/imovel/')) {
@@ -520,7 +516,7 @@
     }
   }, { passive: true });
 
-  // Conversões de clique
+  // Conversões de clique (lista/geral)
   const trackConversion = (sel, eventName, label) => {
     bySelAll(sel).forEach((el) => {
       safeOn(el, 'click', () => {
@@ -544,6 +540,46 @@
       if (mm) return mm[1];
     }
     return '';
+  };
+
+  // ==========================
+  // PÁGINA DE OBRIGADO (CONFIRMAÇÃO)
+  // ==========================
+  const isThankYouPage = () => {
+    const p = (location.pathname || '').toLowerCase();
+    const t = (document.title || '').toLowerCase();
+    return p.includes('/obrigado') || t.includes('obrigado -');
+  };
+
+  const getThankYouParams = () => {
+    const u = new URL(location.href);
+    const q = u.searchParams;
+    const toNumber = (v) => {
+      if (v == null) return null;
+      const s = String(v).replace(/\./g, '').replace(/,/g, '.').trim();
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    };
+    const get = (k) => q.get(k) || '';
+    return {
+      target:            get('target') || 'imovel',
+      interesse:         get('interesse') || '',
+      codigo:            get('codigo') || '',
+      categoria:         get('categoria') || '',
+      tipo:              get('tipo') || '',
+      cidade:            get('cidade') || '',
+      bairro:            get('bairro') || '',
+      empreendimento:    get('empreendimento') || '',
+      valor_venda:       toNumber(get('valor_venda')),
+      valor_aluguel:     toNumber(get('valor_aluguel')),
+      dormitorios:       toNumber(get('dormitorios')),
+      vagas:             toNumber(get('vagas')),
+      titulo_anuncio:    get('titulo_anuncio') || '',
+      lancamento:        get('lancamento') || '',
+      agenciacodigo:     get('agenciacodigo') || '',
+      agencianome:       get('agencianome') || '',
+      thank_you_url:     location.href
+    };
   };
 
   // ==========================
@@ -601,6 +637,49 @@
         referrer: document.referrer,
         landing_page: location.href,
       });
+    }
+
+    // ======= PÁGINA DE OBRIGADO (executa cedo) =======
+    if (isThankYouPage()) {
+      const ty = getThankYouParams();
+
+      // Diagnóstico
+      capture('thank_you_page_view', ty);
+
+      // Conversão final confirmada
+      capture('conversion_complete', {
+        ...ty,
+        confirmation_source: 'thank_you_page',
+        user_id: getUserId(),
+        session_id: getSessionId()
+      });
+
+      // Estágio final
+      trackFunnelStage('conversion_confirmed');
+
+      // Pós-conversão: marcar cliques
+      const markPostConversion = (sel, evtName, label) => {
+        bySelAll(sel).forEach((el) => {
+          safeOn(el, 'click', () => {
+            capture(evtName, {
+              codigo: ty.codigo || '',
+              href: el.href || '',
+              post_conversion: true,
+              source: 'thank_you_page'
+            });
+            trackFunnelStage(label);
+          });
+        });
+      };
+
+      markPostConversion('a[href^="https://wa.me"],a[href*="api.whatsapp.com"]',
+        'conversion_whatsapp_click', 'contacted_whatsapp');
+
+      markPostConversion('a[href^="tel:"]',
+        'conversion_phone_click', 'contacted_phone');
+
+      markPostConversion('a[href^="mailto:"]',
+        'conversion_email_click', 'contacted_email');
     }
 
     // ===== FILTROS BÁSICOS =====
@@ -713,7 +792,7 @@
       safeOn(btn, 'click', () => captureSearchSubmit('sidebar_form'))
     );
 
-    // Conversões (cliques de contato)
+    // Conversões (cliques de contato) em páginas gerais/lista
     trackConversion('a[href^="https://wa.me"],a[href*="api.whatsapp.com"]', 'conversion_whatsapp_click', 'contacted_whatsapp');
     trackConversion('a[href^="tel:"]', 'conversion_phone_click', 'contacted_phone');
     trackConversion('a[href^="mailto:"]', 'conversion_email_click', 'contacted_email');
@@ -765,7 +844,6 @@
         const checkModal = setInterval(() => {
           const modal = byId('imovel-contato');
           const form = modal ? modal.querySelector('form') : null;
-          // para o polling após 10s p/ não “pendurar”
           if (Date.now() - start > 10000) clearInterval(checkModal);
           if (!form) return;
 
@@ -885,4 +963,3 @@
   log('User ID:', getUserId());
   log('Session ID:', getSessionId());
 })();
-
