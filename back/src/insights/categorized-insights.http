@@ -1,0 +1,202 @@
+@apiUrl = http://localhost:3001
+@prodUrl = http://api.matheuscastroks.com.br
+@siteKey = sk_usfdtukcs0zci17ubhutbfxz
+
+### ============================================
+### CATEGORIZED INSIGHTS ENDPOINTS
+### ============================================
+
+# =====================================================
+# SEARCH & FILTERS ANALYTICS
+# =====================================================
+
+### Get Search Analytics (Last 30 days by default)
+GET {{apiUrl}}/api/insights/search/analytics
+X-Site-Key: {{siteKey}}
+
+### Get Search Analytics - Today
+GET {{apiUrl}}/api/insights/search/analytics?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Search Analytics - This Week
+GET {{apiUrl}}/api/insights/search/analytics?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+### Get Search Analytics - This Month
+GET {{apiUrl}}/api/insights/search/analytics?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+### Get Search Analytics - Custom Date Range
+GET {{apiUrl}}/api/insights/search/analytics?dateFilter=custom&startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Filters Usage Analytics
+GET {{apiUrl}}/api/insights/filters/usage
+X-Site-Key: {{siteKey}}
+
+### Get Filters Usage Analytics - Today
+GET {{apiUrl}}/api/insights/filters/usage?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Filters Usage Analytics - This Week
+GET {{apiUrl}}/api/insights/filters/usage?dateFilter=week&limit=20
+X-Site-Key: {{siteKey}}
+
+# =====================================================
+# CONVERSION ANALYTICS
+# =====================================================
+
+### Get Conversion Rate
+GET {{apiUrl}}/api/insights/conversion/rate
+X-Site-Key: {{siteKey}}
+
+### Get Conversion Rate - Today
+GET {{apiUrl}}/api/insights/conversion/rate?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Conversion Rate - This Month
+GET {{apiUrl}}/api/insights/conversion/rate?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Conversion Funnel
+GET {{apiUrl}}/api/insights/conversion/funnel
+X-Site-Key: {{siteKey}}
+
+### Get Conversion Funnel - Today
+GET {{apiUrl}}/api/insights/conversion/funnel?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Conversion Funnel - This Week
+GET {{apiUrl}}/api/insights/conversion/funnel?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Conversion Sources
+GET {{apiUrl}}/api/insights/conversion/sources
+X-Site-Key: {{siteKey}}
+
+### Get Conversion Sources - This Month
+GET {{apiUrl}}/api/insights/conversion/sources?dateFilter=month&limit=10
+X-Site-Key: {{siteKey}}
+
+# =====================================================
+# PROPERTY ANALYTICS
+# =====================================================
+
+### Get Popular Properties (Top 10 by default)
+GET {{apiUrl}}/api/insights/properties/popular
+X-Site-Key: {{siteKey}}
+
+### Get Popular Properties - Today (Top 5)
+GET {{apiUrl}}/api/insights/properties/popular?dateFilter=day&limit=5
+X-Site-Key: {{siteKey}}
+
+### Get Popular Properties - This Week (Top 20)
+GET {{apiUrl}}/api/insights/properties/popular?dateFilter=week&limit=20
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Property Engagement Analytics
+GET {{apiUrl}}/api/insights/properties/engagement
+X-Site-Key: {{siteKey}}
+
+### Get Property Engagement Analytics - Today
+GET {{apiUrl}}/api/insights/properties/engagement?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Property Engagement Analytics - This Month
+GET {{apiUrl}}/api/insights/properties/engagement?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Property CTA Performance
+GET {{apiUrl}}/api/insights/properties/cta-performance
+X-Site-Key: {{siteKey}}
+
+### Get Property CTA Performance - This Week
+GET {{apiUrl}}/api/insights/properties/cta-performance?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+# =====================================================
+# FORM ANALYTICS
+# =====================================================
+
+### Get Form Performance
+GET {{apiUrl}}/api/insights/forms/performance
+X-Site-Key: {{siteKey}}
+
+### Get Form Performance - Today
+GET {{apiUrl}}/api/insights/forms/performance?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Form Performance - This Week
+GET {{apiUrl}}/api/insights/forms/performance?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Form Abandonment Analytics
+GET {{apiUrl}}/api/insights/forms/abandonment
+X-Site-Key: {{siteKey}}
+
+### Get Form Abandonment Analytics - Today
+GET {{apiUrl}}/api/insights/forms/abandonment?dateFilter=day&limit=10
+X-Site-Key: {{siteKey}}
+
+# =====================================================
+# ENGAGEMENT & PERFORMANCE ANALYTICS
+# =====================================================
+
+### Get Bounce Analytics
+GET {{apiUrl}}/api/insights/bounce/analytics
+X-Site-Key: {{siteKey}}
+
+### Get Bounce Analytics - Today
+GET {{apiUrl}}/api/insights/bounce/analytics?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Bounce Analytics - This Week
+GET {{apiUrl}}/api/insights/bounce/analytics?dateFilter=week&limit=10
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Scroll Analytics
+GET {{apiUrl}}/api/insights/scroll/analytics
+X-Site-Key: {{siteKey}}
+
+### Get Scroll Analytics - Today
+GET {{apiUrl}}/api/insights/scroll/analytics?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+### Get Scroll Analytics - This Week
+GET {{apiUrl}}/api/insights/scroll/analytics?dateFilter=week&limit=10
+X-Site-Key: {{siteKey}}
+
+# =====================================================
+# PRODUCTION TESTS
+# =====================================================
+
+### [PROD] Get Search Analytics - This Month
+GET {{prodUrl}}/api/insights/search/analytics?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+### [PROD] Get Conversion Rate - This Month
+GET {{prodUrl}}/api/insights/conversion/rate?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+### [PROD] Get Popular Properties - This Week
+GET {{prodUrl}}/api/insights/properties/popular?dateFilter=week&limit=10
+X-Site-Key: {{siteKey}}
+
+### [PROD] Get Form Performance - This Month
+GET {{prodUrl}}/api/insights/forms/performance?dateFilter=month
+X-Site-Key: {{siteKey}}
+
