@@ -229,7 +229,7 @@ async function bootstrap() {
       )
       // Servidores disponíveis
       .addServer(`http://localhost:${port}`, 'Local Development')
-      .addServer('https://insighthouse.vercel.app', 'Production')
+      .addServer('https://api.matheuscastroks.com.br', 'Production')
       .build();
 
     // Gera o documento OpenAPI com IDs de operação únicos
