@@ -157,9 +157,7 @@ export default function InsightsOverviewPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">
-              🔍 Análise de Buscas
-            </h3>
+            <h3 className="font-semibold mb-2">Análise de Buscas</h3>
             <p className="text-sm text-muted-foreground">
               Identifique as preferências do seu público: quais tipos de
               imóveis, regiões e características são mais buscadas. Use esses
@@ -168,9 +166,7 @@ export default function InsightsOverviewPage() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 text-purple-600 dark:text-purple-400">
-              🏢 Imóveis Populares
-            </h3>
+            <h3 className="font-semibold mb-2">Imóveis Populares</h3>
             <p className="text-sm text-muted-foreground">
               Descubra quais imóveis geram mais visualizações, favoritos e
               cliques em CTAs. Priorize esses imóveis em campanhas pagas e
@@ -178,9 +174,7 @@ export default function InsightsOverviewPage() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 text-green-600 dark:text-green-400">
-              🎯 Conversões
-            </h3>
+            <h3 className="font-semibold mb-2">Conversões</h3>
             <p className="text-sm text-muted-foreground">
               Acompanhe o funil de conversão completo: de visitante a lead.
               Identifique pontos de abandono e otimize as etapas com menor taxa
@@ -188,9 +182,7 @@ export default function InsightsOverviewPage() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 text-pink-600 dark:text-pink-400">
-              💫 Engajamento
-            </h3>
+            <h3 className="font-semibold mb-2">Engajamento</h3>
             <p className="text-sm text-muted-foreground">
               Entenda quais páginas mantêm usuários engajados e quais têm alta
               taxa de rejeição. Use esses insights para melhorar conteúdo e
@@ -198,9 +190,7 @@ export default function InsightsOverviewPage() {
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">
-              📝 Formulários
-            </h3>
+            <h3 className="font-semibold mb-2">Formulários</h3>
             <p className="text-sm text-muted-foreground">
               Otimize seus formulários de contato identificando campos que
               causam abandono. Simplifique o processo de captura de leads para

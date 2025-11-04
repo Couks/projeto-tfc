@@ -337,15 +337,13 @@ export default function AdminHome() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Por que essas métricas são importantes?
+            Importância das Métricas
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm">
-                🎯 Otimização de Campanhas
-              </h3>
+              <h3 className="font-semibold text-sm">Otimização de Campanhas</h3>
               <p className="text-sm text-muted-foreground">
                 Sabendo quais tipos de imóveis e regiões geram mais interesse,
                 você pode direcionar seu orçamento de marketing para as
@@ -354,7 +352,7 @@ export default function AdminHome() {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-sm">
-                📊 Decisões Baseadas em Dados
+                Decisões Baseadas em Dados
               </h3>
               <p className="text-sm text-muted-foreground">
                 Em vez de adivinhar, você terá dados concretos sobre o que
@@ -363,9 +361,7 @@ export default function AdminHome() {
               </p>
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm">
-                💰 Aumento de Conversões
-              </h3>
+              <h3 className="font-semibold text-sm">Aumento de Conversões</h3>
               <p className="text-sm text-muted-foreground">
                 Identificando pontos de abandono no funil e otimizando
                 formulários, você aumenta a taxa de captura de leads
@@ -374,7 +370,7 @@ export default function AdminHome() {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-sm">
-                🏠 Destaque os Melhores Imóveis
+                Destaque Imóveis Estratégicos
               </h3>
               <p className="text-sm text-muted-foreground">
                 Saiba quais imóveis do seu portfólio geram mais engajamento e

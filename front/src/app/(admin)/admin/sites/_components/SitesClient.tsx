@@ -72,14 +72,13 @@ export function SitesClient() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Gerenciar Sites</h1>
-        <p className="text-muted-foreground text-lg">
-          Configure e monitore seus sites imobiliários
-        </p>
-      </div>
-
-      <div className="flex justify-end">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Sites</h1>
+          <p className="text-muted-foreground text-lg">
+            Configure e monitore seus sites imobiliários
+          </p>
+        </div>
         <Button asChild>
           <Link href="/admin/sites/new">
             <Plus className="h-4 w-4 mr-2" />
