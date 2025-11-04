@@ -168,7 +168,7 @@ export class SearchAnalyzerService {
     const avgFiltersResult = await this.prisma.$queryRaw<
       Array<{ avg_filters: number }>
     >`
-      SELECT AVG(journey_length::INTEGER) as avg_filters
+      SELECT AVG((properties->>'journey_length')::INTEGER) as avg_filters
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND name = 'search_submit'
