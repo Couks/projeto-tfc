@@ -20,16 +20,26 @@ class ApiClient {
   /**
    * Make a GET request
    */
-  async get<T>(path: string, options?: RequestInit): Promise<T> {
+  async get<T>(
+    path: string,
+    options?: RequestInit & { siteKey?: string }
+  ): Promise<T> {
     const url = `${this.baseUrl}${path}`
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    }
+
+    // Add X-Site-Key header if siteKey is provided
+    if (options?.siteKey) {
+      headers['X-Site-Key'] = options.siteKey
+    }
+
     const response = await fetch(url, {
       ...options,
       method: 'GET',
       credentials: 'include', // Include cookies for session
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     })
 
     if (!response.ok) {
@@ -42,16 +52,27 @@ class ApiClient {
   /**
    * Make a POST request
    */
-  async post<T>(path: string, data?: any, options?: RequestInit): Promise<T> {
+  async post<T>(
+    path: string,
+    data?: any,
+    options?: RequestInit & { siteKey?: string }
+  ): Promise<T> {
     const url = `${this.baseUrl}${path}`
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    }
+
+    // Add X-Site-Key header if siteKey is provided
+    if (options?.siteKey) {
+      headers['X-Site-Key'] = options.siteKey
+    }
+
     const response = await fetch(url, {
       ...options,
       method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
       body: data ? JSON.stringify(data) : undefined,
     })
 

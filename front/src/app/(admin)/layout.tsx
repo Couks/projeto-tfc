@@ -48,13 +48,13 @@ import {
   HelpCircle,
   Gauge,
   GaugeCircle,
-  TrendingUp,
-  Users,
   MapPin,
   Target,
-  Activity,
-  CircleDollarSign,
   User,
+  Search,
+  BarChart3,
+  FormInput,
+  MousePointer,
 } from 'lucide-react'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
 import { SiteProvider } from '@/lib/providers/SiteProvider'
@@ -131,7 +131,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights">
-                          <TrendingUp className="w-4 h-4" />
+                          <BarChart3 className="w-4 h-4" />
                           <span>Insights</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -161,46 +161,53 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             <SidebarSeparator />
 
-            {/* Insights simples */}
+            {/* Categorized Insights */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
                 <span className="text-xs">Insights</span>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Overview">
-                      <Link href="/admin/insights">
-                        <LayoutGrid className="w-4 h-4" />
-                        <span>Overview</span>
-                      </Link>
+                <Collapsible defaultOpen={true}>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Insights por Categoria">
+                      <BarChart3 /> <span>Insights Avançadas</span>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Top Events">
-                      <Link href="/admin/insights/top-events">
-                        <TrendingUp className="w-4 h-4" />
-                        <span>Top Events</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Cities">
-                      <Link href="/admin/insights/cities">
-                        <MapPin className="w-4 h-4" />
-                        <span>Cities</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Devices">
-                      <Link href="/admin/insights/devices">
-                        <Activity className="w-4 h-4" />
-                        <span>Devices</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/admin/insights/search">
+                          <Search className="w-4 h-4" />
+                          <span>Search Analytics</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/admin/insights/conversion">
+                          <Target className="w-4 h-4" />
+                          <span>Conversions</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/admin/insights/properties">
+                          <Building2 className="w-4 h-4" />
+                          <span>Properties</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/admin/insights/forms">
+                          <FormInput className="w-4 h-4" />
+                          <span>Forms</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/admin/insights/engagement">
+                          <MousePointer className="w-4 h-4" />
+                          <span>Engagement</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
               </SidebarGroupContent>
             </SidebarGroup>
 

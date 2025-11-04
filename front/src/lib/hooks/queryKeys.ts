@@ -9,23 +9,113 @@ export const queryKeys = {
   },
   insights: {
     all: ['insights'] as const,
-    overview: (siteKey: string) =>
-      [...queryKeys.insights.all, 'overview', siteKey] as const,
-    cities: (siteKey: string) =>
-      [...queryKeys.insights.all, 'cities', siteKey] as const,
-    types: (siteKey: string) =>
-      [...queryKeys.insights.all, 'types', siteKey] as const,
-    // Unused keys - endpoints not available in backend yet
-    // prices: (siteKey: string) =>
-    //   [...queryKeys.insights.all, 'prices', siteKey] as const,
-    // purposes: (siteKey: string) =>
-    //   [...queryKeys.insights.all, 'purposes', siteKey] as const,
-    // funnel: (siteKey: string) =>
-    //   [...queryKeys.insights.all, 'funnel', siteKey] as const,
-    // conversions: (siteKey: string) =>
-    //   [...queryKeys.insights.all, 'conversions', siteKey] as const,
-    // journeys: (siteKey: string) =>
-    //   [...queryKeys.insights.all, 'journeys', siteKey] as const,
+    // Categorized insights
+    search: {
+      analytics: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'search',
+          'analytics',
+          siteKey,
+          query,
+        ] as const,
+      filters: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'search',
+          'filters',
+          siteKey,
+          query,
+        ] as const,
+    },
+    conversion: {
+      rate: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'conversion',
+          'rate',
+          siteKey,
+          query,
+        ] as const,
+      funnel: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'conversion',
+          'funnel',
+          siteKey,
+          query,
+        ] as const,
+      sources: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'conversion',
+          'sources',
+          siteKey,
+          query,
+        ] as const,
+    },
+    properties: {
+      popular: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'properties',
+          'popular',
+          siteKey,
+          query,
+        ] as const,
+      engagement: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'properties',
+          'engagement',
+          siteKey,
+          query,
+        ] as const,
+      cta: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'properties',
+          'cta',
+          siteKey,
+          query,
+        ] as const,
+    },
+    forms: {
+      performance: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'forms',
+          'performance',
+          siteKey,
+          query,
+        ] as const,
+      abandonment: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'forms',
+          'abandonment',
+          siteKey,
+          query,
+        ] as const,
+    },
+    engagement: {
+      bounce: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'engagement',
+          'bounce',
+          siteKey,
+          query,
+        ] as const,
+      scroll: (siteKey: string, query?: any) =>
+        [
+          ...queryKeys.insights.all,
+          'engagement',
+          'scroll',
+          siteKey,
+          query,
+        ] as const,
+    },
   },
   auth: {
     all: ['auth'] as const,

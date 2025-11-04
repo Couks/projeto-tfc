@@ -2,89 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from './queryKeys'
 import { apiClient } from '../api'
 import type {
-  OverviewResponse,
-  TopEventsResponse,
-  TopCitiesResponse,
-  DevicesResponse,
   InsightsQuery,
+  SearchAnalyticsResponse,
+  FiltersUsageResponse,
+  ConversionRateResponse,
+  ConversionFunnelResponse,
+  ConversionSourcesResponse,
+  PopularPropertiesResponse,
+  PropertyEngagementResponse,
+  PropertyCTAPerformanceResponse,
+  FormPerformanceResponse,
+  FormAbandonmentResponse,
+  BounceAnalyticsResponse,
+  ScrollAnalyticsResponse,
 } from '../types/insights'
-
-export function useOverview(siteKey: string, query?: InsightsQuery) {
-  const qs = new URLSearchParams({ site: siteKey })
-  if (query?.dateFilter) qs.set('dateFilter', query.dateFilter)
-  if (query?.startDate) qs.set('startDate', query.startDate)
-  if (query?.endDate) qs.set('endDate', query.endDate)
-
-  return useQuery<OverviewResponse>({
-    queryKey: queryKeys.insights.overview(siteKey),
-    queryFn: async () => {
-      return apiClient.get<OverviewResponse>(
-        `/api/insights/overview?${qs.toString()}`
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000, // 2 minutes (dados mais dinâmicos)
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
-  })
-}
-
-export function useTopEvents(siteKey: string, query?: InsightsQuery) {
-  const qs = new URLSearchParams({ site: siteKey })
-  if (query?.dateFilter) qs.set('dateFilter', query.dateFilter)
-  if (query?.startDate) qs.set('startDate', query.startDate)
-  if (query?.endDate) qs.set('endDate', query.endDate)
-  if (query?.limit !== undefined) qs.set('limit', String(query.limit))
-  if (query?.offset !== undefined) qs.set('offset', String(query.offset))
-
-  return useQuery<TopEventsResponse>({
-    queryKey: [...queryKeys.insights.all, 'top-events', siteKey],
-    queryFn: async () => {
-      return apiClient.get<TopEventsResponse>(
-        `/api/insights/top-events?${qs.toString()}`
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-  })
-}
-
-export function useTopCities(siteKey: string, query?: InsightsQuery) {
-  const qs = new URLSearchParams({ site: siteKey })
-  if (query?.dateFilter) qs.set('dateFilter', query.dateFilter)
-  if (query?.startDate) qs.set('startDate', query.startDate)
-  if (query?.endDate) qs.set('endDate', query.endDate)
-  if (query?.limit !== undefined) qs.set('limit', String(query.limit))
-  if (query?.offset !== undefined) qs.set('offset', String(query.offset))
-
-  return useQuery<TopCitiesResponse>({
-    queryKey: queryKeys.insights.cities(siteKey),
-    queryFn: async () => {
-      return apiClient.get<TopCitiesResponse>(
-        `/api/insights/cities?${qs.toString()}`
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-  })
-}
-
-export function useDevices(siteKey: string, query?: InsightsQuery) {
-  const qs = new URLSearchParams({ site: siteKey })
-  if (query?.dateFilter) qs.set('dateFilter', query.dateFilter)
-  if (query?.startDate) qs.set('startDate', query.startDate)
-  if (query?.endDate) qs.set('endDate', query.endDate)
-
-  return useQuery<DevicesResponse>({
-    queryKey: queryKeys.insights.types(siteKey),
-    queryFn: async () => {
-      return apiClient.get<DevicesResponse>(
-        `/api/insights/devices?${qs.toString()}`
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-  })
-}
 
 export function useRefreshInsights() {
   const queryClient = useQueryClient()
@@ -101,20 +32,274 @@ export function useRefreshInsights() {
   })
 }
 
-// Hooks específicos para dados transformados
-// Alias para compatibilidade com componentes
+// =====================================================
+// CATEGORIZED INSIGHTS HOOKS - NEW ENDPOINTS
+// =====================================================
 
-/**
- * Alias para useTopCities - retorna array formatado para componentes de chart
- */
-export function useCities(siteKey: string, query?: InsightsQuery) {
-  const result = useTopCities(siteKey, query)
-  return {
-    ...result,
-    data:
-      result.data?.cities.map((item) => ({
-        city: item.city,
-        searches: item.count,
-      })) || [],
-  }
+// ===== SEARCH & FILTERS =====
+
+export function useSearchAnalytics(siteKey: string, query?: InsightsQuery) {
+  return useQuery<SearchAnalyticsResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'search',
+      'analytics',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<SearchAnalyticsResponse>(
+        `/api/insights/search/analytics`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useFiltersUsage(siteKey: string, query?: InsightsQuery) {
+  return useQuery<FiltersUsageResponse>({
+    queryKey: [...queryKeys.insights.all, 'filters', 'usage', siteKey, query],
+    queryFn: async () => {
+      return apiClient.get<FiltersUsageResponse>(
+        `/api/insights/search/filters`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+// ===== CONVERSION =====
+
+export function useConversionRate(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ConversionRateResponse>({
+    queryKey: [...queryKeys.insights.all, 'conversion', 'rate', siteKey, query],
+    queryFn: async () => {
+      return apiClient.get<ConversionRateResponse>(
+        `/api/insights/conversion/rate`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useConversionFunnel(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ConversionFunnelResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'conversion',
+      'funnel',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<ConversionFunnelResponse>(
+        `/api/insights/conversion/funnel`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useConversionSources(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ConversionSourcesResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'conversion',
+      'sources',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<ConversionSourcesResponse>(
+        `/api/insights/conversion/sources`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+// ===== PROPERTIES =====
+
+export function usePopularProperties(siteKey: string, query?: InsightsQuery) {
+  return useQuery<PopularPropertiesResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'properties',
+      'popular',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<PopularPropertiesResponse>(
+        `/api/insights/properties/popular`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function usePropertyEngagement(siteKey: string, query?: InsightsQuery) {
+  return useQuery<PropertyEngagementResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'properties',
+      'engagement',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<PropertyEngagementResponse>(
+        `/api/insights/properties/engagement`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useCTAPerformance(siteKey: string, query?: InsightsQuery) {
+  return useQuery<PropertyCTAPerformanceResponse>({
+    queryKey: [...queryKeys.insights.all, 'properties', 'cta', siteKey, query],
+    queryFn: async () => {
+      return apiClient.get<PropertyCTAPerformanceResponse>(
+        `/api/insights/properties/cta-performance`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+// ===== FORMS =====
+
+export function useFormPerformance(siteKey: string, query?: InsightsQuery) {
+  return useQuery<FormPerformanceResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'forms',
+      'performance',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<FormPerformanceResponse>(
+        `/api/insights/forms/performance`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useFormAbandonment(siteKey: string, query?: InsightsQuery) {
+  return useQuery<FormAbandonmentResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'forms',
+      'abandonment',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<FormAbandonmentResponse>(
+        `/api/insights/forms/abandonment`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+// ===== ENGAGEMENT & PERFORMANCE =====
+
+export function useBounceAnalytics(siteKey: string, query?: InsightsQuery) {
+  return useQuery<BounceAnalyticsResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'engagement',
+      'bounce',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<BounceAnalyticsResponse>(
+        `/api/insights/bounce/analytics`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useScrollAnalytics(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ScrollAnalyticsResponse>({
+    queryKey: [
+      ...queryKeys.insights.all,
+      'engagement',
+      'scroll',
+      siteKey,
+      query,
+    ],
+    queryFn: async () => {
+      return apiClient.get<ScrollAnalyticsResponse>(
+        `/api/insights/scroll/analytics`,
+        {
+          siteKey,
+        }
+      )
+    },
+    enabled: !!siteKey,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  })
 }
