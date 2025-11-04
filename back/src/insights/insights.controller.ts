@@ -2,6 +2,7 @@ import { Controller, Get, Post, Query, UseGuards, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InsightsService } from './insights.service';
 import { InsightsQueryDto } from './dto/insights-query.dto';
+import { RefreshMaterializedViewsDto } from './dto/refresh-materialized-views.dto';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { SiteKey } from '../common/decorators/site-key.decorator';
 import {
@@ -117,24 +118,32 @@ export class InsightsController {
 
   /**
    * Refreshes materialized views for a date range (admin only)
-   * @param body Date range for refresh
+   * @param body Date range for refresh (optional, defaults to last 90 days)
    */
   @Post('admin/refresh')
-  @ApiOperation({ summary: 'Refresh materialized views for date range' })
+  @ApiOperation({
+    summary: 'Refresh materialized views for date range',
+    description:
+      'Refreshes all materialized views. If no date range provided, refreshes last 90 days.',
+  })
   @ApiResponse({ status: 200, description: 'Materialized views refreshed.' })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async refreshMaterializedViews(
-    @Body() body: { fromDate: string; toDate: string },
-  ) {
-    const fromDate = new Date(body.fromDate);
-    const toDate = new Date(body.toDate);
+  async refreshMaterializedViews(@Body() body: RefreshMaterializedViewsDto) {
+    // Default to last 90 days if not provided
+    const now = new Date();
+    const fromDate = body.fromDate
+      ? new Date(body.fromDate)
+      : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const toDate = body.toDate ? new Date(body.toDate) : now;
 
     await this.insightsService.refreshMaterializedViews(fromDate, toDate);
 
     return {
       success: true,
       message: `Materialized views refreshed from ${fromDate.toISOString()} to ${toDate.toISOString()}`,
+      fromDate: fromDate.toISOString(),
+      toDate: toDate.toISOString(),
     };
   }
 
