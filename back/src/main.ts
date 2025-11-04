@@ -126,15 +126,15 @@ async function bootstrap() {
     // CONFIGURAÇÃO DE CORS
     // ============================================
     // Permite requisições cross-origin para produção
+    // Para endpoints do SDK (events, sdk), permite qualquer origem
+    // Isso permite que o SDK seja usado em qualquer site
+    // A validação de segurança é feita via TenantGuard e siteKey
     app.enableCors({
-      origin: [
-        'https://insighthouse.matheuscastroks.com.br',
-        'http://localhost:3000',
-        'http://localhost:3002',
+      origin: (origin, callback) => {
         // Permite qualquer origem para endpoints do SDK
-        /^https?:\/\/.*\.matheuscastro\.rocketdecolando\.com\.br$/,
-        /^https?:\/\/.*\.rocketdecolando\.com\.br$/,
-      ],
+        // Se não há origin (ex: requisições same-origin, mobile apps), permite
+        callback(null, true);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Site-Key'],

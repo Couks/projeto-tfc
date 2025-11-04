@@ -1,0 +1,566 @@
+@apiUrl = https://api.matheuscastroks.com.br
+@siteKey = sk_usfdtukcs0zci17ubhutbfxz
+
+### ============================================
+### EVENTS ENDPOINTS
+### ============================================
+
+### Get Events - Basic (all events for site)
+GET {{apiUrl}}/api/events
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by event name
+GET {{apiUrl}}/api/events?name=search_submit
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by date (today)
+GET {{apiUrl}}/api/events?dateFilter=day
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by date (this week)
+GET {{apiUrl}}/api/events?dateFilter=week
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by date (this month)
+GET {{apiUrl}}/api/events?dateFilter=month
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by date (this year)
+GET {{apiUrl}}/api/events?dateFilter=year
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Custom date range
+GET {{apiUrl}}/api/events?dateFilter=custom&startDate=2025-01-01T00:00:00Z&endDate=2025-12-31T23:59:59Z
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by user ID
+GET {{apiUrl}}/api/events?userId=user_1760799471758_3geuvk6il
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Filter by session ID
+GET {{apiUrl}}/api/events?sessionId=session_1762270372980_48agww6
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - With pagination
+GET {{apiUrl}}/api/events?limit=50&offset=0
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Ordered by name ascending
+GET {{apiUrl}}/api/events?orderBy=name&order=asc
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Ordered by createdAt descending
+GET {{apiUrl}}/api/events?orderBy=createdAt&order=desc
+X-Site-Key: {{siteKey}}
+
+###
+
+### Get Events - Complex query (multiple filters)
+GET {{apiUrl}}/api/events?name=search_submit&dateFilter=month&limit=20&offset=0&orderBy=ts&order=desc
+X-Site-Key: {{siteKey}}
+
+###
+
+### ============================================
+### TRACK SINGLE EVENT
+### ============================================
+
+### Track Single Event - Search Submit
+POST {{apiUrl}}/api/events/track
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "name": "search_submit",
+  "properties": {
+    "finalidade": "venda",
+    "tipos": ["apartamento", "casa"],
+    "cidades": ["São Paulo", "Rio de Janeiro"],
+    "journey_length": 3
+  },
+  "context": {
+    "url": "https://example.com/busca",
+    "title": "Busca de Imóveis",
+    "referrer": "https://google.com",
+    "userAgent": "Mozilla/5.0",
+    "screen": {
+      "width": 1920,
+      "height": 1080
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    }
+  },
+  "ts": 1732270372000
+}
+
+###
+
+### Track Single Event - Page View
+POST {{apiUrl}}/api/events/track
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "name": "page_view",
+  "properties": {
+    "page": "/imoveis/123"
+  },
+  "context": {
+    "url": "https://example.com/imoveis/123",
+    "title": "Imóvel #123",
+    "referrer": "https://example.com/busca",
+    "userAgent": "Mozilla/5.0",
+    "screen": {
+      "width": 1920,
+      "height": 1080
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    }
+  },
+  "userId": "user_1760799471758_3geuvk6il",
+  "sessionId": "session_1762270372980_48agww6",
+  "ts": 1732270372000
+}
+
+###
+
+### Track Single Event - Filter Changed
+POST {{apiUrl}}/api/events/track
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "name": "search_filter_changed",
+  "properties": {
+    "field": "finalidade",
+    "value": "aluguel",
+    "checked": null
+  },
+  "context": {
+    "url": "https://example.com/busca",
+    "title": "Busca de Imóveis",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0",
+    "screen": {
+      "width": 1920,
+      "height": 1080
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    }
+  },
+  "userId": "user_1760799471758_3geuvk6il",
+  "sessionId": "session_1762270372980_48agww6"
+}
+
+###
+
+### Track Single Event - Property View
+POST {{apiUrl}}/api/events/track
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "name": "property_page_view",
+  "properties": {
+    "codigo": "PROP-12345"
+  },
+  "context": {
+    "url": "https://example.com/imoveis/PROP-12345",
+    "title": "Apartamento 2 Quartos - São Paulo",
+    "referrer": "https://example.com/busca",
+    "userAgent": "Mozilla/5.0",
+    "screen": {
+      "width": 1920,
+      "height": 1080
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    }
+  },
+  "userId": "user_1760799471758_3geuvk6il",
+  "sessionId": "session_1762270372980_48agww6"
+}
+
+###
+
+### ============================================
+### TRACK BATCH EVENTS
+### ============================================
+
+### Track Batch - Minimal valid (single event)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {
+      "name": "page_view",
+      "context": {
+        "url": "https://example.com",
+        "title": "Home",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": { "width": 1920, "height": 1080 },
+        "viewport": { "width": 1366, "height": 768 }
+      },
+      "ts": 1732270372000
+    }
+  ]
+}
+
+###
+
+### Track Batch - ts como string (deve coerir para number)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {
+      "name": "page_view",
+      "context": {
+        "url": "https://example.com/string-ts",
+        "title": "String TS",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": { "width": 1920, "height": 1080 },
+        "viewport": { "width": 1366, "height": 768 }
+      },
+      "ts": "1732270372000"
+    }
+  ]
+}
+
+###
+
+### Track Batch Events - Multiple events
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {
+      "name": "search_filter_changed",
+      "properties": {
+        "field": "finalidade",
+        "value": "venda"
+      },
+      "context": {
+        "url": "https://example.com/busca",
+        "title": "Busca de Imóveis",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        }
+      },
+      "userId": "user_1760799471758_3geuvk6il",
+      "sessionId": "session_1762270372980_48agww6",
+      "ts": 1732270372000
+    },
+    {
+      "name": "search_filter_changed",
+      "properties": {
+        "field": "tipo",
+        "value": "apartamento"
+      },
+      "context": {
+        "url": "https://example.com/busca",
+        "title": "Busca de Imóveis",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        }
+      },
+      "userId": "user_1760799471758_3geuvk6il",
+      "sessionId": "session_1762270372980_48agww6",
+      "ts": 1732270373000
+    },
+    {
+      "name": "search_submit",
+      "properties": {
+        "finalidade": "venda",
+        "tipos": ["apartamento"],
+        "cidades": ["São Paulo"],
+        "journey_length": 2
+      },
+      "context": {
+        "url": "https://example.com/busca",
+        "title": "Busca de Imóveis",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        }
+      },
+      "userId": "user_1760799471758_3geuvk6il",
+      "sessionId": "session_1762270372980_48agww6",
+      "ts": 1732270374000
+    }
+  ]
+}
+
+###
+
+### Track Batch Events - With site key in query (alternative)
+POST {{apiUrl}}/api/events/track/batch?site={{siteKey}}
+Content-Type: application/json
+
+{
+  "events": [
+    {
+      "name": "page_view",
+      "properties": {},
+      "context": {
+        "url": "https://example.com",
+        "title": "Home Page",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        }
+      }
+    }
+  ]
+}
+
+###
+
+### Track Batch - Evento search_submit com journey_length
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {
+      "name": "search_submit",
+      "properties": {
+        "finalidade": "aluguel",
+        "tipos": ["apartamento"],
+        "cidades": ["São Paulo"],
+        "journey_length": 4
+      },
+      "context": {
+        "url": "https://example.com/busca",
+        "title": "Busca",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": { "width": 1920, "height": 1080 },
+        "viewport": { "width": 1366, "height": 768 }
+      },
+      "ts": 1732270375000
+    }
+  ]
+}
+
+###
+
+### Track Batch - Lote grande (exemplo com 10; em produção até 500)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {{#each Array.from({length:10}).map((_,i)=>({
+      name: 'page_view',
+      context: {
+        url: `https://example.com/p/${i}`,
+        title: `P${i}`,
+        referrer: '',
+        userAgent: 'Mozilla/5.0',
+        screen: { width: 1920, height: 1080 },
+        viewport: { width: 1366, height: 768 }
+      },
+      ts: 1732270372000 + i
+    })) }}
+  ]
+}
+
+###
+
+### Track Batch Events - Empty batch (should fail)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": []
+}
+
+###
+
+### Track Batch Events - Missing site key (should fail)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+
+{
+  "events": [
+    {
+      "name": "page_view",
+      "properties": {},
+      "context": {
+        "url": "https://example.com",
+        "title": "Home Page",
+        "referrer": "",
+        "userAgent": "Mozilla/5.0",
+        "screen": {
+          "width": 1920,
+          "height": 1080
+        },
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        }
+      }
+    }
+  ]
+}
+
+###
+
+### ============================================
+### ADMIN ENDPOINTS
+### ============================================
+
+### Admin Test - Smoke test endpoint
+GET {{apiUrl}}/api/events/admin/test
+
+###
+
+### ============================================
+### CORS PREFLIGHT REQUESTS
+### ============================================
+
+### OPTIONS request for GET events (CORS preflight)
+OPTIONS {{apiUrl}}/api/events
+Origin: https://example.com
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: X-Site-Key
+
+###
+
+### OPTIONS request for POST track (CORS preflight)
+OPTIONS {{apiUrl}}/api/events/track
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, X-Site-Key
+
+###
+
+### OPTIONS request for POST track/batch (CORS preflight)
+OPTIONS {{apiUrl}}/api/events/track/batch
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, X-Site-Key
+
+###
+
+### ============================================
+### ERROR CASES
+### ============================================
+
+### Get Events - Invalid site key
+GET {{apiUrl}}/api/events
+X-Site-Key: sk_invalid_key
+
+###
+
+### Get Events - Missing site key (should fail)
+GET {{apiUrl}}/api/events
+X-Site-Key: {{siteKey}}
+###
+
+### Track Event - Invalid event name (too long)
+POST {{apiUrl}}/api/events/track
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "name": "this_is_a_very_long_event_name_that_exceeds_the_maximum_length_of_64_characters",
+  "properties": {},
+  "context": {
+    "url": "https://example.com",
+    "title": "Test",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0",
+    "screen": {
+      "width": 1920,
+      "height": 1080
+    },
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    }
+  }
+}
+
+###
+
+### Track Batch - Invalid event data (missing required fields)
+POST {{apiUrl}}/api/events/track/batch
+Content-Type: application/json
+X-Site-Key: {{siteKey}}
+
+{
+  "events": [
+    {
+      "name": "invalid_event"
+    }
+  ]
+}
+
