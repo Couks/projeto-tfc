@@ -57,17 +57,25 @@
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
   const safeJSONParse = (s, fallback) => {
-    try { return JSON.parse(s); } catch { return fallback; }
+    if (s == null) return fallback; // null or undefined
+    try {
+      return JSON.parse(s);
+    } catch {
+      return fallback;
+    }
   };
 
   const setLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-  const getLS = (k, fallback) => safeJSONParse(localStorage.getItem(k), fallback);
+  const getLS = (k, fallback) =>
+    safeJSONParse(localStorage.getItem(k), fallback);
 
   const byId = (id) => (id ? document.getElementById(id) : null);
-  const bySelAll = (sel) => (sel ? Array.from(document.querySelectorAll(sel)) : []);
+  const bySelAll = (sel) =>
+    sel ? Array.from(document.querySelectorAll(sel)) : [];
 
   const safeOn = (el, ev, fn, opts = { passive: true }) => {
-    if (el && typeof el.addEventListener === 'function') el.addEventListener(ev, fn, opts);
+    if (el && typeof el.addEventListener === 'function')
+      el.addEventListener(ev, fn, opts);
   };
 
   // ==========================
@@ -99,10 +107,15 @@
   // Journey
   const trackPageView = () => {
     const journey = getLS(LS_JOURNEY, []);
-    journey.push({ url: location.href, title: document.title, timestamp: Date.now() });
-    if (journey.length > 20) journey.shift();
-    setLS(LS_JOURNEY, journey);
-    return journey;
+    const safeJourney = Array.isArray(journey) ? journey : [];
+    safeJourney.push({
+      url: location.href,
+      title: document.title,
+      timestamp: Date.now(),
+    });
+    if (safeJourney.length > 20) safeJourney.shift();
+    setLS(LS_JOURNEY, safeJourney);
+    return safeJourney;
   };
 
   const calculateTimeOnSite = () => {
@@ -112,12 +125,13 @@
 
   const getUserJourneyContext = () => {
     const journey = getLS(LS_JOURNEY, []);
+    const safeJourney = Array.isArray(journey) ? journey : [];
     return {
       user_id: getUserId(),
       session_id: localStorage.getItem(LS_SESSION) || 'unknown',
-      page_depth: journey.length,
+      page_depth: safeJourney.length,
       time_on_site: calculateTimeOnSite(),
-      returning_visitor: journey.length > 1,
+      returning_visitor: safeJourney.length > 1,
     };
   };
 
@@ -146,7 +160,8 @@
   const persistFailed = (events) => {
     if (!events?.length) return;
     const cur = getLS(LS_FAILED, []);
-    const merged = [...cur, ...events].slice(-FAILED_LIMIT);
+    const safeCur = Array.isArray(cur) ? cur : [];
+    const merged = [...safeCur, ...events].slice(-FAILED_LIMIT);
     setLS(LS_FAILED, merged);
   };
 
@@ -155,7 +170,7 @@
       if (!navigator.sendBeacon) return false;
       const ok = navigator.sendBeacon(
         BATCH_ENDPOINT,
-        new Blob([JSON.stringify({ events })], { type: 'application/json' })
+        new Blob([JSON.stringify({ events })], { type: 'application/json' }),
       );
       if (ok) log('Lote enviado via sendBeacon:', events.length);
       return ok;
@@ -198,7 +213,7 @@
 
   const retryFailedEvents = () => {
     const failed = getLS(LS_FAILED, []);
-    if (!failed.length) return;
+    if (!failed || !Array.isArray(failed) || !failed.length) return;
     setLS(LS_FAILED, []); // otimista
     sendBatch(failed);
   };
@@ -208,16 +223,20 @@
   safeOn(window, 'online', retryFailedEvents);
 
   // Flush em visibilitychange (p/ abas que vão para background)
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && eventQueue.length) {
-      // tenta beacon primeiro
-      const snapshot = eventQueue.slice();
-      eventQueue = [];
-      if (!sendWithBeacon(snapshot)) {
-        persistFailed(snapshot);
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState === 'hidden' && eventQueue.length) {
+        // tenta beacon primeiro
+        const snapshot = eventQueue.slice();
+        eventQueue = [];
+        if (!sendWithBeacon(snapshot)) {
+          persistFailed(snapshot);
+        }
       }
-    }
-  }, { passive: true });
+    },
+    { passive: true },
+  );
 
   // Flush final
   window.addEventListener('beforeunload', () => {
@@ -288,18 +307,27 @@
     safeOn(el, 'change', (e) => {
       let value = '';
       const t = e.target || el;
-      if (t.type === 'checkbox' || t.type === 'radio') value = t.checked ? t.value : '';
+      if (t.type === 'checkbox' || t.type === 'radio')
+        value = t.checked ? t.value : '';
       else if (t.multiple && t.selectedOptions)
-        value = Array.from(t.selectedOptions).map((o) => o.value).join(',');
+        value = Array.from(t.selectedOptions)
+          .map((o) => o.value)
+          .join(',');
       else value = String(t.value || '');
-      capture('search_filter_changed', { field, value, checked: !!t.checked || null });
+      capture('search_filter_changed', {
+        field,
+        value,
+        checked: !!t.checked || null,
+      });
     });
   };
 
   const trackCheckboxGroup = (name, displayName) => {
     bySelAll(`input[name="${name}"]`).forEach((el) => {
       safeOn(el, 'change', () => {
-        const selected = bySelAll(`input[name="${name}"]:checked`).map((i) => i.value);
+        const selected = bySelAll(`input[name="${name}"]:checked`).map(
+          (i) => i.value,
+        );
         capture('search_filter_group_changed', {
           field: displayName,
           selected,
@@ -317,7 +345,11 @@
     safeOn(slider, 'change', () => {
       const value = slider.value || '';
       const range = getSliderRangeFromVal(value);
-      capture('search_filter_range_changed', { field, ...range, raw_value: value });
+      capture('search_filter_range_changed', {
+        field,
+        ...range,
+        raw_value: value,
+      });
     });
 
     // 2) bootstrapSlider: slideStop (se presente)
@@ -325,15 +357,24 @@
       try {
         const $ = window.jQuery || window.$;
         if (!$ || !$(slider).bootstrapSlider) return false;
-        $(slider).bootstrapSlider().on('slideStop', (ev) => {
-          const val = (ev?.value && Array.isArray(ev.value))
-            ? ev.value.join(',')
-            : (slider.value || '');
-          const range = getSliderRangeFromVal(val);
-          capture('search_filter_range_changed', { field, ...range, raw_value: val });
-        });
+        $(slider)
+          .bootstrapSlider()
+          .on('slideStop', (ev) => {
+            const val =
+              ev?.value && Array.isArray(ev.value)
+                ? ev.value.join(',')
+                : slider.value || '';
+            const range = getSliderRangeFromVal(val);
+            capture('search_filter_range_changed', {
+              field,
+              ...range,
+              raw_value: val,
+            });
+          });
         return true;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     };
 
     if (!bindSlideStop()) setTimeout(bindSlideStop, 1500);
@@ -356,14 +397,15 @@
   // ==========================
   const trackFunnelStage = (stage) => {
     const funnel = getLS(LS_FUNNEL, []);
+    const safeFunnel = Array.isArray(funnel) ? funnel : [];
     const stageData = { stage, timestamp: Date.now(), url: location.href };
-    funnel.push(stageData);
-    setLS(LS_FUNNEL, funnel);
+    safeFunnel.push(stageData);
+    setLS(LS_FUNNEL, safeFunnel);
 
     capture('funnel_stage_reached', {
       stage,
-      funnel_length: funnel.length,
-      previous_stage: funnel[funnel.length - 2]?.stage || 'none',
+      funnel_length: safeFunnel.length,
+      previous_stage: safeFunnel[safeFunnel.length - 2]?.stage || 'none',
     });
   };
 
@@ -406,7 +448,9 @@
 
       // Preço
       preco_venda: getSliderRangeFromVal(getVal('input-slider-valor-venda')),
-      preco_aluguel: getSliderRangeFromVal(getVal('input-slider-valor-aluguel')),
+      preco_aluguel: getSliderRangeFromVal(
+        getVal('input-slider-valor-aluguel'),
+      ),
 
       preco_min_manual: getVal('input-number-valor-min'),
       preco_max_manual: getVal('input-number-valor-max'),
@@ -463,7 +507,10 @@
       },
 
       // Jornada
-      journey_length: getLS(LS_JOURNEY, []).length,
+      journey_length: (() => {
+        const journey = getLS(LS_JOURNEY, []);
+        return Array.isArray(journey) ? journey.length : 0;
+      })(),
     };
 
     capture('search_submit', searchData);
@@ -483,38 +530,49 @@
     return (box && (box.getAttribute('data-codigo') || '')) || '';
   };
 
-  document.addEventListener('click', (e) => {
-    const a = e.target && e.target.closest ? e.target.closest('a') : null;
-    if (!a) return;
-    const href = String(a.getAttribute('href') || '');
-    if (!href) return;
+  document.addEventListener(
+    'click',
+    (e) => {
+      const a = e.target && e.target.closest ? e.target.closest('a') : null;
+      if (!a) return;
+      const href = String(a.getAttribute('href') || '');
+      if (!href) return;
 
-    if (href.includes('/imovel/')) {
-      const codigo = extractCodigoFromUrl(href);
-      capture('results_item_click', { target: href, kind: 'imovel', codigo });
-      trackFunnelStage('viewed_property');
-    } else if (href.includes('/condominio/')) {
-      capture('results_item_click', { target: href, kind: 'condominio' });
-    } else if (a.classList.contains('button-info-panel')) {
-      const codigo = extractCodigoFromParent(a);
-      capture('results_saber_mais_click', { codigo, href });
-      trackFunnelStage('clicked_saber_mais');
-    }
-  }, { passive: true });
+      if (href.includes('/imovel/')) {
+        const codigo = extractCodigoFromUrl(href);
+        capture('results_item_click', { target: href, kind: 'imovel', codigo });
+        trackFunnelStage('viewed_property');
+      } else if (href.includes('/condominio/')) {
+        capture('results_item_click', { target: href, kind: 'condominio' });
+      } else if (a.classList.contains('button-info-panel')) {
+        const codigo = extractCodigoFromParent(a);
+        capture('results_saber_mais_click', { codigo, href });
+        trackFunnelStage('clicked_saber_mais');
+      }
+    },
+    { passive: true },
+  );
 
   // Favoritos (lista)
-  document.addEventListener('click', (e) => {
-    const tgt = e.target;
-    if (tgt?.classList?.contains('btn-favoritar') || tgt?.closest?.('.btn-favoritar')) {
-      const btn = tgt.closest?.('.btn-favoritar') || tgt;
-      const codigo = btn.getAttribute('data-codigo') || '';
-      capture('favorite_toggle', {
-        codigo,
-        action: btn.classList.contains('favorited') ? 'remove' : 'add',
-      });
-      trackFunnelStage('favorited_property');
-    }
-  }, { passive: true });
+  document.addEventListener(
+    'click',
+    (e) => {
+      const tgt = e.target;
+      if (
+        tgt?.classList?.contains('btn-favoritar') ||
+        tgt?.closest?.('.btn-favoritar')
+      ) {
+        const btn = tgt.closest?.('.btn-favoritar') || tgt;
+        const codigo = btn.getAttribute('data-codigo') || '';
+        capture('favorite_toggle', {
+          codigo,
+          action: btn.classList.contains('favorited') ? 'remove' : 'add',
+        });
+        trackFunnelStage('favorited_property');
+      }
+    },
+    { passive: true },
+  );
 
   // Conversões de clique (lista/geral)
   const trackConversion = (sel, eventName, label) => {
@@ -562,23 +620,23 @@
     };
     const get = (k) => q.get(k) || '';
     return {
-      target:            get('target') || 'imovel',
-      interesse:         get('interesse') || '',
-      codigo:            get('codigo') || '',
-      categoria:         get('categoria') || '',
-      tipo:              get('tipo') || '',
-      cidade:            get('cidade') || '',
-      bairro:            get('bairro') || '',
-      empreendimento:    get('empreendimento') || '',
-      valor_venda:       toNumber(get('valor_venda')),
-      valor_aluguel:     toNumber(get('valor_aluguel')),
-      dormitorios:       toNumber(get('dormitorios')),
-      vagas:             toNumber(get('vagas')),
-      titulo_anuncio:    get('titulo_anuncio') || '',
-      lancamento:        get('lancamento') || '',
-      agenciacodigo:     get('agenciacodigo') || '',
-      agencianome:       get('agencianome') || '',
-      thank_you_url:     location.href
+      target: get('target') || 'imovel',
+      interesse: get('interesse') || '',
+      codigo: get('codigo') || '',
+      categoria: get('categoria') || '',
+      tipo: get('tipo') || '',
+      cidade: get('cidade') || '',
+      bairro: get('bairro') || '',
+      empreendimento: get('empreendimento') || '',
+      valor_venda: toNumber(get('valor_venda')),
+      valor_aluguel: toNumber(get('valor_aluguel')),
+      dormitorios: toNumber(get('dormitorios')),
+      vagas: toNumber(get('vagas')),
+      titulo_anuncio: get('titulo_anuncio') || '',
+      lancamento: get('lancamento') || '',
+      agenciacodigo: get('agenciacodigo') || '',
+      agencianome: get('agencianome') || '',
+      thank_you_url: location.href,
     };
   };
 
@@ -590,33 +648,38 @@
   const scrollDepths = [25, 50, 75, 100];
   const trackedDepths = new Set();
 
-  window.addEventListener('scroll', () => {
-    const scrollHeight = Math.max(
-      1,
-      document.documentElement.scrollHeight - window.innerHeight
-    );
-    const scrolled = (window.scrollY / scrollHeight) * 100;
-    if (scrolled > maxScroll) maxScroll = scrolled;
+  window.addEventListener(
+    'scroll',
+    () => {
+      const scrollHeight = Math.max(
+        1,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      const scrolled = (window.scrollY / scrollHeight) * 100;
+      if (scrolled > maxScroll) maxScroll = scrolled;
 
-    scrollDepths.forEach((d) => {
-      if (scrolled >= d && !trackedDepths.has(d)) {
-        trackedDepths.add(d);
-        capture('scroll_depth', { depth: d });
-      }
-    });
-  }, { passive: true });
+      scrollDepths.forEach((d) => {
+        if (scrolled >= d && !trackedDepths.has(d)) {
+          trackedDepths.add(d);
+          capture('scroll_depth', { depth: d });
+        }
+      });
+    },
+    { passive: true },
+  );
 
   const trackBounceIndicators = () => {
     const journey = getLS(LS_JOURNEY, []);
+    const safeJourney = Array.isArray(journey) ? journey : [];
     const timeOnPage = Math.floor((Date.now() - pageLoadTime) / 1000);
-    const isBounce = journey.length <= 1 && timeOnPage < 10;
+    const isBounce = safeJourney.length <= 1 && timeOnPage < 10;
     const isQuickExit = timeOnPage < 30 && maxScroll < 25;
     if (isBounce || isQuickExit) {
       capture('bounce_detected', {
         type: isBounce ? 'hard_bounce' : 'quick_exit',
         time_on_page: timeOnPage,
         max_scroll: Math.floor(maxScroll),
-        page_depth: journey.length,
+        page_depth: safeJourney.length,
       });
     }
   };
