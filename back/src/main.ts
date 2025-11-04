@@ -19,7 +19,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -154,6 +154,25 @@ async function bootstrap() {
         transform: true, // Converte tipos automaticamente
         transformOptions: {
           enableImplicitConversion: true, // Conversão implícita de tipos
+        },
+        validationError: {
+          target: false, // não incluir o objeto alvo nos erros
+          value: false, // não incluir o valor inválido para evitar logs sensíveis
+        },
+        exceptionFactory: (errors) => {
+          // Retorna um corpo detalhado para facilitar o debug de payloads inválidos
+          const formatted = errors.map((e) => ({
+            property: e.property,
+            constraints: e.constraints,
+            children: e.children?.map((c) => ({
+              property: c.property,
+              constraints: c.constraints,
+            })),
+          }));
+          return new BadRequestException({
+            message: 'Validation failed',
+            errors: formatted,
+          });
         },
       }),
     );
