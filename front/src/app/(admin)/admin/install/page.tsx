@@ -223,9 +223,11 @@ export default function InstallPage() {
                 </p>
                 <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>Acesse seu container no Google Tag Manager</li>
-                  <li>Crie uma nova tag do tipo "HTML Personalizado"</li>
+                  <li>
+                    Crie uma nova tag do tipo &quot;HTML Personalizado&quot;
+                  </li>
                   <li>Cole o código do script no campo HTML</li>
-                  <li>Configure o acionador para "All Pages"</li>
+                  <li>Configure o acionador para &quot;All Pages&quot;</li>
                   <li>Salve e publique o container</li>
                 </ol>
               </div>
