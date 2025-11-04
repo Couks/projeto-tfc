@@ -1,20 +1,37 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/lib/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/lib/components/ui/card'
 import { Skeleton } from '@/lib/components/ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
-import { usePopularProperties, usePropertyEngagement, useCTAPerformance } from '@/lib/hooks/useInsights'
+import {
+  usePopularProperties,
+  usePropertyEngagement,
+  useCTAPerformance,
+} from '@/lib/hooks/useInsights'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
-  const { data: popularData, isLoading: popularLoading } = usePopularProperties(selectedSiteKey || '')
-  const { data: engagementData, isLoading: engagementLoading } = usePropertyEngagement(selectedSiteKey || '')
-  const { data: ctaData, isLoading: ctaLoading } = useCTAPerformance(selectedSiteKey || '')
+  const { data: popularData, isLoading: popularLoading } = usePopularProperties(
+    selectedSiteKey || ''
+  )
+  const { data: engagementData, isLoading: engagementLoading } =
+    usePropertyEngagement(selectedSiteKey || '')
+  const { data: ctaData, isLoading: ctaLoading } = useCTAPerformance(
+    selectedSiteKey || ''
+  )
 
   if (!selectedSiteKey) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Please select a site to view insights</p>
+        <p className="text-muted-foreground">
+          Please select a site to view insights
+        </p>
       </div>
     )
   }
@@ -38,20 +55,26 @@ export default function PropertiesAnalyticsPage() {
             {engagementLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{engagementData?.totalViews.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold">
+                {engagementData?.totalViews.toLocaleString() || 0}
+              </div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Favorites</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Favorites
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {engagementLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{engagementData?.totalFavorites.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold">
+                {engagementData?.totalFavorites.toLocaleString() || 0}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -64,21 +87,27 @@ export default function PropertiesAnalyticsPage() {
             {engagementLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{engagementData?.totalShares.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold">
+                {engagementData?.totalShares.toLocaleString() || 0}
+              </div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Time on Property</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Time on Property
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {engagementLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{engagementData?.avgTimeOnProperty.toFixed(0)}s</div>
+                <div className="text-2xl font-bold">
+                  {engagementData?.avgTimeOnProperty.toFixed(0)}s
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">per view</p>
               </>
             )}
@@ -90,7 +119,9 @@ export default function PropertiesAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Call-to-Action Performance</CardTitle>
-          <CardDescription>How users interact with property CTAs</CardDescription>
+          <CardDescription>
+            How users interact with property CTAs
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
@@ -104,11 +135,14 @@ export default function PropertiesAnalyticsPage() {
               <>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Fazer Proposta</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Fazer Proposta
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.fazerProposta.toLocaleString() || 0}
+                      {engagementData?.ctaPerformance.fazerProposta.toLocaleString() ||
+                        0}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">clicks</p>
                   </CardContent>
@@ -116,11 +150,14 @@ export default function PropertiesAnalyticsPage() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Alugar Imóvel</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Alugar Imóvel
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.alugarImovel.toLocaleString() || 0}
+                      {engagementData?.ctaPerformance.alugarImovel.toLocaleString() ||
+                        0}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">clicks</p>
                   </CardContent>
@@ -128,11 +165,14 @@ export default function PropertiesAnalyticsPage() {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Mais Informações</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Mais Informações
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.maisInformacoes.toLocaleString() || 0}
+                      {engagementData?.ctaPerformance.maisInformacoes.toLocaleString() ||
+                        0}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">clicks</p>
                   </CardContent>
@@ -147,7 +187,9 @@ export default function PropertiesAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>CTA Click & Conversion Rates</CardTitle>
-          <CardDescription>Performance metrics for each CTA type</CardDescription>
+          <CardDescription>
+            Performance metrics for each CTA type
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {ctaLoading ? (
@@ -159,7 +201,10 @@ export default function PropertiesAnalyticsPage() {
           ) : (
             <div className="space-y-4">
               {ctaData?.ctas.map((item, index) => (
-                <div key={item.ctaType} className="flex items-center justify-between">
+                <div
+                  key={item.ctaType}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
                       {index + 1}
@@ -229,17 +274,30 @@ export default function PropertiesAnalyticsPage() {
                             {index + 1}
                           </div>
                         </td>
-                        <td className="p-4 align-middle font-medium">{property.codigo}</td>
-                        <td className="p-4 align-middle text-right">{property.views.toLocaleString()}</td>
-                        <td className="p-4 align-middle text-right">{property.favorites.toLocaleString()}</td>
-                        <td className="p-4 align-middle text-right">{property.ctaClicks.toLocaleString()}</td>
+                        <td className="p-4 align-middle font-medium">
+                          {property.codigo}
+                        </td>
                         <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">{property.engagementScore.toFixed(1)}</span>
+                          {property.views.toLocaleString()}
+                        </td>
+                        <td className="p-4 align-middle text-right">
+                          {property.favorites.toLocaleString()}
+                        </td>
+                        <td className="p-4 align-middle text-right">
+                          {property.ctaClicks.toLocaleString()}
+                        </td>
+                        <td className="p-4 align-middle text-right">
+                          <span className="font-semibold">
+                            {property.engagementScore.toFixed(1)}
+                          </span>
                         </td>
                       </tr>
                     )) || (
                       <tr>
-                        <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                        <td
+                          colSpan={6}
+                          className="p-4 text-center text-muted-foreground"
+                        >
                           No data available
                         </td>
                       </tr>
@@ -254,4 +312,3 @@ export default function PropertiesAnalyticsPage() {
     </div>
   )
 }
-

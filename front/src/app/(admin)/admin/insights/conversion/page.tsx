@@ -1,21 +1,39 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/lib/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/lib/components/ui/card'
 import { Skeleton } from '@/lib/components/ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
-import { useConversionRate, useConversionFunnel, useConversionSources } from '@/lib/hooks/useInsights'
+import {
+  useConversionRate,
+  useConversionFunnel,
+  useConversionSources,
+} from '@/lib/hooks/useInsights'
 import { Progress } from '@/lib/components/ui/progress'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
-  const { data: rateData, isLoading: rateLoading } = useConversionRate(selectedSiteKey || '')
-  const { data: funnelData, isLoading: funnelLoading } = useConversionFunnel(selectedSiteKey || '')
-  const { data: sourcesData, isLoading: sourcesLoading } = useConversionSources(selectedSiteKey || '')
+  const { data: rateData, isLoading: rateLoading } = useConversionRate(
+    selectedSiteKey || ''
+  )
+  const { data: funnelData, isLoading: funnelLoading } = useConversionFunnel(
+    selectedSiteKey || ''
+  )
+  const { data: sourcesData, isLoading: sourcesLoading } = useConversionSources(
+    selectedSiteKey || ''
+  )
 
   if (!selectedSiteKey) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Please select a site to view insights</p>
+        <p className="text-muted-foreground">
+          Please select a site to view insights
+        </p>
       </div>
     )
   }
@@ -33,16 +51,21 @@ export default function ConversionAnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Conversion Rate
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {rateLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{rateData?.conversionRate.toFixed(2)}%</div>
+                <div className="text-2xl font-bold">
+                  {rateData?.conversionRate.toFixed(2)}%
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {rateData?.totalConversions} / {rateData?.totalSessions} sessions
+                  {rateData?.totalConversions} / {rateData?.totalSessions}{' '}
+                  sessions
                 </p>
               </>
             )}
@@ -51,26 +74,34 @@ export default function ConversionAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Conversions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Conversions
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {rateLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{rateData?.totalConversions.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold">
+                {rateData?.totalConversions.toLocaleString() || 0}
+              </div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Funnel Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Overall Funnel Rate
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {funnelLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{funnelData?.overallConversionRate.toFixed(2)}%</div>
+              <div className="text-2xl font-bold">
+                {funnelData?.overallConversionRate.toFixed(2)}%
+              </div>
             )}
           </CardContent>
         </Card>
@@ -84,7 +115,9 @@ export default function ConversionAnalyticsPage() {
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{sourcesData?.sources[0]?.source || 'N/A'}</div>
+                <div className="text-2xl font-bold">
+                  {sourcesData?.sources[0]?.source || 'N/A'}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {sourcesData?.sources[0]?.conversions || 0} conversions
                 </p>
@@ -118,12 +151,16 @@ export default function ConversionAnalyticsPage() {
                       </div>
                       <div>
                         <p className="font-medium">{item.type}</p>
-                        <p className="text-xs text-muted-foreground">{item.percentage.toFixed(1)}% of all conversions</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.percentage.toFixed(1)}% of all conversions
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">conversions</p>
+                      <p className="text-xs text-muted-foreground">
+                        conversions
+                      </p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
@@ -138,7 +175,9 @@ export default function ConversionAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Conversion Funnel</CardTitle>
-          <CardDescription>User journey from awareness to conversion</CardDescription>
+          <CardDescription>
+            User journey from awareness to conversion
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {funnelLoading ? (
@@ -156,11 +195,14 @@ export default function ConversionAnalyticsPage() {
                       <p className="font-medium">{stage.stage}</p>
                       <p className="text-xs text-muted-foreground">
                         {stage.percentage.toFixed(1)}% of total
-                        {index > 0 && ` · ${stage.dropoffRate.toFixed(1)}% drop-off from previous`}
+                        {index > 0 &&
+                          ` · ${stage.dropoffRate.toFixed(1)}% drop-off from previous`}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold">{stage.count.toLocaleString()}</p>
+                      <p className="text-xl font-bold">
+                        {stage.count.toLocaleString()}
+                      </p>
                       <p className="text-xs text-muted-foreground">users</p>
                     </div>
                   </div>
@@ -172,13 +214,20 @@ export default function ConversionAnalyticsPage() {
                 <div className="mt-6 p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Overall Funnel Performance</p>
-                      <p className="text-2xl font-bold mt-1">{funnelData.overallConversionRate.toFixed(2)}%</p>
+                      <p className="text-sm text-muted-foreground">
+                        Overall Funnel Performance
+                      </p>
+                      <p className="text-2xl font-bold mt-1">
+                        {funnelData.overallConversionRate.toFixed(2)}%
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Completed / Started</p>
+                      <p className="text-sm text-muted-foreground">
+                        Completed / Started
+                      </p>
                       <p className="text-lg font-semibold mt-1">
-                        {funnelData.totalCompleted.toLocaleString()} / {funnelData.totalStarted.toLocaleString()}
+                        {funnelData.totalCompleted.toLocaleString()} /{' '}
+                        {funnelData.totalStarted.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -213,12 +262,18 @@ export default function ConversionAnalyticsPage() {
                       </div>
                       <div>
                         <p className="font-medium">{item.source}</p>
-                        <p className="text-xs text-muted-foreground">{item.percentage.toFixed(1)}% of conversions</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.percentage.toFixed(1)}% of conversions
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">{item.conversions.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">conversions</p>
+                      <p className="font-bold">
+                        {item.conversions.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        conversions
+                      </p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
@@ -231,4 +286,3 @@ export default function ConversionAnalyticsPage() {
     </div>
   )
 }
-

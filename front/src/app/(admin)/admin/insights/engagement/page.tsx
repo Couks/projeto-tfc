@@ -1,6 +1,12 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/lib/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/lib/components/ui/card'
 import { Skeleton } from '@/lib/components/ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useBounceAnalytics, useScrollAnalytics } from '@/lib/hooks/useInsights'
@@ -8,13 +14,19 @@ import { Progress } from '@/lib/components/ui/progress'
 
 export default function EngagementAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
-  const { data: bounceData, isLoading: bounceLoading } = useBounceAnalytics(selectedSiteKey || '')
-  const { data: scrollData, isLoading: scrollLoading } = useScrollAnalytics(selectedSiteKey || '')
+  const { data: bounceData, isLoading: bounceLoading } = useBounceAnalytics(
+    selectedSiteKey || ''
+  )
+  const { data: scrollData, isLoading: scrollLoading } = useScrollAnalytics(
+    selectedSiteKey || ''
+  )
 
   if (!selectedSiteKey) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Please select a site to view insights</p>
+        <p className="text-muted-foreground">
+          Please select a site to view insights
+        </p>
       </div>
     )
   }
@@ -39,8 +51,13 @@ export default function EngagementAnalyticsPage() {
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold text-destructive">{bounceData?.bounceRate.toFixed(2)}%</div>
-                <Progress value={bounceData?.bounceRate || 0} className="mt-2 h-2" />
+                <div className="text-2xl font-bold text-destructive">
+                  {bounceData?.bounceRate.toFixed(2)}%
+                </div>
+                <Progress
+                  value={bounceData?.bounceRate || 0}
+                  className="mt-2 h-2"
+                />
               </>
             )}
           </CardContent>
@@ -54,22 +71,31 @@ export default function EngagementAnalyticsPage() {
             {bounceLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{bounceData?.totalBounces.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold">
+                {bounceData?.totalBounces.toLocaleString() || 0}
+              </div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Scroll Depth</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Scroll Depth
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {scrollLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{scrollData?.avgScrollDepth.toFixed(0)}%</div>
-                <Progress value={scrollData?.avgScrollDepth || 0} className="mt-2 h-2" />
+                <div className="text-2xl font-bold">
+                  {scrollData?.avgScrollDepth.toFixed(0)}%
+                </div>
+                <Progress
+                  value={scrollData?.avgScrollDepth || 0}
+                  className="mt-2 h-2"
+                />
               </>
             )}
           </CardContent>
@@ -77,14 +103,18 @@ export default function EngagementAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Bounce Type</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Top Bounce Type
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {bounceLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{bounceData?.bouncesByType[0]?.type || 'N/A'}</div>
+                <div className="text-2xl font-bold">
+                  {bounceData?.bouncesByType[0]?.type || 'N/A'}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {bounceData?.bouncesByType[0]?.count || 0} bounces
                 </p>
@@ -177,17 +207,27 @@ export default function EngagementAnalyticsPage() {
                             {index + 1}
                           </div>
                         </td>
-                        <td className="p-4 align-middle font-medium max-w-md truncate" title={page.url}>
+                        <td
+                          className="p-4 align-middle font-medium max-w-md truncate"
+                          title={page.url}
+                        >
                           {page.url}
                         </td>
-                        <td className="p-4 align-middle text-right">{page.bounces.toLocaleString()}</td>
                         <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">{page.bounceRate.toFixed(1)}%</span>
+                          {page.bounces.toLocaleString()}
+                        </td>
+                        <td className="p-4 align-middle text-right">
+                          <span className="font-semibold">
+                            {page.bounceRate.toFixed(1)}%
+                          </span>
                         </td>
                       </tr>
                     )) || (
                       <tr>
-                        <td colSpan={4} className="p-4 text-center text-muted-foreground">
+                        <td
+                          colSpan={4}
+                          className="p-4 text-center text-muted-foreground"
+                        >
                           No data available
                         </td>
                       </tr>
@@ -223,7 +263,9 @@ export default function EngagementAnalyticsPage() {
                         {item.depth}%
                       </div>
                       <div>
-                        <p className="font-medium">{item.depth}% Scroll Depth</p>
+                        <p className="font-medium">
+                          {item.depth}% Scroll Depth
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {item.percentage.toFixed(1)}% of all scrolls
                         </p>
@@ -246,7 +288,9 @@ export default function EngagementAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Most Engaged Pages</CardTitle>
-          <CardDescription>Pages with highest scroll engagement</CardDescription>
+          <CardDescription>
+            Pages with highest scroll engagement
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {scrollLoading ? (
@@ -283,17 +327,27 @@ export default function EngagementAnalyticsPage() {
                             {index + 1}
                           </div>
                         </td>
-                        <td className="p-4 align-middle font-medium max-w-md truncate" title={page.url}>
+                        <td
+                          className="p-4 align-middle font-medium max-w-md truncate"
+                          title={page.url}
+                        >
                           {page.url}
                         </td>
                         <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">{page.avgScrollDepth.toFixed(0)}%</span>
+                          <span className="font-semibold">
+                            {page.avgScrollDepth.toFixed(0)}%
+                          </span>
                         </td>
-                        <td className="p-4 align-middle text-right">{page.deepScrolls.toLocaleString()}</td>
+                        <td className="p-4 align-middle text-right">
+                          {page.deepScrolls.toLocaleString()}
+                        </td>
                       </tr>
                     )) || (
                       <tr>
-                        <td colSpan={4} className="p-4 text-center text-muted-foreground">
+                        <td
+                          colSpan={4}
+                          className="p-4 text-center text-muted-foreground"
+                        >
                           No data available
                         </td>
                       </tr>
@@ -308,4 +362,3 @@ export default function EngagementAnalyticsPage() {
     </div>
   )
 }
-
