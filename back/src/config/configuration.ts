@@ -69,7 +69,7 @@ export default () => {
   );
 
   // Configurações da API
-  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
+  const apiBaseUrl = process.env.API_BASE_URL || '';
   logger.log(`[ENV] API_BASE_URL: ${apiBaseUrl}`);
 
   return {

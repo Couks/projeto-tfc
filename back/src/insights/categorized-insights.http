@@ -1,4 +1,4 @@
-@apiUrl = http://localhost:3001
+@apiUrl = http://api.matheuscastroks.com.br
 @prodUrl = http://api.matheuscastroks.com.br
 @siteKey = sk_usfdtukcs0zci17ubhutbfxz
 

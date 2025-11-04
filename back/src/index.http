@@ -1,4 +1,4 @@
-@apiUrl = http://localhost:3001
+@apiUrl = https://api.matheuscastroks.com.br
 
 ### ============================================
 ### APP ROOT ENDPOINTS

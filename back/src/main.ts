@@ -261,11 +261,10 @@ async function bootstrap() {
     // Inicia o servidor HTTP na porta configurada
     await app.listen(port);
 
-    // Logs informativos sobre URLs e configurações
-    logger.log(`Application is running on: http://localhost:${port}`);
-    logger.log(`API Documentation: http://localhost:${port}/api/docs`);
     logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
-    logger.log(`Swagger JSON: http://localhost:${port}/api/docs-json`);
+    logger.log(
+      `Swagger JSON: https://api.matheuscastroks.com.br/api/docs-json`,
+    );
   } catch (error) {
     // Em caso de erro na inicialização, loga o erro e encerra o processo
     logger.error(
