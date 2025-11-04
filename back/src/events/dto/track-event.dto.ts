@@ -5,6 +5,7 @@ import {
   IsObject,
   MaxLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class TrackEventDto {
   @IsString()
@@ -23,6 +24,7 @@ export class TrackEventDto {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   ts?: number;
 
   @IsOptional()
