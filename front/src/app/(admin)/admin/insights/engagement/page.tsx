@@ -11,6 +11,8 @@ import { Skeleton } from '@/lib/components/ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useBounceAnalytics, useScrollAnalytics } from '@/lib/hooks/useInsights'
 import { Progress } from '@/lib/components/ui/progress'
+import { BounceTable } from './_components/BounceTable'
+import { EngagedPagesTable } from './_components/EngagedPagesTable'
 
 export default function EngagementAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -180,62 +182,7 @@ export default function EngagementAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        #
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        Page URL
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Bounces
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Bounce Rate
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bounceData?.topBouncePages.map((page, index) => (
-                      <tr key={page.url} className="border-b">
-                        <td className="p-4 align-middle">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-xs font-medium">
-                            {index + 1}
-                          </div>
-                        </td>
-                        <td
-                          className="p-4 align-middle font-medium max-w-md truncate"
-                          title={page.url}
-                        >
-                          {page.url}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {page.bounces.toLocaleString()}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">
-                            {page.bounceRate.toFixed(1)}%
-                          </span>
-                        </td>
-                      </tr>
-                    )) || (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="p-4 text-center text-muted-foreground"
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <BounceTable data={bounceData?.topBouncePages || []} />
           )}
         </CardContent>
       </Card>
@@ -300,62 +247,7 @@ export default function EngagementAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        #
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        Page URL
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Avg Scroll Depth
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Deep Scrolls (75%+)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scrollData?.topEngagedPages.map((page, index) => (
-                      <tr key={page.url} className="border-b">
-                        <td className="p-4 align-middle">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
-                            {index + 1}
-                          </div>
-                        </td>
-                        <td
-                          className="p-4 align-middle font-medium max-w-md truncate"
-                          title={page.url}
-                        >
-                          {page.url}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">
-                            {page.avgScrollDepth.toFixed(0)}%
-                          </span>
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {page.deepScrolls.toLocaleString()}
-                        </td>
-                      </tr>
-                    )) || (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="p-4 text-center text-muted-foreground"
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <EngagedPagesTable data={scrollData?.topEngagedPages || []} />
           )}
         </CardContent>
       </Card>

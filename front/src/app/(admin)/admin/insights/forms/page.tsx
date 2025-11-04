@@ -11,6 +11,7 @@ import { Skeleton } from '@/lib/components/ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useFormPerformance, useFormAbandonment } from '@/lib/hooks/useInsights'
 import { Progress } from '@/lib/components/ui/progress'
+import { FieldAnalyticsTable } from './_components/FieldAnalyticsTable'
 
 export default function FormsAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -257,57 +258,7 @@ export default function FormsAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        Field
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Focus Count
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Fill Rate
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {performanceData?.fieldAnalytics.map((field) => (
-                      <tr key={field.field} className="border-b">
-                        <td className="p-4 align-middle font-medium">
-                          {field.field}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {field.focusCount.toLocaleString()}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="font-semibold">
-                              {field.fillRate.toFixed(1)}%
-                            </span>
-                            <Progress
-                              value={field.fillRate}
-                              className="h-2 w-20"
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    )) || (
-                      <tr>
-                        <td
-                          colSpan={3}
-                          className="p-4 text-center text-muted-foreground"
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <FieldAnalyticsTable data={performanceData?.fieldAnalytics || []} />
           )}
         </CardContent>
       </Card>

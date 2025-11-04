@@ -14,6 +14,7 @@ import {
   usePropertyEngagement,
   useCTAPerformance,
 } from '@/lib/hooks/useInsights'
+import { PopularPropertiesTable } from './_components/PopularPropertiesTable'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -241,71 +242,7 @@ export default function PropertiesAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        #
-                      </th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        Property Code
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Views
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Favorites
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        CTA Clicks
-                      </th>
-                      <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                        Engagement Score
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {popularData?.properties.map((property, index) => (
-                      <tr key={property.codigo} className="border-b">
-                        <td className="p-4 align-middle">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
-                            {index + 1}
-                          </div>
-                        </td>
-                        <td className="p-4 align-middle font-medium">
-                          {property.codigo}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {property.views.toLocaleString()}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {property.favorites.toLocaleString()}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          {property.ctaClicks.toLocaleString()}
-                        </td>
-                        <td className="p-4 align-middle text-right">
-                          <span className="font-semibold">
-                            {property.engagementScore.toFixed(1)}
-                          </span>
-                        </td>
-                      </tr>
-                    )) || (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="p-4 text-center text-muted-foreground"
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <PopularPropertiesTable data={popularData?.properties || []} />
           )}
         </CardContent>
       </Card>
