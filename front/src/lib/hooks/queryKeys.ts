@@ -22,8 +22,8 @@ export const queryKeys = {
       filters: (siteKey: string, query?: any) =>
         [
           ...queryKeys.insights.all,
-          'search',
           'filters',
+          'usage',
           siteKey,
           query,
         ] as const,

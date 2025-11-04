@@ -10,6 +10,7 @@ import {
 import { PieChart, Pie, Cell } from 'recharts'
 import { Skeleton } from '@ui/skeleton'
 import { useSites } from '@/lib/hooks'
+import { useSearchAnalytics } from '@/lib/hooks/useInsights'
 
 const COLORS = [
   'hsl(var(--primary))',
@@ -28,9 +29,18 @@ const chartConfig = {
 export function TypesChart() {
   const { data: sites } = useSites()
   const firstSite = sites?.[0]
-  const typesData: Array<{ name: string; value: number }> = []
-  const isLoading = false
-  const error: Error | null = null
+  const {
+    data: searchData,
+    isLoading,
+    error,
+  } = useSearchAnalytics(firstSite?.siteKey || '')
+
+  // Transform search analytics data to chart format
+  const typesData =
+    searchData?.topTipos.map((item) => ({
+      name: item.tipo,
+      value: item.count,
+    })) || []
 
   // Add colors to the data
   const typesDataWithColors = typesData.map((item, index) => ({
@@ -50,11 +60,12 @@ export function TypesChart() {
     )
   }
 
-  if (typesDataWithColors.length === 0) {
+  if (error || typesDataWithColors.length === 0) {
     return (
       <div className="h-[400px] w-full flex items-center justify-center">
         <p className="text-sm text-muted-foreground">
-          Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.
+          {error?.message ||
+            'Nenhum dado disponível. Configure um site e aguarde dados de pesquisa.'}
         </p>
       </div>
     )

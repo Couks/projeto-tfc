@@ -66,7 +66,7 @@ export function useFiltersUsage(siteKey: string, query?: InsightsQuery) {
     queryKey: [...queryKeys.insights.all, 'filters', 'usage', siteKey, query],
     queryFn: async () => {
       return apiClient.get<FiltersUsageResponse>(
-        `/api/insights/search/filters`,
+        `/api/insights/filters/usage`,
         {
           siteKey,
         }
