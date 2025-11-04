@@ -46,10 +46,16 @@ export default function NewSitePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Novo Site</h1>
-      <Card className="max-w-lg">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Novo Site</h1>
+        <p className="text-muted-foreground text-lg">
+          Adicione um novo site para começar a rastrear visitantes e gerar
+          insights
+        </p>
+      </div>
+      <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-base">Informações</CardTitle>
+          <CardTitle>Informações do Site</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-3">

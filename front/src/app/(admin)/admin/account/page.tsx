@@ -59,8 +59,8 @@ export default function AccountPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Conta</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">Minha Conta</h1>
+          <p className="text-muted-foreground text-lg">
             Erro ao carregar dados da conta
           </p>
         </div>
@@ -83,8 +83,8 @@ export default function AccountPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Conta</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight">Minha Conta</h1>
+        <p className="text-muted-foreground text-lg">
           Gerencie suas informações pessoais e configurações da conta
         </p>
       </div>

@@ -52,16 +52,21 @@ export default function EditSitePage({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Editar Site</h1>
-        <Button asChild size="sm" variant="outline">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Editar Site</h1>
+          <p className="text-muted-foreground text-lg">
+            Atualize as configurações e informações do site
+          </p>
+        </div>
+        <Button asChild variant="outline">
           <Link href="/admin/sites">Voltar</Link>
         </Button>
       </div>
-      <Card>
+      <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-base">Informações do Site</CardTitle>
+          <CardTitle>Informações do Site</CardTitle>
         </CardHeader>
         <CardContent>
           <EditSiteForm
