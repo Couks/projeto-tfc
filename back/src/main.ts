@@ -129,7 +129,6 @@ async function bootstrap() {
     app.enableCors({
       origin: [
         'https://insighthouse.matheuscastroks.com.br',
-        'https://insighthouse.vercel.app',
         'http://localhost:3000',
         'http://localhost:3002',
         // Permite qualquer origem para endpoints do SDK
@@ -228,7 +227,6 @@ async function bootstrap() {
         'site-key',
       )
       // Servidores disponíveis
-      .addServer(`http://localhost:${port}`, 'Local Development')
       .addServer('https://api.matheuscastroks.com.br', 'Production')
       .build();
 
