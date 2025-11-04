@@ -46,9 +46,6 @@ import {
   ExternalLink,
   Globe,
   HelpCircle,
-  Gauge,
-  GaugeCircle,
-  MapPin,
   Target,
   User,
   Search,
@@ -104,7 +101,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip="Visão Geral">
-                      <Link href="/admin/">
+                      <Link href="/admin/insights">
                         <LayoutGrid /> <span>Visão Geral</span>
                       </Link>
                     </SidebarMenuButton>
@@ -115,62 +112,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             <SidebarSeparator />
 
-            {/* Relatórios Detalhados */}
+            {/* Insights Categorizados */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <span className="text-xs">Relatórios</span>
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <Collapsible defaultOpen={false}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip="Análises Detalhadas">
-                      <GaugeCircle /> <span>Análises Detalhadas</span>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/insights">
-                          <BarChart3 className="w-4 h-4" />
-                          <span>Insights</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/dashboard">
-                          <Gauge className="w-4 h-4" />
-                          <span>Métricas Gerais</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/dashboard/cities">
-                          <MapPin className="w-4 h-4" />
-                          <span>Análise por Cidades</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/dashboard/types">
-                          <Building2 className="w-4 h-4" />
-                          <span>Tipos de Imóveis</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </Collapsible>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarSeparator />
-
-            {/* Categorized Insights */}
-            <SidebarGroup>
-              <SidebarGroupLabel asChild>
-                <span className="text-xs">Insights</span>
+                <span className="text-xs">Análises</span>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <Collapsible defaultOpen={true}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip="Insights por Categoria">
-                      <BarChart3 /> <span>Insights Avançadas</span>
+                    <SidebarMenuButton tooltip="Análises Categorizadas">
+                      <BarChart3 /> <span>Análises Avançadas</span>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -178,31 +129,31 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/search">
                           <Search className="w-4 h-4" />
-                          <span>Search Analytics</span>
+                          <span>Buscas</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/conversion">
                           <Target className="w-4 h-4" />
-                          <span>Conversions</span>
+                          <span>Conversões</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/properties">
                           <Building2 className="w-4 h-4" />
-                          <span>Properties</span>
+                          <span>Imóveis</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/forms">
                           <FormInput className="w-4 h-4" />
-                          <span>Forms</span>
+                          <span>Formulários</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/engagement">
                           <MousePointer className="w-4 h-4" />
-                          <span>Engagement</span>
+                          <span>Engajamento</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

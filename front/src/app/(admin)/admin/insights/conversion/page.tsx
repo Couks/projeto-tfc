@@ -32,7 +32,7 @@ export default function ConversionAnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="text-muted-foreground">
-          Please select a site to view insights
+          Por favor, selecione um site para visualizar as análises
         </p>
       </div>
     )
@@ -41,9 +41,11 @@ export default function ConversionAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Conversion Analytics</h1>
-        <p className="text-muted-foreground">
-          Track conversion rates, funnel performance, and conversion sources
+        <h1 className="text-3xl font-bold tracking-tight">
+          Análise de Conversões
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Acompanhe taxas de conversão, desempenho do funil e fontes de leads
         </p>
       </div>
 
@@ -52,7 +54,7 @@ export default function ConversionAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Conversion Rate
+              Taxa de Conversão
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -65,7 +67,7 @@ export default function ConversionAnalyticsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {rateData?.totalConversions} / {rateData?.totalSessions}{' '}
-                  sessions
+                  sessões
                 </p>
               </>
             )}
@@ -75,7 +77,7 @@ export default function ConversionAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Conversions
+              Total de Conversões
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -92,7 +94,7 @@ export default function ConversionAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Overall Funnel Rate
+              Taxa do Funil Completo
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -108,7 +110,9 @@ export default function ConversionAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Source</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Fonte Principal
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {sourcesLoading ? (
@@ -119,7 +123,7 @@ export default function ConversionAnalyticsPage() {
                   {sourcesData?.sources[0]?.source || 'N/A'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {sourcesData?.sources[0]?.conversions || 0} conversions
+                  {sourcesData?.sources[0]?.conversions || 0} conversões
                 </p>
               </>
             )}
@@ -128,10 +132,12 @@ export default function ConversionAnalyticsPage() {
       </div>
 
       {/* Conversions by Type */}
-      <Card>
+      <Card className="border-2 border-primary/20">
         <CardHeader>
-          <CardTitle>Conversions by Type</CardTitle>
-          <CardDescription>Breakdown of conversion events</CardDescription>
+          <CardTitle>Conversões por Tipo</CardTitle>
+          <CardDescription>
+            Distribuição dos eventos de conversão
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {rateLoading ? (
@@ -146,37 +152,39 @@ export default function ConversionAnalyticsPage() {
                 <div key={item.type} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-medium">{item.type}</p>
+                        <p className="font-semibold">{item.type}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% of all conversions
+                          {item.percentage.toFixed(1)}% de todas as conversões
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold">{item.count.toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">
-                        conversions
+                        conversões
                       </p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Conversion Funnel */}
-      <Card>
+      <Card className="border-2 border-primary/20">
         <CardHeader>
-          <CardTitle>Conversion Funnel</CardTitle>
+          <CardTitle>Funil de Conversão</CardTitle>
           <CardDescription>
-            User journey from awareness to conversion
+            Jornada do usuário desde o primeiro contato até a conversão
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -194,28 +202,30 @@ export default function ConversionAnalyticsPage() {
                     <div>
                       <p className="font-medium">{stage.stage}</p>
                       <p className="text-xs text-muted-foreground">
-                        {stage.percentage.toFixed(1)}% of total
+                        {stage.percentage.toFixed(1)}% do total
                         {index > 0 &&
-                          ` · ${stage.dropoffRate.toFixed(1)}% drop-off from previous`}
+                          ` · ${stage.dropoffRate.toFixed(1)}% de desistência da etapa anterior`}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-bold">
                         {stage.count.toLocaleString()}
                       </p>
-                      <p className="text-xs text-muted-foreground">users</p>
+                      <p className="text-xs text-muted-foreground">usuários</p>
                     </div>
                   </div>
                   <Progress value={stage.percentage} className="h-3" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
 
               {funnelData && (
                 <div className="mt-6 p-4 bg-muted rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Overall Funnel Performance
+                        Desempenho Geral do Funil
                       </p>
                       <p className="text-2xl font-bold mt-1">
                         {funnelData.overallConversionRate.toFixed(2)}%
@@ -223,7 +233,7 @@ export default function ConversionAnalyticsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">
-                        Completed / Started
+                        Completados / Iniciados
                       </p>
                       <p className="text-lg font-semibold mt-1">
                         {funnelData.totalCompleted.toLocaleString()} /{' '}
@@ -241,8 +251,8 @@ export default function ConversionAnalyticsPage() {
       {/* Conversion Sources */}
       <Card>
         <CardHeader>
-          <CardTitle>Conversion Sources</CardTitle>
-          <CardDescription>Where conversions are coming from</CardDescription>
+          <CardTitle>Fontes de Conversão</CardTitle>
+          <CardDescription>De onde vêm as suas conversões</CardDescription>
         </CardHeader>
         <CardContent>
           {sourcesLoading ? (
@@ -263,7 +273,7 @@ export default function ConversionAnalyticsPage() {
                       <div>
                         <p className="font-medium">{item.source}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% of conversions
+                          {item.percentage.toFixed(1)}% das conversões
                         </p>
                       </div>
                     </div>
@@ -272,13 +282,15 @@ export default function ConversionAnalyticsPage() {
                         {item.conversions.toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        conversions
+                        conversões
                       </p>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
                 </div>
-              )) || <p className="text-muted-foreground">No data available</p>}
+              )) || (
+                <p className="text-muted-foreground">Sem dados disponíveis</p>
+              )}
             </div>
           )}
         </CardContent>

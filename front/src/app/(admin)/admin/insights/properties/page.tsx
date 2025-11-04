@@ -31,7 +31,7 @@ export default function PropertiesAnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="text-muted-foreground">
-          Please select a site to view insights
+          Por favor, selecione um site para visualizar as análises
         </p>
       </div>
     )
@@ -40,9 +40,11 @@ export default function PropertiesAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Properties Analytics</h1>
-        <p className="text-muted-foreground">
-          Track property views, favorites, and user engagement
+        <h1 className="text-3xl font-bold tracking-tight">
+          Análise de Imóveis
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Descubra quais imóveis geram mais engajamento e oportunidades
         </p>
       </div>
 
@@ -231,8 +233,10 @@ export default function PropertiesAnalyticsPage() {
       {/* Popular Properties Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Most Popular Properties</CardTitle>
-          <CardDescription>Top properties by engagement score</CardDescription>
+          <CardTitle>Imóveis Mais Populares</CardTitle>
+          <CardDescription>
+            Imóveis com maior pontuação de engajamento
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {popularLoading ? (

@@ -27,7 +27,7 @@ export default function EngagementAnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="text-muted-foreground">
-          Please select a site to view insights
+          Por favor, selecione um site para visualizar as análises
         </p>
       </div>
     )
@@ -36,9 +36,12 @@ export default function EngagementAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Engagement Analytics</h1>
-        <p className="text-muted-foreground">
-          Monitor bounce rates, scroll depth, and user engagement metrics
+        <h1 className="text-3xl font-bold tracking-tight">
+          Análise de Engajamento
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Monitore taxas de rejeição, profundidade de scroll e métricas de
+          engajamento
         </p>
       </div>
 

@@ -16,6 +16,7 @@ import {
   FormInput,
   MousePointer,
   ArrowRight,
+  TrendingUp,
 } from 'lucide-react'
 
 export default function InsightsOverviewPage() {
@@ -25,7 +26,7 @@ export default function InsightsOverviewPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="text-muted-foreground">
-          Please select a site to view insights
+          Por favor, selecione um site para visualizar as análises
         </p>
       </div>
     )
@@ -33,128 +34,196 @@ export default function InsightsOverviewPage() {
 
   const categories = [
     {
-      title: 'Search Analytics',
-      description: 'Analyze search behavior and filter usage patterns',
+      title: 'Análise de Buscas',
+      description:
+        'Entenda o que seus clientes procuram e como usam os filtros',
       icon: Search,
       href: '/admin/insights/search',
       color: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-50 dark:bg-blue-950',
+      priority: 'high',
     },
     {
-      title: 'Conversion Analytics',
-      description:
-        'Track conversion rates, funnel performance, and conversion sources',
-      icon: Target,
-      href: '/admin/insights/conversion',
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-950',
-    },
-    {
-      title: 'Properties Analytics',
-      description: 'Track property views, favorites, and user engagement',
+      title: 'Imóveis Populares',
+      description: 'Descubra quais imóveis geram mais interesse e engajamento',
       icon: Building2,
       href: '/admin/insights/properties',
       color: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 dark:bg-purple-950',
+      priority: 'high',
     },
     {
-      title: 'Forms Analytics',
+      title: 'Conversões',
       description:
-        'Track form completion, abandonment, and field-level insights',
-      icon: FormInput,
-      href: '/admin/insights/forms',
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-950',
+        'Acompanhe taxas de conversão, funil de vendas e fontes de leads',
+      icon: Target,
+      href: '/admin/insights/conversion',
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-950',
+      priority: 'high',
     },
     {
-      title: 'Engagement Analytics',
+      title: 'Engajamento',
       description:
-        'Monitor bounce rates, scroll depth, and user engagement metrics',
+        'Monitore taxas de rejeição, profundidade de scroll e tempo no site',
       icon: MousePointer,
       href: '/admin/insights/engagement',
       color: 'text-pink-600 dark:text-pink-400',
       bgColor: 'bg-pink-50 dark:bg-pink-950',
+      priority: 'medium',
+    },
+    {
+      title: 'Formulários',
+      description:
+        'Otimize formulários identificando campos problemáticos e abandono',
+      icon: FormInput,
+      href: '/admin/insights/forms',
+      color: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-50 dark:bg-orange-950',
+      priority: 'medium',
     },
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Insights Dashboard</h1>
-        <p className="text-muted-foreground">
-          Explore categorized analytics to understand your users better
+        <h1 className="text-3xl font-bold tracking-tight">
+          Central de Análises
+        </h1>
+        <p className="text-muted-foreground text-lg mt-2">
+          Insights estratégicos para impulsionar suas campanhas imobiliárias
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => {
-          const Icon = category.icon
-          return (
-            <Link key={category.href} href={category.href}>
-              <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-lg ${category.bgColor}`}>
-                      <Icon className={`h-6 w-6 ${category.color}`} />
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <CardTitle className="mt-4">{category.title}</CardTitle>
-                  <CardDescription>{category.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-primary font-medium">
-                    View Details →
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          )
-        })}
+      {/* Métricas Prioritárias */}
+      ;<div>
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Análises Prioritárias</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {categories
+            .filter((c) => c.priority === 'high')
+            .map((category) => {
+              const Icon = category.icon
+              return (
+                <Link key={category.href} href={category.href}>
+                  <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className={`p-3 rounded-lg ${category.bgColor}`}>
+                          <Icon className={`h-6 w-6 ${category.color}`} />
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <CardTitle className="mt-4">{category.title}</CardTitle>
+                      <CardDescription>{category.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-primary font-medium">
+                        Ver Detalhes →
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
+        </div>
       </div>
 
-      <Card>
+      {
+        /* Análises Complementares */
+      }
+      ;<div>
+        <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {categories
+            .filter((c) => c.priority === 'medium')
+            .map((category) => {
+              const Icon = category.icon
+              return (
+                <Link key={category.href} href={category.href}>
+                  <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className={`p-3 rounded-lg ${category.bgColor}`}>
+                          <Icon className={`h-6 w-6 ${category.color}`} />
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <CardTitle className="mt-4">{category.title}</CardTitle>
+                      <CardDescription>{category.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-primary font-medium">
+                        Ver Detalhes →
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
+        </div>
+      </div>
+
+      {/* Guia de Uso */}
+      <Card className="border-primary/20">
         <CardHeader>
-          <CardTitle>About Categorized Insights</CardTitle>
-          <CardDescription>How to use this analytics dashboard</CardDescription>
+          <CardTitle>Como Usar Estas Análises</CardTitle>
+          <CardDescription>
+            Guia prático para criar campanhas efetivas
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-semibold mb-2">🔍 Search Analytics</h3>
+            <h3 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">
+              🔍 Análise de Buscas
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Understand what users are looking for with detailed search and
-              filter analytics. See top finalidades, property types, cities, and
-              filter combinations.
+              Identifique as preferências do seu público: quais tipos de
+              imóveis, regiões e características são mais buscadas. Use esses
+              dados para direcionar campanhas e destacar imóveis alinhados com a
+              demanda.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">🎯 Conversion Analytics</h3>
+            <h3 className="font-semibold mb-2 text-purple-600 dark:text-purple-400">
+              🏢 Imóveis Populares
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Track your conversion funnel from awareness to action. Monitor
-              conversion rates, identify drop-off points, and understand
-              conversion sources.
+              Descubra quais imóveis geram mais visualizações, favoritos e
+              cliques em CTAs. Priorize esses imóveis em campanhas pagas e
+              destaque-os em materiais de marketing.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">🏢 Properties Analytics</h3>
+            <h3 className="font-semibold mb-2 text-green-600 dark:text-green-400">
+              🎯 Conversões
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Discover which properties are most popular and how users engage
-              with them. Track views, favorites, shares, and CTA performance.
+              Acompanhe o funil de conversão completo: de visitante a lead.
+              Identifique pontos de abandono e otimize as etapas com menor taxa
+              de conversão para aumentar seus resultados.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">📝 Forms Analytics</h3>
+            <h3 className="font-semibold mb-2 text-pink-600 dark:text-pink-400">
+              💫 Engajamento
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Optimize your forms with completion and abandonment metrics.
-              Identify problematic fields and stages where users drop off.
+              Entenda quais páginas mantêm usuários engajados e quais têm alta
+              taxa de rejeição. Use esses insights para melhorar conteúdo e
+              experiência do usuário.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">💫 Engagement Analytics</h3>
+            <h3 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">
+              📝 Formulários
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Monitor user engagement with bounce rates and scroll depth.
-              Understand which pages keep users engaged and which need
-              improvement.
+              Otimize seus formulários de contato identificando campos que
+              causam abandono. Simplifique o processo de captura de leads para
+              aumentar conversões.
             </p>
           </div>
         </CardContent>

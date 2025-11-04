@@ -24,7 +24,7 @@ export default function FormsAnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="text-muted-foreground">
-          Please select a site to view insights
+          Por favor, selecione um site para visualizar as análises
         </p>
       </div>
     )
@@ -33,9 +33,11 @@ export default function FormsAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Forms Analytics</h1>
-        <p className="text-muted-foreground">
-          Track form completion, abandonment, and field-level insights
+        <h1 className="text-3xl font-bold tracking-tight">
+          Análise de Formulários
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Otimize formulários e aumente suas taxas de captura de leads
         </p>
       </div>
 
