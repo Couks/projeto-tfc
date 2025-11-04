@@ -18,23 +18,14 @@ import {
   User,
 } from 'lucide-react'
 import { useSites } from '@/lib/hooks'
-import { useOverview } from '@/lib/hooks/useInsights'
 
 export function AdminDashboardClient() {
   const { data: sites } = useSites()
-  const firstSite = sites?.[0]
-
-  const { data: overviewData } = useOverview(firstSite?.siteKey || '')
-
-  // Calculate metrics from real data with proper type checking
-  const totalEvents = overviewData?.totalEvents || 0
-  const totalSessions = overviewData?.totalSessions || 0
-  const totalUsers = overviewData?.totalUsers || 0
 
   const metrics = {
-    totalVisitors: totalUsers,
-    totalSessions: totalSessions,
-    totalEvents: totalEvents,
+    totalVisitors: 0,
+    totalSessions: 0,
+    totalEvents: 0,
     totalSites: sites?.length || 0,
   }
 
@@ -175,9 +166,9 @@ export function AdminDashboardClient() {
               variant="outline"
               className="w-full justify-start"
             >
-              <Link href="/admin/insights/top-events">
+              <Link href="/admin/insights">
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Top Events
+                Insights Dashboard
               </Link>
             </Button>
             <Button
@@ -186,9 +177,9 @@ export function AdminDashboardClient() {
               variant="outline"
               className="w-full justify-start"
             >
-              <Link href="/admin/insights/cities">
+              <Link href="/admin/insights/search">
                 <Users className="h-4 w-4 mr-2" />
-                Cities
+                Search Analytics
               </Link>
             </Button>
             <div className="pt-2 border-t">

@@ -3,7 +3,8 @@
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@ui/chart'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Skeleton } from '@ui/skeleton'
-import { useSites, useCities } from '@/lib/hooks'
+import { useSites } from '@/lib/hooks'
+import { useSearchAnalytics } from '@/lib/hooks/useInsights'
 
 const chartConfig = {
   searches: {
@@ -16,10 +17,17 @@ export function CitiesChart() {
   const { data: sites } = useSites()
   const firstSite = sites?.[0]
   const {
-    data: citiesData,
+    data: searchData,
     isLoading,
     error,
-  } = useCities(firstSite?.siteKey || '')
+  } = useSearchAnalytics(firstSite?.siteKey || '')
+
+  // Transform search analytics data to chart format
+  const citiesData =
+    searchData?.topCidades.map((item) => ({
+      city: item.cidade,
+      searches: item.count,
+    })) || []
 
   if (isLoading) {
     return (
