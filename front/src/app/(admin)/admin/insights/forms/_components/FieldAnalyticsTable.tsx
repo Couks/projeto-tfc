@@ -41,7 +41,9 @@ const columns: ColumnDef<FieldAnalytic>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue('field')}</div>,
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue('field')}</div>
+    ),
   },
   {
     accessorKey: 'focusCount',
@@ -59,7 +61,9 @@ const columns: ColumnDef<FieldAnalytic>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="text-right">{row.getValue<number>('focusCount').toLocaleString()}</div>
+      <div className="text-right">
+        {row.getValue<number>('focusCount').toLocaleString()}
+      </div>
     ),
   },
   {
@@ -153,4 +157,3 @@ export function FieldAnalyticsTable({ data }: FieldAnalyticsTableProps) {
     </div>
   )
 }
-

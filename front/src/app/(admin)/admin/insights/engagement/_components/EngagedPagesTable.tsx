@@ -50,7 +50,10 @@ const columns: ColumnDef<EngagedPage>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="max-w-md truncate font-medium" title={row.getValue('url')}>
+      <div
+        className="max-w-md truncate font-medium"
+        title={row.getValue('url')}
+      >
         {row.getValue('url')}
       </div>
     ),
@@ -72,7 +75,9 @@ const columns: ColumnDef<EngagedPage>[] = [
     },
     cell: ({ row }) => (
       <div className="text-right">
-        <span className="font-semibold">{row.getValue<number>('avgScrollDepth').toFixed(1)}%</span>
+        <span className="font-semibold">
+          {row.getValue<number>('avgScrollDepth').toFixed(1)}%
+        </span>
       </div>
     ),
   },
@@ -163,4 +168,3 @@ export function EngagedPagesTable({ data }: EngagedPagesTableProps) {
     </div>
   )
 }
-

@@ -34,9 +34,7 @@ export default function SearchAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Análise de Buscas
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Análise de Buscas</h1>
         <p className="text-muted-foreground text-lg">
           Entenda o que seus clientes procuram e otimize seu inventário
         </p>
@@ -187,7 +185,9 @@ export default function SearchAnalyticsPage() {
                       <p className="text-xs text-muted-foreground">buscas</p>
                     </div>
                   </div>
-                )) || <p className="text-muted-foreground">Sem dados disponíveis</p>}
+                )) || (
+                  <p className="text-muted-foreground">Sem dados disponíveis</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -240,7 +240,9 @@ export default function SearchAnalyticsPage() {
                       <p className="text-xs text-muted-foreground">buscas</p>
                     </div>
                   </div>
-                )) || <p className="text-muted-foreground">Sem dados disponíveis</p>}
+                )) || (
+                  <p className="text-muted-foreground">Sem dados disponíveis</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -279,7 +281,9 @@ export default function SearchAnalyticsPage() {
                       <p className="font-bold">{item.count.toLocaleString()}</p>
                     </div>
                   </div>
-                )) || <p className="text-muted-foreground">Sem dados disponíveis</p>}
+                )) || (
+                  <p className="text-muted-foreground">Sem dados disponíveis</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -322,7 +326,9 @@ export default function SearchAnalyticsPage() {
                       <p className="font-bold">{item.count.toLocaleString()}</p>
                     </div>
                   </div>
-                )) || <p className="text-muted-foreground">Sem dados disponíveis</p>}
+                )) || (
+                  <p className="text-muted-foreground">Sem dados disponíveis</p>
+                )}
               </div>
             )}
           </CardContent>

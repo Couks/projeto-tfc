@@ -50,7 +50,10 @@ const columns: ColumnDef<BouncePage>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="max-w-md truncate font-medium" title={row.getValue('url')}>
+      <div
+        className="max-w-md truncate font-medium"
+        title={row.getValue('url')}
+      >
         {row.getValue('url')}
       </div>
     ),
@@ -71,7 +74,9 @@ const columns: ColumnDef<BouncePage>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="text-right">{row.getValue<number>('bounces').toLocaleString()}</div>
+      <div className="text-right">
+        {row.getValue<number>('bounces').toLocaleString()}
+      </div>
     ),
   },
   {
@@ -91,7 +96,9 @@ const columns: ColumnDef<BouncePage>[] = [
     },
     cell: ({ row }) => (
       <div className="text-right">
-        <span className="font-semibold">{row.getValue<number>('bounceRate').toFixed(1)}%</span>
+        <span className="font-semibold">
+          {row.getValue<number>('bounceRate').toFixed(1)}%
+        </span>
       </div>
     ),
   },

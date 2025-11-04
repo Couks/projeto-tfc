@@ -94,9 +94,8 @@ export default function InsightsOverviewPage() {
           Insights estratégicos para impulsionar suas campanhas imobiliárias
         </p>
       </div>
-
-      {/* Métricas Prioritárias */}
-      ;<div>
+      {/* Métricas Prioritárias */};
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">Análises Prioritárias</h2>
@@ -130,11 +129,8 @@ export default function InsightsOverviewPage() {
             })}
         </div>
       </div>
-
-      {
-        /* Análises Complementares */
-      }
-      ;<div>
+      {/* Análises Complementares */};
+      <div>
         <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {categories
@@ -165,7 +161,6 @@ export default function InsightsOverviewPage() {
             })}
         </div>
       </div>
-
       {/* Guia de Uso */}
       <Card className="border-primary/20">
         <CardHeader>

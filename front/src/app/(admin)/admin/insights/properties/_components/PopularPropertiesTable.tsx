@@ -51,7 +51,9 @@ const columns: ColumnDef<Property>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue('codigo')}</div>,
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue('codigo')}</div>
+    ),
   },
   {
     accessorKey: 'views',
@@ -69,7 +71,9 @@ const columns: ColumnDef<Property>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="text-right">{row.getValue<number>('views').toLocaleString()}</div>
+      <div className="text-right">
+        {row.getValue<number>('views').toLocaleString()}
+      </div>
     ),
   },
   {
@@ -88,7 +92,9 @@ const columns: ColumnDef<Property>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="text-right">{row.getValue<number>('favorites').toLocaleString()}</div>
+      <div className="text-right">
+        {row.getValue<number>('favorites').toLocaleString()}
+      </div>
     ),
   },
   {
@@ -107,7 +113,9 @@ const columns: ColumnDef<Property>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="text-right">{row.getValue<number>('ctaClicks').toLocaleString()}</div>
+      <div className="text-right">
+        {row.getValue<number>('ctaClicks').toLocaleString()}
+      </div>
     ),
   },
   {
@@ -199,4 +207,3 @@ export function PopularPropertiesTable({ data }: PopularPropertiesTableProps) {
     </div>
   )
 }
-
