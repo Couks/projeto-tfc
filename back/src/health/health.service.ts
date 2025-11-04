@@ -12,11 +12,14 @@ export class HealthService {
    * @returns Health status object
    */
   check() {
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    this.logger.log(`[ENV] NODE_ENV in health check: ${nodeEnv}`);
+
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+      environment: nodeEnv,
     };
   }
 

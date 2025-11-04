@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -29,6 +30,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   /**
@@ -69,11 +72,16 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production';
+    this.logger.log(`[ENV] NODE_ENV in login: ${nodeEnv}`);
+    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
+
     const signedSession = await this.authService.login(loginDto);
 
     res.cookie('admin_session', signedSession, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -121,11 +129,16 @@ export class AuthController {
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production';
+    this.logger.log(`[ENV] NODE_ENV in register: ${nodeEnv}`);
+    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
+
     const signedSession = await this.authService.register(registerDto);
 
     res.cookie('admin_session', signedSession, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -157,9 +170,14 @@ export class AuthController {
     },
   })
   logout(@Res({ passthrough: true }) res: Response) {
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production';
+    this.logger.log(`[ENV] NODE_ENV in logout: ${nodeEnv}`);
+    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
+
     res.clearCookie('admin_session', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       domain: '.matheuscastroks.com.br',
       path: '/',
     });

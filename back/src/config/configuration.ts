@@ -20,26 +20,70 @@
  * ```
  */
 
-export default () => ({
+import { Logger } from '@nestjs/common';
+
+/**
+ * Helper function to mask sensitive values in logs
+ */
+function maskSensitiveValue(value: string | undefined): string {
+  if (!value) return 'undefined';
+  if (value.length <= 8) return '***';
+  return `${value.substring(0, 4)}***${value.substring(value.length - 4)}`;
+}
+
+/**
+ * Helper function to extract host from database URL for logging
+ */
+function extractDbHost(url: string | undefined): string {
+  if (!url) return 'undefined';
+  try {
+    const urlObj = new URL(url);
+    return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.split('/')[0]}`;
+  } catch {
+    return maskSensitiveValue(url);
+  }
+}
+
+export default () => {
+  const logger = new Logger('Configuration');
+
   // Porta do servidor HTTP (padrão: 3001)
-  port: process.env.PORT || 3001,
+  const port = process.env.PORT || 3001;
+  logger.log(`[ENV] PORT: ${port}`);
 
   // Ambiente de execução (development, production, test)
-  nodeEnv: process.env.NODE_ENV || 'development',
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  logger.log(`[ENV] NODE_ENV: ${nodeEnv}`);
 
   // Configurações do banco de dados PostgreSQL
-  database: {
-    url: process.env.DATABASE_URL, // URL de conexão via connection pooler
-    directUrl: process.env.DIRECT_URL, // URL de conexão direta (para migrations)
-  },
+  const databaseUrl = process.env.DATABASE_URL;
+  const directUrl = process.env.DIRECT_URL;
+  logger.log(`[ENV] DATABASE_URL: ${extractDbHost(databaseUrl)}`);
+  logger.log(`[ENV] DIRECT_URL: ${extractDbHost(directUrl)}`);
 
   // Configurações de autenticação
-  auth: {
-    secret: process.env.NEXTAUTH_SECRET || 'dev-secret-do-not-use-in-prod', // Secret para HMAC-SHA256
-  },
+  const nextauthSecret =
+    process.env.NEXTAUTH_SECRET || 'dev-secret-do-not-use-in-prod';
+  logger.log(
+    `[ENV] NEXTAUTH_SECRET: ${maskSensitiveValue(nextauthSecret)} (length: ${nextauthSecret.length})`,
+  );
 
   // Configurações da API
-  api: {
-    baseUrl: process.env.API_BASE_URL || 'http://localhost:3001', // URL base para gerar links
-  },
-});
+  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
+  logger.log(`[ENV] API_BASE_URL: ${apiBaseUrl}`);
+
+  return {
+    port,
+    nodeEnv,
+    database: {
+      url: databaseUrl,
+      directUrl,
+    },
+    auth: {
+      secret: nextauthSecret,
+    },
+    api: {
+      baseUrl: apiBaseUrl,
+    },
+  };
+};

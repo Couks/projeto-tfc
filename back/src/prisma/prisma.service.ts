@@ -43,13 +43,21 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
+    const nodeEnv = process.env.NODE_ENV;
+    const isDevelopment = nodeEnv === 'development';
+
     // Inicializa o PrismaClient com configurações de logging
     super({
-      log:
-        process.env.NODE_ENV === 'development'
-          ? ['query', 'error', 'warn'] // Em dev: loga queries SQL
-          : ['error'], // Em prod: loga apenas erros
+      log: isDevelopment
+        ? ['query', 'error', 'warn'] // Em dev: loga queries SQL
+        : ['error'], // Em prod: loga apenas erros
     });
+
+    // Log após super() para poder usar this.logger
+    this.logger.log(`[ENV] NODE_ENV in PrismaService: ${nodeEnv}`);
+    this.logger.log(
+      `[ENV] Prisma log level: ${isDevelopment ? 'query, error, warn' : 'error only'}`,
+    );
   }
 
   /**

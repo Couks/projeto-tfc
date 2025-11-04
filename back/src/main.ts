@@ -45,7 +45,38 @@ async function bootstrap() {
 
     // Obtém o serviço de configuração para acessar variáveis de ambiente
     const configService = app.get(ConfigService);
-    const port = configService.get<number>('PORT') || 3001;
+    const port = configService.get<number>('port') || 3001;
+    const nodeEnv = configService.get<string>('nodeEnv');
+    const databaseUrl = configService.get<string>('database.url');
+    const directUrl = configService.get<string>('database.directUrl');
+    const nextauthSecret = configService.get<string>('auth.secret');
+    const apiBaseUrl = configService.get<string>('api.baseUrl');
+
+    // Log environment variables loaded via ConfigService
+    logger.log(`[ConfigService] PORT: ${port}`);
+    logger.log(`[ConfigService] NODE_ENV: ${nodeEnv || 'undefined'}`);
+    try {
+      logger.log(
+        `[ConfigService] DATABASE_URL: ${databaseUrl ? `${new URL(databaseUrl).protocol}//${new URL(databaseUrl).host}` : 'undefined'}`,
+      );
+    } catch {
+      logger.log(
+        `[ConfigService] DATABASE_URL: ${databaseUrl ? 'invalid format' : 'undefined'}`,
+      );
+    }
+    try {
+      logger.log(
+        `[ConfigService] DIRECT_URL: ${directUrl ? `${new URL(directUrl).protocol}//${new URL(directUrl).host}` : 'undefined'}`,
+      );
+    } catch {
+      logger.log(
+        `[ConfigService] DIRECT_URL: ${directUrl ? 'invalid format' : 'undefined'}`,
+      );
+    }
+    logger.log(
+      `[ConfigService] NEXTAUTH_SECRET: ${nextauthSecret ? `${nextauthSecret.substring(0, 4)}***${nextauthSecret.substring(nextauthSecret.length - 4)} (length: ${nextauthSecret.length})` : 'undefined'}`,
+    );
+    logger.log(`[ConfigService] API_BASE_URL: ${apiBaseUrl || 'undefined'}`);
 
     // ============================================
     // MIDDLEWARE DE SEGURANÇA - HELMET
