@@ -6,15 +6,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/lib/components/ui/card'
-import { Skeleton } from '@/lib/components/ui/skeleton'
+} from '@ui/card'
+import { Skeleton } from '@ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   useConversionRate,
   useConversionFunnel,
   useConversionSources,
 } from '@/lib/hooks/useInsights'
-import { Progress } from '@/lib/components/ui/progress'
+import { Progress } from '@ui/progress'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -51,7 +51,7 @@ export default function ConversionAnalyticsPage() {
 
       {/* Conversion Rate Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="shadow-layer-5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Taxa de Conversão
@@ -74,7 +74,7 @@ export default function ConversionAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total de Conversões
@@ -91,7 +91,7 @@ export default function ConversionAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Taxa do Funil Completo
@@ -108,7 +108,7 @@ export default function ConversionAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Fonte Principal

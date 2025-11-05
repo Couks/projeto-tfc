@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { ArrowUpDown } from 'lucide-react'
-import { Button } from '@/lib/components/ui/button'
+import { Button } from '@ui/button'
 import {
   Table,
   TableBody,
@@ -18,7 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/lib/components/ui/table'
+} from '@ui/table'
 
 interface Property {
   codigo: string

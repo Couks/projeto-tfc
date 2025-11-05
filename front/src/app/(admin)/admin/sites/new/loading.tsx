@@ -1,5 +1,5 @@
-import { Skeleton } from '@/lib/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/lib/components/ui/card'
+import { Skeleton } from '@ui/skeleton'
+import { Card, CardContent, CardHeader } from '@ui/card'
 
 export default function NewSiteLoading() {
   return (
@@ -32,4 +32,3 @@ export default function NewSiteLoading() {
     </div>
   )
 }
-

@@ -6,8 +6,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/lib/components/ui/card'
-import { Skeleton } from '@/lib/components/ui/skeleton'
+} from '@ui/card'
+import { Skeleton } from '@ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useSearchAnalytics, useFiltersUsage } from '@/lib/hooks/useInsights'
 import { TrendingUp, MapPin, Home, Target } from 'lucide-react'
@@ -42,7 +42,7 @@ export default function SearchAnalyticsPage() {
 
       {/* Métricas Principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="shadow-layer-5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total de Buscas
@@ -65,7 +65,7 @@ export default function SearchAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Filtros por Busca
@@ -88,7 +88,7 @@ export default function SearchAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Mudanças de Filtro
@@ -110,7 +110,7 @@ export default function SearchAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Finalidade Líder
@@ -139,7 +139,7 @@ export default function SearchAnalyticsPage() {
       {/* Prioridade Alta: Finalidades e Cidades */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Finalidades */}
-        <Card className="border-2 border-primary/20">
+        <Card className="border-2 border-primary/20 shadow-layer-5">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
@@ -194,7 +194,7 @@ export default function SearchAnalyticsPage() {
         </Card>
 
         {/* Top Cidades */}
-        <Card className="border-2 border-primary/20">
+        <Card className="border-2 border-primary/20 shadow-layer-4">
           <CardHeader>
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
@@ -252,7 +252,7 @@ export default function SearchAnalyticsPage() {
       {/* Informações Complementares */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Tipos */}
-        <Card>
+        <Card className="shadow-layer-2">
           <CardHeader>
             <CardTitle>Tipos de Imóveis</CardTitle>
             <CardDescription>Categorias mais procuradas</CardDescription>
@@ -290,7 +290,7 @@ export default function SearchAnalyticsPage() {
         </Card>
 
         {/* Filters Usage */}
-        <Card>
+        <Card className="shadow-layer-1">
           <CardHeader>
             <CardTitle>Uso de Filtros por Tipo</CardTitle>
             <CardDescription>

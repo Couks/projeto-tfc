@@ -93,11 +93,20 @@ export default function InsightsOverviewPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {categories
             .filter((c) => c.priority === 'high')
-            .map((category) => {
+            .map((category, index) => {
               const Icon = category.icon
+              const shadowClasses = [
+                'shadow-layer-5',
+                'shadow-layer-4',
+                'shadow-layer-3',
+              ]
+              const shadowClass =
+                shadowClasses[index] || shadowClasses[shadowClasses.length - 1]
               return (
                 <Link key={category.href} href={category.href}>
-                  <Card className="h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2">
+                  <Card
+                    className={`h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 ${shadowClass}`}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <Icon className="h-6 w-6 text-muted-foreground" />
@@ -117,17 +126,24 @@ export default function InsightsOverviewPage() {
             })}
         </div>
       </div>
-      {/* Análises Complementares */}
+      {
+        /* Análises Complementares */
+      }
       <div>
         <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {categories
             .filter((c) => c.priority === 'medium')
-            .map((category) => {
+            .map((category, index) => {
               const Icon = category.icon
+              const shadowClasses = ['shadow-layer-2', 'shadow-layer-1']
+              const shadowClass =
+                shadowClasses[index] || shadowClasses[shadowClasses.length - 1]
               return (
                 <Link key={category.href} href={category.href}>
-                  <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer">
+                  <Card
+                    className={`h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer ${shadowClass}`}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <Icon className="h-6 w-6 text-muted-foreground" />

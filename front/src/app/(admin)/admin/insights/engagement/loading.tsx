@@ -1,5 +1,5 @@
-import { Skeleton } from '@/lib/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/lib/components/ui/card'
+import { Skeleton } from '@ui/skeleton'
+import { Card, CardContent, CardHeader } from '@ui/card'
 
 export default function EngagementAnalyticsLoading() {
   return (
@@ -102,4 +102,3 @@ export default function EngagementAnalyticsLoading() {
     </div>
   )
 }
-

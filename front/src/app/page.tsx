@@ -5,9 +5,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/lib/components/ui/card'
-import { Button } from '@/lib/components/ui/button'
-import { Badge } from '@/lib/components/ui/badge'
+} from '@ui/card'
+import { Button } from '@ui/button'
+import { Badge } from '@ui/badge'
 import {
   BarChart3,
   MapPin,

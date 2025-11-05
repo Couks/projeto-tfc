@@ -196,7 +196,7 @@ export default function AdminHome() {
         <div className="grid gap-4 md:grid-cols-2">
           {/* Search Analytics */}
           <Link href="/admin/insights/search">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2">
+            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2 shadow-layer-5">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Search className="h-6 w-6 text-muted-foreground" />
@@ -224,7 +224,7 @@ export default function AdminHome() {
 
           {/* Properties Analytics */}
           <Link href="/admin/insights/properties">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2">
+            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2 shadow-layer-4">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Building2 className="h-6 w-6 text-muted-foreground" />
@@ -252,7 +252,7 @@ export default function AdminHome() {
 
           {/* Conversion Analytics */}
           <Link href="/admin/insights/conversion">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2">
+            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer border-2 shadow-layer-3">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Target className="h-6 w-6 text-muted-foreground" />
@@ -280,7 +280,7 @@ export default function AdminHome() {
 
           {/* Engagement Analytics */}
           <Link href="/admin/insights/engagement">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer">
+            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer shadow-layer-2">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <MousePointer className="h-6 w-6 text-muted-foreground" />
@@ -307,7 +307,7 @@ export default function AdminHome() {
 
           {/* Forms Analytics */}
           <Link href="/admin/insights/forms">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer">
+            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer shadow-layer-1">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <FormInput className="h-6 w-6 text-muted-foreground" />

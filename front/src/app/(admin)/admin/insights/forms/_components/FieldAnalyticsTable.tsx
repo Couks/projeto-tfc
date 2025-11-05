@@ -10,8 +10,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { ArrowUpDown } from 'lucide-react'
-import { Button } from '@/lib/components/ui/button'
-import { Progress } from '@/lib/components/ui/progress'
+import { Button } from '@ui/button'
+import { Progress } from '@ui/progress'
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/lib/components/ui/table'
+} from '@ui/table'
 
 interface FieldAnalytic {
   field: string

@@ -6,11 +6,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/lib/components/ui/card'
-import { Skeleton } from '@/lib/components/ui/skeleton'
+} from '@ui/card'
+import { Skeleton } from '@ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useFormPerformance, useFormAbandonment } from '@/lib/hooks/useInsights'
-import { Progress } from '@/lib/components/ui/progress'
+import { Progress } from '@ui/progress'
 import { FieldAnalyticsTable } from './_components/FieldAnalyticsTable'
 
 export default function FormsAnalyticsPage() {

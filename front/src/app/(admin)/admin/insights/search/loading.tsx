@@ -1,5 +1,5 @@
-import { Skeleton } from '@/lib/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/lib/components/ui/card'
+import { Skeleton } from '@ui/skeleton'
+import { Card, CardContent, CardHeader } from '@ui/card'
 
 export default function SearchAnalyticsLoading() {
   return (
@@ -63,4 +63,3 @@ export default function SearchAnalyticsLoading() {
     </div>
   )
 }
-

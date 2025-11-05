@@ -59,7 +59,7 @@ import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-} from '@/lib/components/ui/collapsible'
+} from '@ui/collapsible'
 import { useUser, useLogout } from '@/lib/hooks'
 import { useRouter } from 'next/navigation'
 
