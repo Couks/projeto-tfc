@@ -17,7 +17,7 @@
  * - Todos os módulos dependem de PrismaModule (exceto ConfigModule)
  * - Auth, Sites, Events, Insights dependem de ConfigModule
  * - SdkModule depende de SitesModule
- * - TenantGuard (usado em Events e Insights) depende de PrismaModule
+ * - UnifiedGuard (usado em todos os controllers) depende de AuthModule e PrismaModule
  */
 
 import { Module } from '@nestjs/common';
@@ -68,12 +68,12 @@ import { HealthModule } from './health/health.module';
 
     // EventsModule: Ingestão de eventos de analytics
     // Endpoints: /api/events/track, /api/events/track/batch
-    // Protegido por TenantGuard (valida X-Site-Key)
+    // Protegido por UnifiedGuard com @RequireTenant() (valida X-Site-Key)
     EventsModule,
 
     // InsightsModule: Queries de analytics e geração de insights
     // Endpoints: /api/insights/overview, /api/insights/conversions, etc
-    // Protegido por TenantGuard, usa cache em memória
+    // Protegido por UnifiedGuard com @RequireTenant(), usa cache em memória
     InsightsModule,
 
     // HealthModule: Health checks e monitoramento

@@ -21,86 +21,76 @@ function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((fn) => fn(pathname))
 }
 
-function getSecret(): string {
-  const s = process.env.NEXTAUTH_SECRET || ''
-  if (!s) return 'dev-secret-do-not-use-in-prod'
-  return s
+/**
+ * Decodifica base64url (usado em JWTs)
+ * Edge Runtime compatible
+ */
+function base64UrlDecode(str: string): string {
+  // Converte base64url para base64
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+
+  // Adiciona padding se necessário
+  while (base64.length % 4) {
+    base64 += '='
+  }
+
+  // Decodifica usando atob (disponível no Edge Runtime)
+  try {
+    return atob(base64)
+  } catch {
+    return ''
+  }
 }
 
 /**
- * Verifica e decodifica cookie de sessão assinado
- * Usa Web Crypto API compatível com Edge Runtime
- * Formato: dados.hmac_hex (mesmo do backend NestJS)
+ * Verifica e decodifica JWT do cookie
+ * No Edge Runtime, apenas valida formato e expiração
+ * A validação completa da assinatura é feita no backend
  */
-async function verifySignedCookie(
-  signed: string
-): Promise<{ userId: string } | null> {
-  if (!signed) return null
+function verifyJwt(token: string): { userId: string } | null {
+  if (!token) return null
 
   try {
-    // Encontra o último '.' que separa dados da assinatura
-    const lastDot = signed.lastIndexOf('.')
-    if (lastDot <= 0) return null
+    // JWT tem formato: header.payload.signature
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
 
-    // Separa dados (antes do .) e assinatura (depois do .)
-    const raw = signed.slice(0, lastDot)
-    const sigFromCookie = signed.slice(lastDot + 1)
+    // Decodifica o payload (segunda parte)
+    const payloadJson = base64UrlDecode(parts[1])
+    if (!payloadJson) return null
 
-    // Valida que a assinatura do cookie está em formato hex
-    if (!/^[0-9a-f]+$/i.test(sigFromCookie)) return null
-
-    // Cria chave HMAC usando Web Crypto API
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(getSecret()),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    )
-
-    // Gera assinatura HMAC-SHA256 dos dados
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      new TextEncoder().encode(raw)
-    )
-
-    // Converte assinatura calculada para hex (mesmo formato do backend)
-    const expectedSig = Array.from(new Uint8Array(signature))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-
-    // Compara assinaturas usando constant-time comparison
-    // Ambas devem ter o mesmo tamanho (64 caracteres hex = 32 bytes)
-    if (expectedSig.length !== sigFromCookie.length) return null
-
-    // Timing-safe comparison para prevenir timing attacks
-    let isValid = true
-    for (let i = 0; i < expectedSig.length; i++) {
-      if (expectedSig[i] !== sigFromCookie[i]) {
-        isValid = false
-      }
+    const payload = JSON.parse(payloadJson) as {
+      userId?: string
+      sub?: string
+      exp?: number
+      iat?: number
     }
 
-    if (!isValid) return null
-
-    // Se assinatura válida, decodifica o JSON
-    const parsed = JSON.parse(raw) as { userId: string }
-    // Valida estrutura dos dados
-    if (!parsed?.userId || typeof parsed.userId !== 'string') {
+    // Valida que tem userId ou sub
+    const userId = payload.userId || payload.sub
+    if (!userId || typeof userId !== 'string') {
       return null
     }
 
-    return parsed
+    // Verifica expiração (se presente)
+    if (payload.exp) {
+      const now = Math.floor(Date.now() / 1000)
+      if (payload.exp < now) {
+        // Token expirado
+        return null
+      }
+    }
+
+    return { userId }
   } catch {
-    // Qualquer erro de verificação retorna null
+    // Qualquer erro de parsing ou decodificação retorna null
     return null
   }
 }
 
 async function hasValidSessionCookie(req: NextRequest): Promise<boolean> {
   const c = req.cookies.get('admin_session')
-  return !!(await verifySignedCookie(c?.value || ''))
+  return !!verifyJwt(c?.value || '')
 }
 
 export async function middleware(req: NextRequest) {
@@ -117,7 +107,7 @@ export async function middleware(req: NextRequest) {
     if (!has) {
       console.warn('[Middleware] blocked unauthenticated access', {
         pathname,
-        cookies: req.cookies.getAll().map((c) => ({
+        cookies: req.cookies.getAll().map((c: any) => ({
           name: c.name,
           value: c.value?.substring(0, 20) + '...',
         })),

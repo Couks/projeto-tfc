@@ -19,7 +19,7 @@
  * - EventsService: Inserção de eventos
  * - InsightsService: Queries SQL para analytics
  * - HealthService: Health check do banco
- * - Guards: TenantGuard busca sites
+ * - Guards: UnifiedGuard busca sites
  *
  * Lifecycle:
  * 1. onModuleInit: Conecta ao banco quando o módulo é iniciado

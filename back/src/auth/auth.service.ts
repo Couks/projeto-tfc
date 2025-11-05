@@ -4,31 +4,20 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import {
-  hashPassword,
-  verifyPassword,
-  signSession,
-} from '../common/utils/auth.utils';
+import { hashPassword, verifyPassword } from '../common/utils/auth.utils';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly sessionSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {
-    const secret = this.configService.get<string>('auth.secret');
-    if (!secret) {
-      throw new Error('AUTH_SECRET is not configured or is empty');
-    }
-    this.sessionSecret = secret;
-  }
+    private readonly jwtService: JwtService,
+  ) {}
 
   /**
    * Authenticates a user with email and password
@@ -71,8 +60,11 @@ export class AuthService {
 
     this.logger.log(`Successful login for user: ${user.id}`);
 
-    // Create signed session
-    return signSession({ userId: user.id }, this.sessionSecret);
+    // Generate JWT token
+    return this.jwtService.sign({
+      userId: user.id,
+      sub: user.id,
+    });
   }
 
   /**
@@ -113,7 +105,11 @@ export class AuthService {
 
     this.logger.log(`User registered successfully: ${user.id}`);
 
-    return signSession({ userId: user.id }, this.sessionSecret);
+    // Generate JWT token
+    return this.jwtService.sign({
+      userId: user.id,
+      sub: user.id,
+    });
   }
 
   /**

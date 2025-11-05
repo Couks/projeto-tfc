@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InsightsService } from './insights.service';
 import { InsightsQueryDto } from './dto/insights-query.dto';
 import { RefreshMaterializedViewsDto } from './dto/refresh-materialized-views.dto';
-import { TenantGuard } from '../common/guards/tenant.guard';
+import { UnifiedGuard } from '../common/guards/unified.guard';
+import { RequireTenant } from '../common/decorators/require-tenant.decorator';
 import { SiteKey } from '../common/decorators/site-key.decorator';
 import {
   OverviewResponse,
@@ -33,7 +34,8 @@ import { EngagementAnalyzerService } from './analyzers/engagement-analyzer.servi
 
 @ApiTags('Insights')
 @Controller('insights')
-@UseGuards(TenantGuard)
+@UseGuards(UnifiedGuard)
+@RequireTenant()
 export class InsightsController {
   constructor(
     private readonly insightsService: InsightsService,

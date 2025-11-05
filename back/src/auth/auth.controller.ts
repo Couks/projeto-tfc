@@ -24,7 +24,8 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { AuthGuard } from '../common/guards/auth.guard';
+import { UnifiedGuard } from '../common/guards/unified.guard';
+import { RequireAuth } from '../common/decorators/require-auth.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Authentication')
@@ -191,7 +192,8 @@ export class AuthController {
    * @returns User data
    */
   @Get('me')
-  @UseGuards(AuthGuard)
+  @UseGuards(UnifiedGuard)
+  @RequireAuth()
   @ApiOperation({
     summary: 'Get current user',
     description:
