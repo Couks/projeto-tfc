@@ -80,14 +80,16 @@ export class AuthController {
 
     const signedSession = await this.authService.login(loginDto);
 
-    res.cookie('admin_session', signedSession, {
+    const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'lax', // Permite cookies em navegação cross-site
-    });
+      sameSite: 'lax' as const, // Permite cookies em navegação cross-site
+      ...(isProduction && { domain: '.matheuscastroks.com.br' }),
+    };
+
+    res.cookie('admin_session', signedSession, cookieOptions);
 
     return { ok: true };
   }
@@ -137,14 +139,16 @@ export class AuthController {
 
     const signedSession = await this.authService.register(registerDto);
 
-    res.cookie('admin_session', signedSession, {
+    const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      domain: '.matheuscastroks.com.br',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'lax', // Permite cookies em navegação cross-site
-    });
+      sameSite: 'lax' as const, // Permite cookies em navegação cross-site
+      ...(isProduction && { domain: '.matheuscastroks.com.br' }),
+    };
+
+    res.cookie('admin_session', signedSession, cookieOptions);
 
     return { ok: true };
   }
@@ -176,12 +180,14 @@ export class AuthController {
     this.logger.log(`[ENV] NODE_ENV in logout: ${nodeEnv}`);
     this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
 
-    res.clearCookie('admin_session', {
+    const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      domain: '.matheuscastroks.com.br',
       path: '/',
-    });
+      ...(isProduction && { domain: '.matheuscastroks.com.br' }),
+    };
+
+    res.clearCookie('admin_session', cookieOptions);
 
     return { ok: true };
   }
