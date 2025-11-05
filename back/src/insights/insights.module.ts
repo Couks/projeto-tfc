@@ -6,8 +6,11 @@ import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.servi
 import { PropertyAnalyzerService } from './analyzers/property-analyzer.service';
 import { FormAnalyzerService } from './analyzers/form-analyzer.service';
 import { EngagementAnalyzerService } from './analyzers/engagement-analyzer.service';
+import { AuthModule } from '../auth/auth.module';
+import { UnifiedGuard } from '../common/guards/unified.guard';
 
 @Module({
+  imports: [AuthModule], // Import AuthModule to access JwtService for UnifiedGuard
   controllers: [InsightsController],
   providers: [
     InsightsService,
@@ -16,6 +19,7 @@ import { EngagementAnalyzerService } from './analyzers/engagement-analyzer.servi
     PropertyAnalyzerService,
     FormAnalyzerService,
     EngagementAnalyzerService,
+    UnifiedGuard,
   ],
   exports: [
     InsightsService,

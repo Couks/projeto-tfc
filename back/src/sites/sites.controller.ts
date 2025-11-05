@@ -15,12 +15,14 @@ import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import { CreateDomainDto } from './dto/create-domain.dto';
-import { AuthGuard } from '../common/guards/auth.guard';
+import { UnifiedGuard } from '../common/guards/unified.guard';
+import { RequireAuth } from '../common/decorators/require-auth.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Sites')
 @Controller('sites')
-@UseGuards(AuthGuard)
+@UseGuards(UnifiedGuard)
+@RequireAuth()
 export class SitesController {
   constructor(private readonly sitesService: SitesService) {}
 

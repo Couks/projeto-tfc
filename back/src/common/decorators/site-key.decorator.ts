@@ -1,12 +1,13 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { RequestWithTenant } from '../guards/tenant.guard';
+import { RequestWithAuthAndTenant } from '../guards/unified.guard';
 
 /**
  * Decorator to extract site key from request
+ * The UnifiedGuard with @RequireTenant() ensures tenant exists
  */
 export const SiteKey = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest<RequestWithTenant>();
-    return request.tenant?.siteKey;
+    const request = ctx.switchToHttp().getRequest<RequestWithAuthAndTenant>();
+    return request.tenant!.siteKey;
   },
 );

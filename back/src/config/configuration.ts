@@ -8,7 +8,7 @@
  * - port: Porta do servidor HTTP
  * - nodeEnv: Ambiente de execução (development, production, test)
  * - database: URLs de conexão com PostgreSQL
- * - auth: Secret para assinatura de session cookies
+ * - auth: Secret para assinatura de tokens JWT
  * - api: URL base da API (usado para gerar links)
  *
  * Como usar em outros módulos:

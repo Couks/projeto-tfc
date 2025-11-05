@@ -56,15 +56,3 @@ export async function verifyPassword(
     return false;
   }
 }
-
-/**
- * Signs a session value with HMAC
- * @param value Session data
- * @param secret Secret key
- * @returns Signed session string
- */
-export function signSession(value: { userId: string }, secret: string): string {
-  const raw = JSON.stringify(value);
-  const hmac = crypto.createHmac('sha256', secret).update(raw).digest('hex');
-  return `${raw}.${hmac}`;
-}

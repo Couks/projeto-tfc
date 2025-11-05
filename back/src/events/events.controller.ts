@@ -18,12 +18,14 @@ import { TrackEventDto } from './dto/track-event.dto';
 import { TrackBatchDto } from './dto/track-batch.dto';
 import { GetEventsDto } from './dto/get-events.dto';
 import { EventsListResponse } from './interfaces/events.interface';
-import { TenantGuard } from '../common/guards/tenant.guard';
+import { UnifiedGuard } from '../common/guards/unified.guard';
+import { RequireTenant } from '../common/decorators/require-tenant.decorator';
 import { SiteKey } from '../common/decorators/site-key.decorator';
 
 @ApiTags('Events')
 @Controller('events')
-@UseGuards(TenantGuard)
+@UseGuards(UnifiedGuard)
+@RequireTenant()
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 

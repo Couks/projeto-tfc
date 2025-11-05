@@ -128,7 +128,7 @@ async function bootstrap() {
     // Permite requisições cross-origin para produção
     // Para endpoints do SDK (events, sdk), permite qualquer origem
     // Isso permite que o SDK seja usado em qualquer site
-    // A validação de segurança é feita via TenantGuard e siteKey
+    // A validação de segurança é feita via UnifiedGuard e siteKey
     app.enableCors({
       origin: (origin, callback) => {
         // Permite qualquer origem para endpoints do SDK
