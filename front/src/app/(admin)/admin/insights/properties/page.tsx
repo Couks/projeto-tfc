@@ -15,6 +15,8 @@ import {
   useCTAPerformance,
 } from '@/lib/hooks/useInsights'
 import { PopularPropertiesTable } from './_components/PopularPropertiesTable'
+import { PopularPropertiesChart } from './_components/PopularPropertiesChart'
+import { CTADistributionChart } from './_components/CTADistributionChart'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -48,204 +50,131 @@ export default function PropertiesAnalyticsPage() {
         </p>
       </div>
 
-      {/* Engagement Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Visualizações
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {engagementData?.totalViews.toLocaleString() || 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Favoritos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {engagementData?.totalFavorites.toLocaleString() || 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Compartilhamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {engagementData?.totalShares.toLocaleString() || 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tempo Médio no Imóvel
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <>
+      {/* Top Row: Grid Assimétrico - 2 cards pequenos à esquerda + 1 card grande com gráfico à direita */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Esquerda: 2 cards pequenos empilhados */}
+        <div className="space-y-4 md:col-span-1">
+          <Card className="shadow-layer-5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total de Visualizações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {engagementLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
                 <div className="text-2xl font-bold">
-                  {engagementData?.avgTimeOnProperty.toFixed(0)}s
+                  {engagementData?.totalViews.toLocaleString() || 0}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  por visualização
-                </p>
-              </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-layer-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total de Favoritos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {engagementLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {engagementData?.totalFavorites.toLocaleString() || 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Direita: Card grande com gráfico de imóveis populares */}
+        <Card className="shadow-layer-5 md:col-span-2">
+          <CardHeader>
+            <CardTitle>Top 5 Imóveis Mais Populares</CardTitle>
+            <CardDescription>
+              Imóveis com maior pontuação de engajamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PopularPropertiesChart
+              data={popularData}
+              isLoading={popularLoading}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Middle Row: Grid 2 colunas - Gráfico de CTAs + Lista de desempenho */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Distribuição de CTAs - Gráfico */}
+        <Card className="shadow-layer-4">
+          <CardHeader>
+            <CardTitle>Distribuição de Chamadas para Ação</CardTitle>
+            <CardDescription>
+              Como os usuários interagem com CTAs de imóveis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CTADistributionChart
+              data={engagementData}
+              isLoading={engagementLoading}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Taxa de Conversão de CTAs - Lista */}
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Taxa de Cliques e Conversão de CTAs</CardTitle>
+            <CardDescription>
+              Métricas de desempenho para cada tipo de CTA
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {ctaLoading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {ctaData?.ctas.map((item, index) => (
+                  <div
+                    key={item.ctaType}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.ctaType}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.conversionRate.toFixed(2)}% taxa de conversão
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">
+                        {item.clicks.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">cliques</p>
+                    </div>
+                  </div>
+                )) || (
+                  <p className="text-muted-foreground">Sem dados disponíveis</p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* CTA Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Desempenho de Chamadas para Ação</CardTitle>
-          <CardDescription>
-            Como os usuários interagem com CTAs de imóveis
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {engagementLoading ? (
-              <>
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-              </>
-            ) : (
-              <>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Fazer Proposta
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.fazerProposta.toLocaleString() ||
-                        0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      cliques
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Alugar Imóvel
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.alugarImovel.toLocaleString() ||
-                        0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      cliques
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Mais Informações
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {engagementData?.ctaPerformance.maisInformacoes.toLocaleString() ||
-                        0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      cliques
-                    </p>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CTA Conversion Rates */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Taxa de Cliques e Conversão de CTAs</CardTitle>
-          <CardDescription>
-            Métricas de desempenho para cada tipo de CTA
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {ctaLoading ? (
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {ctaData?.ctas.map((item, index) => (
-                <div
-                  key={item.ctaType}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.ctaType}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.conversionRate.toFixed(2)}% taxa de conversão
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{item.clicks.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">cliques</p>
-                  </div>
-                </div>
-              )) || (
-                <p className="text-muted-foreground">Sem dados disponíveis</p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Popular Properties Table */}
-      <Card>
+      {/* Bottom Row: Card full-width com tabela de imóveis populares */}
+      <Card className="shadow-inner-5">
         <CardHeader>
           <CardTitle>Imóveis Mais Populares</CardTitle>
           <CardDescription>

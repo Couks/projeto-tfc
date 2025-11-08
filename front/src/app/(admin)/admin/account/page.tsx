@@ -1,12 +1,10 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
-import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
-import { Separator } from '@ui/separator'
 import { Badge } from '@ui/badge'
-import { User, Mail, Calendar, Shield, Bell, Key } from 'lucide-react'
+import { User, Mail, Calendar, Shield } from 'lucide-react'
 import { useUser } from '@/lib/hooks'
 import { Skeleton } from '@ui/skeleton'
 
@@ -20,37 +18,30 @@ export default function AccountPage() {
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-4 w-64 mt-2" />
         </div>
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4 mb-6">
+              <Skeleton className="h-20 w-20 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-64" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -84,70 +75,83 @@ export default function AccountPage() {
         </p>
       </div>
 
-      <div className="grid gap-6">
-        {/* Profile Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Perfil
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src="" />
-                <AvatarFallback className="text-lg">
-                  {userData.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-1">
-                <h3 className="text-lg font-medium">{userData.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {userData.email}
-                </p>
+      <Card className="shadow-layer-4">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Informações da Conta
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Profile Header */}
+          <div className="flex items-start gap-6 pb-6 border-b">
+            <Avatar className="h-20 w-20 border-2 border-primary/20">
+              <AvatarImage src="" />
+              <AvatarFallback className="text-2xl font-semibold bg-primary/10">
+                {userData.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-1">
+              <h3 className="text-2xl font-semibold">{userData.name}</h3>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <p className="text-sm">{userData.email}</p>
+              </div>
+              <div className="flex items-center gap-4 mt-3">
+                <Badge variant="default" className="gap-1.5">
+                  <Shield className="h-3 w-3" />
+                  Ativo
+                </Badge>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    Membro desde{' '}
+                    {new Date(userData.createdAt).toLocaleDateString('pt-BR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nome</label>
-                <Input defaultValue={userData.name} readOnly />
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold mb-4 text-foreground">
+                Informações Pessoais
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <User className="h-3.5 w-3.5" />
+                    Nome completo
+                  </label>
+                  <Input
+                    defaultValue={userData.name}
+                    readOnly
+                    className="bg-muted/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Mail className="h-3.5 w-3.5" />
+                    Endereço de email
+                  </label>
+                  <Input
+                    defaultValue={userData.email}
+                    type="email"
+                    readOnly
+                    className="bg-muted/50"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input defaultValue={userData.email} type="email" readOnly />
-              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Informações da Conta
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">
-                Membro desde
-              </span>
-              <span className="text-sm font-medium">
-                {new Date(userData.createdAt).toLocaleDateString('pt-BR')}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <Badge variant="default">Ativo</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

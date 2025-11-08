@@ -12,6 +12,7 @@ import { useSiteContext } from '@/lib/providers/SiteProvider'
 import { useFormPerformance, useFormAbandonment } from '@/lib/hooks/useInsights'
 import { Progress } from '@ui/progress'
 import { FieldAnalyticsTable } from './_components/FieldAnalyticsTable'
+import { AbandonmentChart } from './_components/AbandonmentChart'
 
 export default function FormsAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -41,9 +42,9 @@ export default function FormsAnalyticsPage() {
         </p>
       </div>
 
-      {/* Form Performance Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
+      {/* Top Row: Grid 3 colunas - 2 cards pequenos + 1 card médio span 2 */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="shadow-layer-5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Inícios de Formulário
@@ -60,7 +61,7 @@ export default function FormsAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Envios</CardTitle>
           </CardHeader>
@@ -75,7 +76,7 @@ export default function FormsAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-layer-3 md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Taxa de Conclusão
@@ -97,161 +98,77 @@ export default function FormsAnalyticsPage() {
             )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Abandono
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {performanceLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-destructive">
-                  {performanceData?.abandonmentRate.toFixed(2)}%
-                </div>
-                <Progress
-                  value={performanceData?.abandonmentRate || 0}
-                  className="mt-2 h-2"
-                />
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tempo Médio de Conclusão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {performanceLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {performanceData?.avgCompletionTime.toFixed(0)}s
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">por envio</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Form Abandonment by Stage */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Abandono por Estágio</CardTitle>
-          <CardDescription>
-            Onde os usuários abandonam o formulário
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {abandonmentLoading ? (
-            <div className="space-y-2">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {abandonmentData?.abandonmentsByStage.map((item, index) => (
-                <div key={item.stage} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{item.stage}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% de todos os abandonos
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">abandonos</p>
-                    </div>
-                  </div>
-                  <Progress value={item.percentage} className="h-2" />
-                </div>
-              )) || (
-                <p className="text-muted-foreground">Sem dados disponíveis</p>
-              )}
+      {/* Middle Row: Grid 2 colunas - Gráfico de abandono + Métricas */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Abandono por Estágio - Gráfico */}
+        <Card className="shadow-layer-4">
+          <CardHeader>
+            <CardTitle>Abandono por Estágio</CardTitle>
+            <CardDescription>
+              Onde os usuários abandonam o formulário
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AbandonmentChart
+              data={abandonmentData}
+              isLoading={abandonmentLoading}
+            />
+          </CardContent>
+        </Card>
 
-              {abandonmentData && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Total de Abandonos
-                      </p>
-                      <p className="text-2xl font-bold mt-1">
-                        {abandonmentData.totalAbandons.toLocaleString()}
-                      </p>
-                    </div>
+        {/* Métricas Adicionais */}
+        <div className="space-y-4">
+          <Card className="shadow-layer-3">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Taxa de Abandono
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {performanceLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-destructive">
+                    {performanceData?.abandonmentRate.toFixed(2)}%
                   </div>
-                </div>
+                  <Progress
+                    value={performanceData?.abandonmentRate || 0}
+                    className="mt-2 h-2"
+                  />
+                </>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Commonly Abandoned Fields */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Campos Frequentemente Abandonados</CardTitle>
-          <CardDescription>
-            Campos onde os usuários mais frequentemente desistem
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {abandonmentLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {abandonmentData?.commonlyAbandonedFields.map((item, index) => (
-                <div
-                  key={item.field}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-sm font-medium">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.field}</p>
-                    </div>
+          <Card className="shadow-layer-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Tempo Médio de Conclusão
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {performanceLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {performanceData?.avgCompletionTime.toFixed(0)}s
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">
-                      {item.abandonCount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      desistências
-                    </p>
-                  </div>
-                </div>
-              )) || (
-                <p className="text-muted-foreground">Sem dados disponíveis</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    por envio
+                  </p>
+                </>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      {/* Field Analytics */}
-      <Card>
+      {/* Bottom Row: Card full-width com tabela de campos abandonados e análise */}
+      <Card className="shadow-inner-5">
         <CardHeader>
           <CardTitle>Análise por Campo</CardTitle>
           <CardDescription>

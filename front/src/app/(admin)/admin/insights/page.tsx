@@ -14,7 +14,6 @@ import {
   Target,
   Building2,
   FormInput,
-  MousePointer,
   ArrowRight,
   TrendingUp,
 } from 'lucide-react'
@@ -55,14 +54,6 @@ export default function InsightsOverviewPage() {
       icon: Target,
       href: '/admin/insights/conversion',
       priority: 'high',
-    },
-    {
-      title: 'Engajamento',
-      description:
-        'Monitore taxas de rejeição, profundidade de scroll e tempo no site',
-      icon: MousePointer,
-      href: '/admin/insights/engagement',
-      priority: 'medium',
     },
     {
       title: 'Formulários',
@@ -126,9 +117,7 @@ export default function InsightsOverviewPage() {
             })}
         </div>
       </div>
-      {
-        /* Análises Complementares */
-      }
+      {/* Análises Complementares */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
         <div className="grid gap-4 md:grid-cols-2">
@@ -195,14 +184,6 @@ export default function InsightsOverviewPage() {
               Acompanhe o funil de conversão completo: de visitante a lead.
               Identifique pontos de abandono e otimize as etapas com menor taxa
               de conversão para aumentar seus resultados.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">Engajamento</h3>
-            <p className="text-sm text-muted-foreground">
-              Entenda quais páginas mantêm usuários engajados e quais têm alta
-              taxa de rejeição. Use esses insights para melhorar conteúdo e
-              experiência do usuário.
             </p>
           </div>
           <div>

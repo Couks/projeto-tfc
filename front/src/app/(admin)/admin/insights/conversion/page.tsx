@@ -15,6 +15,8 @@ import {
   useConversionSources,
 } from '@/lib/hooks/useInsights'
 import { Progress } from '@ui/progress'
+import { ConversionFunnelChart } from './_components/ConversionFunnelChart'
+import { ConversionDistributionChart } from './_components/ConversionDistributionChart'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -49,90 +51,70 @@ export default function ConversionAnalyticsPage() {
         </p>
       </div>
 
-      {/* Conversion Rate Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-layer-5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Conversão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {rateLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <>
+      {/* Top Row: Grid Assimétrico - 2 cards pequenos à esquerda + 1 card grande com gráfico à direita */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Esquerda: 2 cards pequenos empilhados */}
+        <div className="space-y-4 md:col-span-1">
+          <Card className="shadow-layer-5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Taxa de Conversão
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {rateLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {rateData?.conversionRate.toFixed(2)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {rateData?.totalConversions} / {rateData?.totalSessions}{' '}
+                    sessões
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-layer-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total de Conversões
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {rateLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
                 <div className="text-2xl font-bold">
-                  {rateData?.conversionRate.toFixed(2)}%
+                  {rateData?.totalConversions.toLocaleString() || 0}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {rateData?.totalConversions} / {rateData?.totalSessions}{' '}
-                  sessões
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="shadow-layer-4">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Conversões
-            </CardTitle>
+        {/* Direita: Card grande com gráfico de funil */}
+        <Card className="shadow-layer-5 md:col-span-2">
+          <CardHeader>
+            <CardTitle>Funil de Conversão</CardTitle>
+            <CardDescription>
+              Jornada do usuário desde o primeiro contato até a conversão
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {rateLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {rateData?.totalConversions.toLocaleString() || 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa do Funil Completo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {funnelLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {funnelData?.overallConversionRate.toFixed(2)}%
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Fonte Principal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sourcesLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {sourcesData?.sources[0]?.source || 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {sourcesData?.sources[0]?.conversions || 0} conversões
-                </p>
-              </>
-            )}
+            <ConversionFunnelChart
+              data={funnelData}
+              isLoading={funnelLoading}
+            />
           </CardContent>
         </Card>
       </div>
 
-      {/* Conversions by Type */}
-      <Card className="border-2 border-primary/20">
+      {/* Middle Row: Card grande com gráfico de distribuição */}
+      <Card className="shadow-layer-4">
         <CardHeader>
           <CardTitle>Conversões por Tipo</CardTitle>
           <CardDescription>
@@ -140,116 +122,17 @@ export default function ConversionAnalyticsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {rateLoading ? (
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {rateData?.conversionsByType.map((item, index) => (
-                <div key={item.type} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{item.type}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.percentage.toFixed(1)}% de todas as conversões
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">
-                        conversões
-                      </p>
-                    </div>
-                  </div>
-                  <Progress value={item.percentage} className="h-2" />
-                </div>
-              )) || (
-                <p className="text-muted-foreground">Sem dados disponíveis</p>
-              )}
-            </div>
-          )}
+          <ConversionDistributionChart
+            data={rateData}
+            isLoading={rateLoading}
+          />
         </CardContent>
       </Card>
 
-      {/* Conversion Funnel */}
-      <Card className="border-2 border-primary/20">
-        <CardHeader>
-          <CardTitle>Funil de Conversão</CardTitle>
-          <CardDescription>
-            Jornada do usuário desde o primeiro contato até a conversão
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {funnelLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {funnelData?.stages.map((stage, index) => (
-                <div key={stage.stage} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{stage.stage}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {stage.percentage.toFixed(1)}% do total
-                        {index > 0 &&
-                          ` · ${stage.dropoffRate.toFixed(1)}% de desistência da etapa anterior`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold">
-                        {stage.count.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">usuários</p>
-                    </div>
-                  </div>
-                  <Progress value={stage.percentage} className="h-3" />
-                </div>
-              )) || (
-                <p className="text-muted-foreground">Sem dados disponíveis</p>
-              )}
-
-              {funnelData && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Desempenho Geral do Funil
-                      </p>
-                      <p className="text-2xl font-bold mt-1">
-                        {funnelData.overallConversionRate.toFixed(2)}%
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
-                        Completados / Iniciados
-                      </p>
-                      <p className="text-lg font-semibold mt-1">
-                        {funnelData.totalCompleted.toLocaleString()} /{' '}
-                        {funnelData.totalStarted.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Bottom Row: Card full-width com tabela de fontes */}
 
       {/* Conversion Sources */}
-      <Card>
+      <Card className="shadow-layer-2">
         <CardHeader>
           <CardTitle>Fontes de Conversão</CardTitle>
           <CardDescription>De onde vêm as suas conversões</CardDescription>

@@ -51,7 +51,6 @@ import {
   Search,
   BarChart3,
   FormInput,
-  MousePointer,
 } from 'lucide-react'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
 import { SiteProvider } from '@/lib/providers/SiteProvider'
@@ -150,12 +149,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                           <span>Formulários</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/insights/engagement">
-                          <MousePointer className="w-4 h-4" />
-                          <span>Engajamento</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </Collapsible>
@@ -251,7 +244,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <SidebarRail />
         </Sidebar>
         <SidebarInset className="m-0 p-0">
-          <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b px-4 bg-background/95 backdrop-blur-sm">
+          <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b px-4 bg-sidebar backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
             </div>
@@ -302,7 +295,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </TooltipProvider>
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-6">{children}</div>
+          <div className="flex-1 overflow-auto p-6 bg-sidebar">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </SiteProvider>

@@ -11,6 +11,8 @@ import {
   SelectItem,
   SelectValue,
 } from '@ui/select'
+import { Alert, AlertDescription } from '@ui/alert'
+import { Building2, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { useUpdateSite } from '@/lib/hooks'
 
@@ -39,30 +41,38 @@ export function EditSiteForm({
     }
   }
   return (
-    <form className="space-y-3" onSubmit={onSave}>
-      <div>
-        <label htmlFor="site-name" className="block text-sm font-medium">
-          Nome do Site
-        </label>
-        <Input
-          id="site-name"
-          name="name"
-          defaultValue={site.name}
-          className="mt-1"
-          placeholder="Site name"
-        />
-      </div>
-      <div>
-        <label htmlFor="site-status" className="block text-sm font-medium">
-          Status
-        </label>
-        <div className="mt-1">
+    <form className="space-y-6" onSubmit={onSave}>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label
+            htmlFor="site-name"
+            className="text-sm font-medium text-muted-foreground flex items-center gap-2"
+          >
+            <Building2 className="h-3.5 w-3.5" />
+            Nome do Site
+          </label>
+          <Input
+            id="site-name"
+            name="name"
+            defaultValue={site.name}
+            placeholder="Nome do site"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label
+            htmlFor="site-status"
+            className="text-sm font-medium text-muted-foreground flex items-center gap-2"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            Status
+          </label>
           <Select
             value={status}
             onValueChange={(v) => setStatus(v as 'active' | 'inactive')}
           >
             <SelectTrigger id="site-status">
-              <SelectValue placeholder="Select status" />
+              <SelectValue placeholder="Selecione o status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="active">Ativo</SelectItem>
@@ -72,22 +82,29 @@ export function EditSiteForm({
           <input type="hidden" name="status" value={status} />
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" disabled={updateSiteMutation.isPending}>
-          {updateSiteMutation.isPending ? 'Salvando...' : 'Salvar'}
+
+      {updateSiteMutation.isError && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {updateSiteMutation.error instanceof Error
+              ? updateSiteMutation.error.message
+              : 'Falha ao atualizar site'}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex items-center gap-3 pt-2 border-t">
+        <Button
+          type="submit"
+          disabled={updateSiteMutation.isPending}
+          className="min-w-[120px]"
+        >
+          {updateSiteMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost">
           <Link href="/admin/sites">Cancelar</Link>
         </Button>
       </div>
-
-      {updateSiteMutation.isError && (
-        <div className="text-sm text-red-600">
-          {updateSiteMutation.error instanceof Error
-            ? updateSiteMutation.error.message
-            : 'Falha ao atualizar site'}
-        </div>
-      )}
     </form>
   )
 }

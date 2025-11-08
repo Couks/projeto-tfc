@@ -15,7 +15,6 @@ import {
   Target,
   Building2,
   FormInput,
-  MousePointer,
   Globe,
   Code,
   BarChart3,
@@ -273,33 +272,6 @@ export default function AdminHome() {
                 <Badge className="mt-4" variant="secondary">
                   <Target className="h-3 w-3 mr-1" />
                   Essencial para campanhas
-                </Badge>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Engagement Analytics */}
-          <Link href="/admin/insights/engagement">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer shadow-layer-2">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <MousePointer className="h-6 w-6 text-muted-foreground" />
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <CardTitle className="mt-4">Engajamento</CardTitle>
-                <CardDescription>
-                  Monitore como usuários interagem com o site
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• Taxa de rejeição por página</p>
-                  <p>• Profundidade de scroll</p>
-                  <p>• Páginas mais engajadas</p>
-                  <p>• Tempo médio no site</p>
-                </div>
-                <Badge className="mt-4" variant="outline">
-                  Complementar
                 </Badge>
               </CardContent>
             </Card>
