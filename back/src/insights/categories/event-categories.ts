@@ -7,7 +7,6 @@ export enum EventCategory {
   SEARCH = 'search',
   FILTERS = 'filters',
   NAVIGATION = 'navigation',
-  ENGAGEMENT = 'engagement',
   CONVERSION = 'conversion',
   FUNNEL = 'funnel',
   PROPERTY = 'property',
@@ -41,11 +40,10 @@ export const EVENT_CATEGORY_MAP: Record<string, EventCategory> = {
   property_gallery_navigation: EventCategory.NAVIGATION,
   property_image_click: EventCategory.NAVIGATION,
 
-  // Engagement
-  favorite_toggle: EventCategory.ENGAGEMENT,
-  property_favorite_toggle: EventCategory.ENGAGEMENT,
-  property_share_click: EventCategory.ENGAGEMENT,
-  scroll_depth: EventCategory.ENGAGEMENT,
+  // Engagement (favorites and shares - not bounce/scroll)
+  favorite_toggle: EventCategory.PROPERTY,
+  property_favorite_toggle: EventCategory.PROPERTY,
+  property_share_click: EventCategory.PROPERTY,
 
   // Conversion
   conversion_complete: EventCategory.CONVERSION,
@@ -75,7 +73,6 @@ export const EVENT_CATEGORY_MAP: Record<string, EventCategory> = {
 
   // Performance
   page_exit: EventCategory.PERFORMANCE,
-  bounce_detected: EventCategory.PERFORMANCE,
 };
 
 /**

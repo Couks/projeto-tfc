@@ -13,36 +13,33 @@ class InsightHouseAnalytics {
   // ==========================
   // CONFIG
   // ==========================
-  MAX_QUEUE_SIZE   = 10;
-  FLUSH_INTERVAL   = 3000; // ms
-  FAILED_LIMIT     = 300;  // máx eventos persistidos p/ retry
-  BACKOFF_MAX      = 30000;
-  SESSION_TIMEOUT  = 30 * 60 * 1000;
+  MAX_QUEUE_SIZE = 10;
+  FLUSH_INTERVAL = 3000; // ms
+  FAILED_LIMIT = 300; // máx eventos persistidos p/ retry
+  BACKOFF_MAX = 30000;
+  SESSION_TIMEOUT = 30 * 60 * 1000;
 
   // Storage keys
-  LS_FAILED   = 'ih_failed_events';
-  LS_USER     = 'ih_user_id';
-  LS_SESSION  = 'ih_session_id';
-  LS_TIMEOUT  = 'ih_session_timeout';
+  LS_FAILED = 'ih_failed_events';
+  LS_USER = 'ih_user_id';
+  LS_SESSION = 'ih_session_id';
+  LS_TIMEOUT = 'ih_session_timeout';
   LS_FIRST_TS = 'ih_first_page_time';
-  LS_JOURNEY  = 'ih_journey_pages';
-  LS_FUNNEL   = 'ih_funnel_stages';
+  LS_JOURNEY = 'ih_journey_pages';
+  LS_FUNNEL = 'ih_funnel_stages';
   LS_NEW_SESS = 'ih_new_session_created';
 
   // Estado
   eventQueue = [];
   flushTimer = null;
-  backoffMs  = 1000;
+  backoffMs = 1000;
   pageLoadTime = Date.now();
-  maxScroll = 0;
-  scrollDepths = [25, 50, 75, 100];
-  trackedDepths = new Set();
 
   constructor({ apiUrl, siteKey, debug = true } = {}) {
     const MyAnalytics = (window.MyAnalytics = window.MyAnalytics || {});
     this.debug = debug ?? MyAnalytics.debug ?? false;
 
-    this.API_URL  = apiUrl  ?? window.IH_API_URL  ?? '';
+    this.API_URL = apiUrl ?? window.IH_API_URL ?? '';
     this.SITE_KEY = siteKey ?? window.IH_SITE_KEY ?? '';
 
     if (!this.SITE_KEY) {
@@ -63,11 +60,16 @@ class InsightHouseAnalytics {
 
   safeJSONParse = (s, fallback) => {
     if (s == null) return fallback;
-    try { return JSON.parse(s); } catch { return fallback; }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return fallback;
+    }
   };
 
   setLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-  getLS = (k, fallback) => this.safeJSONParse(localStorage.getItem(k), fallback);
+  getLS = (k, fallback) =>
+    this.safeJSONParse(localStorage.getItem(k), fallback);
 
   byId = (id) => (id ? document.getElementById(id) : null);
 
@@ -100,7 +102,11 @@ class InsightHouseAnalytics {
   trackPageView = () => {
     const journey = this.getLS(this.LS_JOURNEY, []);
     const safeJourney = Array.isArray(journey) ? journey : [];
-    safeJourney.push({ url: location.href, title: document.title, timestamp: Date.now() });
+    safeJourney.push({
+      url: location.href,
+      title: document.title,
+      timestamp: Date.now(),
+    });
     if (safeJourney.length > 20) safeJourney.shift();
     this.setLS(this.LS_JOURNEY, safeJourney);
     return safeJourney;
@@ -113,7 +119,10 @@ class InsightHouseAnalytics {
   };
 
   calculateTimeOnSite = () => {
-    const firstTs = parseInt(localStorage.getItem(this.LS_FIRST_TS) || Date.now().toString(), 10);
+    const firstTs = parseInt(
+      localStorage.getItem(this.LS_FIRST_TS) || Date.now().toString(),
+      10,
+    );
     return Math.floor((Date.now() - firstTs) / 1000);
   };
 
@@ -159,11 +168,13 @@ class InsightHouseAnalytics {
       if (!navigator.sendBeacon) return false;
       const ok = navigator.sendBeacon(
         this.BATCH_ENDPOINT,
-        new Blob([JSON.stringify({ events })], { type: 'application/json' })
+        new Blob([JSON.stringify({ events })], { type: 'application/json' }),
       );
       if (ok) this.log('Lote enviado via sendBeacon:', events.length);
       return ok;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   };
 
   sendBatch = async (events) => {
@@ -309,7 +320,7 @@ class InsightHouseAnalytics {
         if (!el) return;
         handler(ev, el);
       },
-      opts
+      opts,
     );
   };
 
@@ -322,15 +333,19 @@ class InsightHouseAnalytics {
     window.addEventListener('online', this.retryFailedEvents);
 
     // Flush em visibilitychange
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && this.eventQueue.length) {
-        const snapshot = this.eventQueue.slice();
-        this.eventQueue = [];
-        if (!this.sendWithBeacon(snapshot)) {
-          this.persistFailed(snapshot);
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.visibilityState === 'hidden' && this.eventQueue.length) {
+          const snapshot = this.eventQueue.slice();
+          this.eventQueue = [];
+          if (!this.sendWithBeacon(snapshot)) {
+            this.persistFailed(snapshot);
+          }
         }
-      }
-    }, { passive: true });
+      },
+      { passive: true },
+    );
 
     // Flush final
     window.addEventListener('beforeunload', () => {
@@ -341,43 +356,12 @@ class InsightHouseAnalytics {
       }
     });
 
-    // Scroll depth
-    window.addEventListener('scroll', () => {
-      const scrollHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const scrolled = (window.scrollY / scrollHeight) * 100;
-      if (scrolled > this.maxScroll) this.maxScroll = scrolled;
-
-      this.scrollDepths.forEach((d) => {
-        if (scrolled >= d && !this.trackedDepths.has(d)) {
-          this.trackedDepths.add(d);
-          this.capture('scroll_depth', { depth: d });
-        }
-      });
-    }, { passive: true });
-
-    // Saída (page_exit + bounce)
+    // Saída (page_exit)
     window.addEventListener('beforeunload', () => {
       const timeOnPage = Math.floor((Date.now() - this.pageLoadTime) / 1000);
-      this.capture('page_exit', { time_on_page: timeOnPage, max_scroll_depth: Math.floor(this.maxScroll) });
-      this.trackBounceIndicators();
+      this.capture('page_exit', { time_on_page: timeOnPage });
       this.flushQueue();
     });
-  };
-
-  trackBounceIndicators = () => {
-    const journey = this.getLS(this.LS_JOURNEY, []);
-    const safeJourney = Array.isArray(journey) ? journey : [];
-    const timeOnPage = Math.floor((Date.now() - this.pageLoadTime) / 1000);
-    const isBounce = safeJourney.length <= 1 && timeOnPage < 10;
-    const isQuickExit = timeOnPage < 30 && this.maxScroll < 25;
-    if (isBounce || isQuickExit) {
-      this.capture('bounce_detected', {
-        type: isBounce ? 'hard_bounce' : 'quick_exit',
-        time_on_page: timeOnPage,
-        max_scroll: Math.floor(this.maxScroll),
-        page_depth: safeJourney.length,
-      });
-    }
   };
 
   bindThankYouPage = () => {
@@ -399,35 +383,50 @@ class InsightHouseAnalytics {
     this.trackFunnelStage('conversion_confirmed');
 
     // Pós-conversão: cliques (delegação)
-    this.on('click', 'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]', (_e, a) => {
-      this.capture('conversion_whatsapp_click', {
-        codigo: ty.codigo || '',
-        href: a.href || '',
-        post_conversion: true,
-        source: 'thank_you_page',
-      });
-      this.trackFunnelStage('contacted_whatsapp');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]',
+      (_e, a) => {
+        this.capture('conversion_whatsapp_click', {
+          codigo: ty.codigo || '',
+          href: a.href || '',
+          post_conversion: true,
+          source: 'thank_you_page',
+        });
+        this.trackFunnelStage('contacted_whatsapp');
+      },
+      { passive: true },
+    );
 
-    this.on('click', 'a[href^="tel:"]', (_e, a) => {
-      this.capture('conversion_phone_click', {
-        codigo: ty.codigo || '',
-        href: a.href || '',
-        post_conversion: true,
-        source: 'thank_you_page',
-      });
-      this.trackFunnelStage('contacted_phone');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="tel:"]',
+      (_e, a) => {
+        this.capture('conversion_phone_click', {
+          codigo: ty.codigo || '',
+          href: a.href || '',
+          post_conversion: true,
+          source: 'thank_you_page',
+        });
+        this.trackFunnelStage('contacted_phone');
+      },
+      { passive: true },
+    );
 
-    this.on('click', 'a[href^="mailto:"]', (_e, a) => {
-      this.capture('conversion_email_click', {
-        codigo: ty.codigo || '',
-        href: a.href || '',
-        post_conversion: true,
-        source: 'thank_you_page',
-      });
-      this.trackFunnelStage('contacted_email');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="mailto:"]',
+      (_e, a) => {
+        this.capture('conversion_email_click', {
+          codigo: ty.codigo || '',
+          href: a.href || '',
+          post_conversion: true,
+          source: 'thank_you_page',
+        });
+        this.trackFunnelStage('contacted_email');
+      },
+      { passive: true },
+    );
   };
 
   bindSessionStart = () => {
@@ -454,7 +453,9 @@ class InsightHouseAnalytics {
   };
 
   getCheckedValues = (name) =>
-    Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map((el) => el.value);
+    Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(
+      (el) => el.value,
+    );
 
   getSliderRangeFromVal = (value) => {
     const [min, max] = String(value || '').split(',');
@@ -484,8 +485,12 @@ class InsightHouseAnalytics {
       salas: this.getCheckedValues('salas[]'),
       galpoes: this.getCheckedValues('galpoes[]'),
       // Preço
-      preco_venda: this.getSliderRangeFromVal(this.getVal('input-slider-valor-venda')),
-      preco_aluguel: this.getSliderRangeFromVal(this.getVal('input-slider-valor-aluguel')),
+      preco_venda: this.getSliderRangeFromVal(
+        this.getVal('input-slider-valor-venda'),
+      ),
+      preco_aluguel: this.getSliderRangeFromVal(
+        this.getVal('input-slider-valor-aluguel'),
+      ),
       preco_min_manual: this.getVal('input-number-valor-min'),
       preco_max_manual: this.getVal('input-number-valor-max'),
       // Área
@@ -549,146 +554,249 @@ class InsightHouseAnalytics {
   // ==========================
   bindResultsAndActions = () => {
     // Itens de resultado (todos links)
-    this.on('click', 'a', (e, a) => {
-      const href = String(a.getAttribute('href') || '');
-      if (!href) return;
+    this.on(
+      'click',
+      'a',
+      (e, a) => {
+        const href = String(a.getAttribute('href') || '');
+        if (!href) return;
 
-      if (href.includes('/imovel/')) {
-        const m = href.match(/\/imovel\/(\d+)\//);
-        const codigo = m ? m[1] : '';
-        this.capture('results_item_click', { target: href, kind: 'imovel', codigo });
-        this.trackFunnelStage('viewed_property');
-      } else if (href.includes('/condominio/')) {
-        this.capture('results_item_click', { target: href, kind: 'condominio' });
-      } else if (a.classList.contains('button-info-panel')) {
-        const box = a.closest('.imovel-box-single');
-        const codigo = box?.getAttribute('data-codigo') || '';
-        this.capture('results_saber_mais_click', { codigo, href });
-        this.trackFunnelStage('clicked_saber_mais');
-      }
-    }, { passive: true });
+        if (href.includes('/imovel/')) {
+          const m = href.match(/\/imovel\/(\d+)\//);
+          const codigo = m ? m[1] : '';
+          this.capture('results_item_click', {
+            target: href,
+            kind: 'imovel',
+            codigo,
+          });
+          this.trackFunnelStage('viewed_property');
+        } else if (href.includes('/condominio/')) {
+          this.capture('results_item_click', {
+            target: href,
+            kind: 'condominio',
+          });
+        } else if (a.classList.contains('button-info-panel')) {
+          const box = a.closest('.imovel-box-single');
+          const codigo = box?.getAttribute('data-codigo') || '';
+          this.capture('results_saber_mais_click', { codigo, href });
+          this.trackFunnelStage('clicked_saber_mais');
+        }
+      },
+      { passive: true },
+    );
 
     // Favoritos (lista/página)
-    this.on('click', '.btn-favoritar, .btn-favoritar *', (_e, el) => {
-      const btn = el.closest('.btn-favoritar');
-      const codigo = btn?.getAttribute('data-codigo') || '';
-      this.capture('favorite_toggle', {
-        codigo,
-        action: btn?.classList?.contains('favorited') ? 'remove' : 'add',
-      });
-      this.trackFunnelStage('favorited_property');
-    }, { passive: true });
+    this.on(
+      'click',
+      '.btn-favoritar, .btn-favoritar *',
+      (_e, el) => {
+        const btn = el.closest('.btn-favoritar');
+        const codigo = btn?.getAttribute('data-codigo') || '';
+        this.capture('favorite_toggle', {
+          codigo,
+          action: btn?.classList?.contains('favorited') ? 'remove' : 'add',
+        });
+        this.trackFunnelStage('favorited_property');
+      },
+      { passive: true },
+    );
 
     // Conversões (WhatsApp / Telefone / Email)
-    this.on('click', 'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]', (_e, a) => {
-      const codigo = a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
-      this.capture('conversion_whatsapp_click', { codigo, href: a.href || '' });
-      this.trackFunnelStage('contacted_whatsapp');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]',
+      (_e, a) => {
+        const codigo =
+          a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
+        this.capture('conversion_whatsapp_click', {
+          codigo,
+          href: a.href || '',
+        });
+        this.trackFunnelStage('contacted_whatsapp');
+      },
+      { passive: true },
+    );
 
-    this.on('click', 'a[href^="tel:"]', (_e, a) => {
-      const codigo = a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
-      this.capture('conversion_phone_click', { codigo, href: a.href || '' });
-      this.trackFunnelStage('contacted_phone');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="tel:"]',
+      (_e, a) => {
+        const codigo =
+          a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
+        this.capture('conversion_phone_click', { codigo, href: a.href || '' });
+        this.trackFunnelStage('contacted_phone');
+      },
+      { passive: true },
+    );
 
-    this.on('click', 'a[href^="mailto:"]', (_e, a) => {
-      const codigo = a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
-      this.capture('conversion_email_click', { codigo, href: a.href || '' });
-      this.trackFunnelStage('contacted_email');
-    }, { passive: true });
+    this.on(
+      'click',
+      'a[href^="mailto:"]',
+      (_e, a) => {
+        const codigo =
+          a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
+        this.capture('conversion_email_click', { codigo, href: a.href || '' });
+        this.trackFunnelStage('contacted_email');
+      },
+      { passive: true },
+    );
 
     // Ordenação (dropdown)
-    this.on('click', '.dropdown-orderby ul li a', (_e, link) => {
-      const order = link.getAttribute('data-value');
-      this.capture('results_order_changed', { order_by: order });
-    }, { passive: true });
+    this.on(
+      'click',
+      '.dropdown-orderby ul li a',
+      (_e, link) => {
+        const order = link.getAttribute('data-value');
+        this.capture('results_order_changed', { order_by: order });
+      },
+      { passive: true },
+    );
 
     // Submits dos formulários de busca
     const mainSubmit = this.byId('submit-main-search-form');
-    if (mainSubmit) mainSubmit.addEventListener('click', () => this.captureSearchSubmit('main_form'), { passive: true });
+    if (mainSubmit)
+      mainSubmit.addEventListener(
+        'click',
+        () => this.captureSearchSubmit('main_form'),
+        { passive: true },
+      );
 
     const codeSubmit = this.byId('submit-main-search-form-codigo');
-    if (codeSubmit) codeSubmit.addEventListener('click', () => {
-      const codigo = this.getVal('property-codigo');
-      this.capture('search_submit', { source: 'codigo', codigo });
-      this.trackFunnelStage('search_by_code');
-    }, { passive: true });
+    if (codeSubmit)
+      codeSubmit.addEventListener(
+        'click',
+        () => {
+          const codigo = this.getVal('property-codigo');
+          this.capture('search_submit', { source: 'codigo', codigo });
+          this.trackFunnelStage('search_by_code');
+        },
+        { passive: true },
+      );
 
     document.querySelectorAll('.submit-sidebar-search-form').forEach((btn) => {
-      btn.addEventListener('click', () => this.captureSearchSubmit('sidebar_form'), { passive: true });
+      btn.addEventListener(
+        'click',
+        () => this.captureSearchSubmit('sidebar_form'),
+        { passive: true },
+      );
     });
   };
 
   bindFiltersDelegated = () => {
     // Filtros básicos via change/input delegados
-    document.addEventListener('change', (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLElement)) return;
+    document.addEventListener(
+      'change',
+      (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
 
-      // Grupos (checkbox/radio)
-      if (t.matches('input[type="checkbox"][name], input[type="radio"][name]')) {
-        const name = t.getAttribute('name');
-        const selected = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i => i.value);
-        this.capture('search_filter_group_changed', { field: name, selected, count: selected.length });
-        return;
-      }
-
-      // Selects
-      if (t.matches('select')) {
-        const values = t.multiple
-          ? Array.from(t.selectedOptions).map(o => o.value).join(',')
-          : String(t.value || '');
-        this.capture('search_filter_changed', { field: t.id || t.name || 'select', value: values });
-        // Cidades e Bairros com eventos dedicados
-        if (t.id === 'search-field-cidade' && t.selectedOptions?.length) {
-          const cidades = Array.from(t.selectedOptions).map(o => o.value);
-          this.capture('search_filter_city', { cidades });
+        // Grupos (checkbox/radio)
+        if (
+          t.matches('input[type="checkbox"][name], input[type="radio"][name]')
+        ) {
+          const name = t.getAttribute('name');
+          const selected = Array.from(
+            document.querySelectorAll(`input[name="${name}"]:checked`),
+          ).map((i) => i.value);
+          this.capture('search_filter_group_changed', {
+            field: name,
+            selected,
+            count: selected.length,
+          });
+          return;
         }
-        if (t.id === 'search-field-cidadebairro' && t.selectedOptions?.length) {
-          const bairros = Array.from(t.selectedOptions).map(o => o.value);
-          this.capture('search_filter_bairro', { bairros });
+
+        // Selects
+        if (t.matches('select')) {
+          const values = t.multiple
+            ? Array.from(t.selectedOptions)
+                .map((o) => o.value)
+                .join(',')
+            : String(t.value || '');
+          this.capture('search_filter_changed', {
+            field: t.id || t.name || 'select',
+            value: values,
+          });
+          // Cidades e Bairros com eventos dedicados
+          if (t.id === 'search-field-cidade' && t.selectedOptions?.length) {
+            const cidades = Array.from(t.selectedOptions).map((o) => o.value);
+            this.capture('search_filter_city', { cidades });
+          }
+          if (
+            t.id === 'search-field-cidadebairro' &&
+            t.selectedOptions?.length
+          ) {
+            const bairros = Array.from(t.selectedOptions).map((o) => o.value);
+            this.capture('search_filter_bairro', { bairros });
+          }
+          return;
         }
-        return;
-      }
 
-      // Sliders nativos (range) ou inputs com valor "min,max"
-      if (t.matches('input[type="range"], input[data-slider="range"]')) {
-        const [min, max] = String(t.value || '').split(',');
-        this.capture('search_filter_range_changed', {
-          field: t.id || 'range',
-          min: min || '0',
-          max: max || 'unlimited',
-          raw_value: t.value || '',
-        });
-      }
-    }, { passive: true });
-
-    document.addEventListener('input', (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLElement)) return;
-
-      // Campos numéricos manuais
-      if (t.matches('#input-number-valor-min, #input-number-valor-max, #input-number-area-min, #input-number-area-max')) {
-        const field = t.id.replace('input-number-', '');
-        if (String(t.value || '').trim()) {
-          this.capture('search_filter_manual_input', { field, value: t.value });
+        // Sliders nativos (range) ou inputs com valor "min,max"
+        if (t.matches('input[type="range"], input[data-slider="range"]')) {
+          const [min, max] = String(t.value || '').split(',');
+          this.capture('search_filter_range_changed', {
+            field: t.id || 'range',
+            min: min || '0',
+            max: max || 'unlimited',
+            raw_value: t.value || '',
+          });
         }
-      }
-    }, { passive: true });
+      },
+      { passive: true },
+    );
+
+    document.addEventListener(
+      'input',
+      (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+
+        // Campos numéricos manuais
+        if (
+          t.matches(
+            '#input-number-valor-min, #input-number-valor-max, #input-number-area-min, #input-number-area-max',
+          )
+        ) {
+          const field = t.id.replace('input-number-', '');
+          if (String(t.value || '').trim()) {
+            this.capture('search_filter_manual_input', {
+              field,
+              value: t.value,
+            });
+          }
+        }
+      },
+      { passive: true },
+    );
 
     // Botões de finalidade alias
-    this.on('click', '.finalidade-alias-button[data-value]', (_e, btn) => {
-      this.capture('search_filter_changed', { field: 'finalidade', value: btn.getAttribute('data-value') });
-    }, { passive: true });
+    this.on(
+      'click',
+      '.finalidade-alias-button[data-value]',
+      (_e, btn) => {
+        this.capture('search_filter_changed', {
+          field: 'finalidade',
+          value: btn.getAttribute('data-value'),
+        });
+      },
+      { passive: true },
+    );
 
     // Toggle de avançados
     const advancedTrigger = this.byId('collapseAdvFilter-trigger');
     if (advancedTrigger) {
-      advancedTrigger.addEventListener('click', () => {
-        const isExpanded = !!this.byId('collapseAdvFilter')?.classList?.contains('show');
-        this.capture('advanced_filters_toggle', { action: isExpanded ? 'collapse' : 'expand' });
-      }, { passive: true });
+      advancedTrigger.addEventListener(
+        'click',
+        () => {
+          const isExpanded =
+            !!this.byId('collapseAdvFilter')?.classList?.contains('show');
+          this.capture('advanced_filters_toggle', {
+            action: isExpanded ? 'collapse' : 'expand',
+          });
+        },
+        { passive: true },
+      );
     }
 
     // Sliders específicos (fallback compat)
@@ -699,17 +807,28 @@ class InsightHouseAnalytics {
       const emit = (raw) => {
         const val = raw ?? el.value ?? '';
         const [min, max] = String(val).split(',');
-        this.capture('search_filter_range_changed', { field, min: min || '0', max: max || 'unlimited', raw_value: String(val) });
+        this.capture('search_filter_range_changed', {
+          field,
+          min: min || '0',
+          max: max || 'unlimited',
+          raw_value: String(val),
+        });
       };
       el.addEventListener('input', () => emit(), { passive: true });
       el.addEventListener('change', () => emit(), { passive: true });
 
       // Se o plugin emitir CustomEvent('slideStop', {detail:{value:[min,max]}}) ou em ev.value
       ['slideStop', 'slidestop'].forEach((evt) => {
-        el.addEventListener(evt, (ev) => {
-          const v = ev?.detail?.value ?? (Array.isArray(ev?.value) ? ev.value.join(',') : el.value);
-          emit(v);
-        }, { passive: true });
+        el.addEventListener(
+          evt,
+          (ev) => {
+            const v =
+              ev?.detail?.value ??
+              (Array.isArray(ev?.value) ? ev.value.join(',') : el.value);
+            emit(v);
+          },
+          { passive: true },
+        );
       });
     };
     bindSlider('input-slider-valor-venda', 'preco_venda');
@@ -722,43 +841,85 @@ class InsightHouseAnalytics {
     if (!propertyCode) return;
 
     this.log('Página de propriedade detectada:', propertyCode);
-    this.capture('property_page_view', { codigo: propertyCode, url: location.href, title: document.title });
+    this.capture('property_page_view', {
+      codigo: propertyCode,
+      url: location.href,
+      title: document.title,
+    });
 
     // CTAs
     const propostaBtn = document.querySelector('.cadastro-proposta-cta');
-    if (propostaBtn) propostaBtn.addEventListener('click', () => {
-      this.capture('cta_fazer_proposta_click', { codigo: propertyCode, href: propostaBtn?.getAttribute('href') || '' });
-      this.trackFunnelStage('clicked_fazer_proposta');
-    }, { passive: true });
+    if (propostaBtn)
+      propostaBtn.addEventListener(
+        'click',
+        () => {
+          this.capture('cta_fazer_proposta_click', {
+            codigo: propertyCode,
+            href: propostaBtn?.getAttribute('href') || '',
+          });
+          this.trackFunnelStage('clicked_fazer_proposta');
+        },
+        { passive: true },
+      );
 
     const alugarBtn = document.querySelector('.cadastro-inquilino-cta');
-    if (alugarBtn) alugarBtn.addEventListener('click', () => {
-      this.capture('cta_alugar_imovel_click', { codigo: propertyCode, href: alugarBtn?.getAttribute('href') || '' });
-      this.trackFunnelStage('clicked_alugar_imovel');
-    }, { passive: true });
+    if (alugarBtn)
+      alugarBtn.addEventListener(
+        'click',
+        () => {
+          this.capture('cta_alugar_imovel_click', {
+            codigo: propertyCode,
+            href: alugarBtn?.getAttribute('href') || '',
+          });
+          this.trackFunnelStage('clicked_alugar_imovel');
+        },
+        { passive: true },
+      );
 
-    const maisInfoBtn = document.querySelector('a[data-toggle="modal"][href="#imovel-contato"]');
-    if (maisInfoBtn) maisInfoBtn.addEventListener('click', () => {
-      this.capture('cta_mais_informacoes_click', { codigo: propertyCode });
-      this.trackFunnelStage('opened_contact_form');
-    }, { passive: true });
+    const maisInfoBtn = document.querySelector(
+      'a[data-toggle="modal"][href="#imovel-contato"]',
+    );
+    if (maisInfoBtn)
+      maisInfoBtn.addEventListener(
+        'click',
+        () => {
+          this.capture('cta_mais_informacoes_click', { codigo: propertyCode });
+          this.trackFunnelStage('opened_contact_form');
+        },
+        { passive: true },
+      );
 
     const shareBtn = document.querySelector('a[href="#modal-compartilhar"]');
-    if (shareBtn) shareBtn.addEventListener('click', () => {
-      this.capture('property_share_click', { codigo: propertyCode });
-    }, { passive: true });
+    if (shareBtn)
+      shareBtn.addEventListener(
+        'click',
+        () => {
+          this.capture('property_share_click', { codigo: propertyCode });
+        },
+        { passive: true },
+      );
 
     const favBtn = document.querySelector('.clb-form-fixed-fav a[data-codigo]');
-    if (favBtn) favBtn.addEventListener('click', () => {
-      const isFavorited = !!favBtn?.classList?.contains('favorited');
-      this.capture('property_favorite_toggle', { codigo: propertyCode, action: isFavorited ? 'remove' : 'add' });
-      this.trackFunnelStage('favorited_property');
-    }, { passive: true });
+    if (favBtn)
+      favBtn.addEventListener(
+        'click',
+        () => {
+          const isFavorited = !!favBtn?.classList?.contains('favorited');
+          this.capture('property_favorite_toggle', {
+            codigo: propertyCode,
+            action: isFavorited ? 'remove' : 'add',
+          });
+          this.trackFunnelStage('favorited_property');
+        },
+        { passive: true },
+      );
 
     // Form de contato (modal) - rastreio robusto
     const calculateFormCompleteness = (fields) => {
       const total = Object.keys(fields).length;
-      const filled = Object.values(fields).filter((v) => v && String(v).trim()).length;
+      const filled = Object.values(fields).filter(
+        (v) => v && String(v).trim(),
+      ).length;
       return Math.round((filled / total) * 100);
     };
 
@@ -778,80 +939,137 @@ class InsightHouseAnalytics {
           if (!field) return;
 
           // usar focusin/out pois borbulham
-          field.addEventListener('focus', () => this.capture('contact_form_field_focus', { codigo: propertyCode, field: fieldName }), { passive: true, capture: true });
-          field.addEventListener('blur', () => {
-            if (String(field.value || '').trim()) {
-              this.capture('contact_form_field_filled', { codigo: propertyCode, field: fieldName, has_value: true });
-            }
-          }, { passive: true, capture: true });
+          field.addEventListener(
+            'focus',
+            () =>
+              this.capture('contact_form_field_focus', {
+                codigo: propertyCode,
+                field: fieldName,
+              }),
+            { passive: true, capture: true },
+          );
+          field.addEventListener(
+            'blur',
+            () => {
+              if (String(field.value || '').trim()) {
+                this.capture('contact_form_field_filled', {
+                  codigo: propertyCode,
+                  field: fieldName,
+                  has_value: true,
+                });
+              }
+            },
+            { passive: true, capture: true },
+          );
         };
 
         trackField('input[name="nome"], input[type="text"]', 'nome');
         trackField('input[name="email"], input[type="email"]', 'email');
-        trackField('input[name="celular"], input[name="telefone"], input[type="tel"]', 'telefone');
+        trackField(
+          'input[name="celular"], input[name="telefone"], input[type="tel"]',
+          'telefone',
+        );
         trackField('textarea[name="mensagem"], textarea', 'mensagem');
 
-        form.addEventListener('submit', () => {
-          const fd = new FormData(form);
-          const nome = fd.get('nome') || '';
-          const email = fd.get('email') || '';
-          const telefone = fd.get('celular') || fd.get('telefone') || '';
-          const mensagem = fd.get('mensagem') || '';
-          this.capture('contact_form_submit', {
-            codigo: propertyCode,
-            has_nome: !!nome,
-            has_email: !!email,
-            has_telefone: !!telefone,
-            has_mensagem: !!mensagem,
-            form_completeness: calculateFormCompleteness({ nome, email, telefone, mensagem }),
-          });
-          this.trackFunnelStage('submitted_contact_form');
-          this.capture('conversion_contact_form', {
-            codigo: propertyCode,
-            contact_type: 'form',
-            user_id: this.getUserId(),
-            session_id: this.getSessionId(),
-          });
-        }, { passive: true });
+        form.addEventListener(
+          'submit',
+          () => {
+            const fd = new FormData(form);
+            const nome = fd.get('nome') || '';
+            const email = fd.get('email') || '';
+            const telefone = fd.get('celular') || fd.get('telefone') || '';
+            const mensagem = fd.get('mensagem') || '';
+            this.capture('contact_form_submit', {
+              codigo: propertyCode,
+              has_nome: !!nome,
+              has_email: !!email,
+              has_telefone: !!telefone,
+              has_mensagem: !!mensagem,
+              form_completeness: calculateFormCompleteness({
+                nome,
+                email,
+                telefone,
+                mensagem,
+              }),
+            });
+            this.trackFunnelStage('submitted_contact_form');
+            this.capture('conversion_contact_form', {
+              codigo: propertyCode,
+              contact_type: 'form',
+              user_id: this.getUserId(),
+              session_id: this.getSessionId(),
+            });
+          },
+          { passive: true },
+        );
 
         // Abandono
         let formStarted = false;
         form.querySelectorAll('input, textarea').forEach((field) => {
-          field.addEventListener('input', () => {
-            if (!formStarted) {
-              formStarted = true;
-              this.capture('contact_form_started', { codigo: propertyCode });
-            }
-          }, { passive: true });
+          field.addEventListener(
+            'input',
+            () => {
+              if (!formStarted) {
+                formStarted = true;
+                this.capture('contact_form_started', { codigo: propertyCode });
+              }
+            },
+            { passive: true },
+          );
         });
 
         const detectAbandonment = () => {
           if (!formStarted) return;
           const fd = new FormData(form);
-          const hasAny = Array.from(fd.values()).some((v) => v && String(v).trim());
-          if (hasAny) this.capture('contact_form_abandoned', { codigo: propertyCode, partial_data: true });
+          const hasAny = Array.from(fd.values()).some(
+            (v) => v && String(v).trim(),
+          );
+          if (hasAny)
+            this.capture('contact_form_abandoned', {
+              codigo: propertyCode,
+              partial_data: true,
+            });
         };
 
         const closeBtn = modal.querySelector('[data-dismiss="modal"]');
         // Suporte Bootstrap modal (se presente)
-        modal.addEventListener('hidden.bs.modal', detectAbandonment, { passive: true });
-        if (closeBtn) closeBtn.addEventListener('click', detectAbandonment, { passive: true });
+        modal.addEventListener('hidden.bs.modal', detectAbandonment, {
+          passive: true,
+        });
+        if (closeBtn)
+          closeBtn.addEventListener('click', detectAbandonment, {
+            passive: true,
+          });
       }, 500);
     };
     trackContactForm();
 
     // Galeria
-    document.querySelectorAll('.swiper-button-next, .swiper-button-prev').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.capture('property_gallery_navigation', {
-          codigo: propertyCode,
-          direction: btn.classList.contains('swiper-button-next') ? 'next' : 'prev',
-        });
-      }, { passive: true });
-    });
-    document.querySelectorAll('.foto-imovel, .swiper-slide').forEach((slide) => {
-      slide.addEventListener('click', () => this.capture('property_image_click', { codigo: propertyCode }), { passive: true });
-    });
+    document
+      .querySelectorAll('.swiper-button-next, .swiper-button-prev')
+      .forEach((btn) => {
+        btn.addEventListener(
+          'click',
+          () => {
+            this.capture('property_gallery_navigation', {
+              codigo: propertyCode,
+              direction: btn.classList.contains('swiper-button-next')
+                ? 'next'
+                : 'prev',
+            });
+          },
+          { passive: true },
+        );
+      });
+    document
+      .querySelectorAll('.foto-imovel, .swiper-slide')
+      .forEach((slide) => {
+        slide.addEventListener(
+          'click',
+          () => this.capture('property_image_click', { codigo: propertyCode }),
+          { passive: true },
+        );
+      });
   };
 
   // ==========================

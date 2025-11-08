@@ -23,14 +23,11 @@ import {
   PropertyCTAPerformanceResponse,
   FormPerformanceResponse,
   FormAbandonmentResponse,
-  BounceAnalyticsResponse,
-  ScrollAnalyticsResponse,
 } from './interfaces/categorized-insights.interface';
 import { SearchAnalyzerService } from './analyzers/search-analyzer.service';
 import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.service';
 import { PropertyAnalyzerService } from './analyzers/property-analyzer.service';
 import { FormAnalyzerService } from './analyzers/form-analyzer.service';
-import { EngagementAnalyzerService } from './analyzers/engagement-analyzer.service';
 
 @ApiTags('Insights')
 @Controller('insights')
@@ -43,7 +40,6 @@ export class InsightsController {
     private readonly conversionAnalyzer: ConversionAnalyzerService,
     private readonly propertyAnalyzer: PropertyAnalyzerService,
     private readonly formAnalyzer: FormAnalyzerService,
-    private readonly engagementAnalyzer: EngagementAnalyzerService,
   ) {}
 
   /**
@@ -349,45 +345,5 @@ export class InsightsController {
     @Query() queryDto: InsightsQueryDto,
   ): Promise<FormAbandonmentResponse> {
     return this.formAnalyzer.getFormAbandonmentReasons(siteKey, queryDto);
-  }
-
-  // =====================================================
-  // ENGAGEMENT & PERFORMANCE ANALYTICS
-  // =====================================================
-
-  /**
-   * Gets bounce analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Bounce analytics data
-   */
-  @Get('bounce/analytics')
-  @ApiOperation({ summary: 'Get bounce analytics' })
-  @ApiResponse({ status: 200, description: 'Return bounce analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getBounceAnalytics(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<BounceAnalyticsResponse> {
-    return this.engagementAnalyzer.getBounceAnalytics(siteKey, queryDto);
-  }
-
-  /**
-   * Gets scroll analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Scroll analytics data
-   */
-  @Get('scroll/analytics')
-  @ApiOperation({ summary: 'Get scroll analytics' })
-  @ApiResponse({ status: 200, description: 'Return scroll analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getScrollAnalytics(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<ScrollAnalyticsResponse> {
-    return this.engagementAnalyzer.getScrollAnalytics(siteKey, queryDto);
   }
 }

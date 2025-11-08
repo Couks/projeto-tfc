@@ -151,36 +151,6 @@ GET {{apiUrl}}/api/insights/forms/abandonment?dateFilter=day&limit=10
 X-Site-Key: {{siteKey}}
 
 # =====================================================
-# ENGAGEMENT & PERFORMANCE ANALYTICS
-# =====================================================
-
-### Get Bounce Analytics
-GET {{apiUrl}}/api/insights/bounce/analytics
-X-Site-Key: {{siteKey}}
-
-### Get Bounce Analytics - Today
-GET {{apiUrl}}/api/insights/bounce/analytics?dateFilter=day
-X-Site-Key: {{siteKey}}
-
-### Get Bounce Analytics - This Week
-GET {{apiUrl}}/api/insights/bounce/analytics?dateFilter=week&limit=10
-X-Site-Key: {{siteKey}}
-
-###
-
-### Get Scroll Analytics
-GET {{apiUrl}}/api/insights/scroll/analytics
-X-Site-Key: {{siteKey}}
-
-### Get Scroll Analytics - Today
-GET {{apiUrl}}/api/insights/scroll/analytics?dateFilter=day
-X-Site-Key: {{siteKey}}
-
-### Get Scroll Analytics - This Week
-GET {{apiUrl}}/api/insights/scroll/analytics?dateFilter=week&limit=10
-X-Site-Key: {{siteKey}}
-
-# =====================================================
 # PRODUCTION TESTS
 # =====================================================
 

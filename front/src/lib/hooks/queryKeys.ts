@@ -98,24 +98,6 @@ export const queryKeys = {
           query,
         ] as const,
     },
-    engagement: {
-      bounce: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'engagement',
-          'bounce',
-          siteKey,
-          query,
-        ] as const,
-      scroll: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'engagement',
-          'scroll',
-          siteKey,
-          query,
-        ] as const,
-    },
   },
   auth: {
     all: ['auth'] as const,

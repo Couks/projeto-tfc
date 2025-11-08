@@ -13,8 +13,6 @@ import type {
   PropertyCTAPerformanceResponse,
   FormPerformanceResponse,
   FormAbandonmentResponse,
-  BounceAnalyticsResponse,
-  ScrollAnalyticsResponse,
 } from '../types/insights'
 
 export function useRefreshInsights() {
@@ -256,50 +254,3 @@ export function useFormAbandonment(siteKey: string, query?: InsightsQuery) {
   })
 }
 
-// ===== ENGAGEMENT & PERFORMANCE =====
-
-export function useBounceAnalytics(siteKey: string, query?: InsightsQuery) {
-  return useQuery<BounceAnalyticsResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'engagement',
-      'bounce',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<BounceAnalyticsResponse>(
-        `/api/insights/bounce/analytics`,
-        {
-          siteKey,
-        }
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  })
-}
-
-export function useScrollAnalytics(siteKey: string, query?: InsightsQuery) {
-  return useQuery<ScrollAnalyticsResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'engagement',
-      'scroll',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<ScrollAnalyticsResponse>(
-        `/api/insights/scroll/analytics`,
-        {
-          siteKey,
-        }
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  })
-}
