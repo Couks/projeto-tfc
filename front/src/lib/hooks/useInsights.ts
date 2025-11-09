@@ -6,7 +6,6 @@ import type {
   SearchAnalyticsResponse,
   FiltersUsageResponse,
   ConversionRateResponse,
-  ConversionFunnelResponse,
   ConversionSourcesResponse,
   PopularPropertiesResponse,
   PropertyEngagementResponse,
@@ -84,29 +83,6 @@ export function useConversionRate(siteKey: string, query?: InsightsQuery) {
     queryFn: async () => {
       return apiClient.get<ConversionRateResponse>(
         `/api/insights/conversion/rate`,
-        {
-          siteKey,
-        }
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  })
-}
-
-export function useConversionFunnel(siteKey: string, query?: InsightsQuery) {
-  return useQuery<ConversionFunnelResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'conversion',
-      'funnel',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<ConversionFunnelResponse>(
-        `/api/insights/conversion/funnel`,
         {
           siteKey,
         }

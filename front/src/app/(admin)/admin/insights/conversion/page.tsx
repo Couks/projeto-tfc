@@ -11,13 +11,11 @@ import { Skeleton } from '@ui/skeleton'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   useConversionRate,
-  useConversionFunnel,
   useConversionSources,
   useFormPerformance,
 } from '@/lib/hooks/useInsights'
 import { Progress } from '@ui/progress'
 import { Alert, AlertDescription } from '@ui/alert'
-import { ConversionFunnelChart } from './_components/ConversionFunnelChart'
 import { ConversionDistributionChart } from './_components/ConversionDistributionChart'
 
 export default function ConversionAnalyticsPage() {
@@ -27,11 +25,6 @@ export default function ConversionAnalyticsPage() {
     isLoading: rateLoading,
     error: rateError,
   } = useConversionRate(selectedSiteKey || '')
-  const {
-    data: funnelData,
-    isLoading: funnelLoading,
-    error: funnelError,
-  } = useConversionFunnel(selectedSiteKey || '')
   const {
     data: sourcesData,
     isLoading: sourcesLoading,
@@ -54,7 +47,7 @@ export default function ConversionAnalyticsPage() {
   }
 
   // Check for errors
-  const hasError = rateError || funnelError || sourcesError || formError
+  const hasError = rateError || sourcesError || formError
 
   return (
     <div className="space-y-6">
@@ -156,38 +149,21 @@ export default function ConversionAnalyticsPage() {
         </Card>
       </div>
 
-      {/* Middle Row: Grid 2 colunas - Funil e Distribuição */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-layer-4">
-          <CardHeader>
-            <CardTitle>Funil de Conversão</CardTitle>
-            <CardDescription>
-              Jornada do usuário desde o primeiro contato até a conversão
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ConversionFunnelChart
-              data={funnelData}
-              isLoading={funnelLoading}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-4">
-          <CardHeader>
-            <CardTitle>Conversões por Tipo</CardTitle>
-            <CardDescription>
-              Distribuição dos eventos de conversão
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ConversionDistributionChart
-              data={rateData}
-              isLoading={rateLoading}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Middle Row: Distribuição de Conversões */}
+      <Card className="shadow-layer-4">
+        <CardHeader>
+          <CardTitle>Conversões por Tipo</CardTitle>
+          <CardDescription>
+            Distribuição dos eventos de conversão
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ConversionDistributionChart
+            data={rateData}
+            isLoading={rateLoading}
+          />
+        </CardContent>
+      </Card>
 
       {/* Bottom Row: Fontes de Conversão */}
       <Card className="shadow-layer-2">

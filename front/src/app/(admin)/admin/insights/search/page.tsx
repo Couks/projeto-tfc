@@ -168,7 +168,7 @@ export default function SearchAnalyticsPage() {
       </div>
 
       {/* Bairros Section */}
-      <Card className="shadow-layer-3">
+      <Card className="shadow-inner-5">
         <CardHeader>
           <CardTitle>Bairros Mais Buscados</CardTitle>
           <CardDescription>
@@ -453,7 +453,7 @@ export default function SearchAnalyticsPage() {
       </div>
 
       {/* Switches/Filters */}
-      <Card className="shadow-layer-3">
+      <Card className="shadow-inner-5">
         <CardHeader>
           <CardTitle>Filtros Especiais Mais Usados</CardTitle>
           <CardDescription>

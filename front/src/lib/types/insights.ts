@@ -134,22 +134,6 @@ export interface ConversionRateResponse {
   }
 }
 
-export interface ConversionFunnelResponse {
-  stages: Array<{
-    stage: string
-    count: number
-    percentage: number
-    dropoffRate: number
-  }>
-  totalStarted: number
-  totalCompleted: number
-  overallConversionRate: number
-  period: {
-    start: string
-    end: string
-  }
-}
-
 export interface ConversionSourcesResponse {
   sources: Array<{
     source: string
