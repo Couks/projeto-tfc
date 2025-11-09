@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { Button } from '@ui/button'
+import { Spinner } from '@ui/spinner'
 import { Trash2 } from 'lucide-react'
 import { useDeleteSite } from '@/lib/hooks/useSites'
 
@@ -32,7 +33,11 @@ export function DeleteSiteButton({ siteId }: { siteId: string }) {
       title="Delete site"
       className="text-red-600 hover:text-red-700 disabled:opacity-50"
     >
-      <Trash2 />
+      {deleteSiteMutation.isPending ? (
+        <Spinner className="h-4 w-4" />
+      ) : (
+        <Trash2 />
+      )}
     </Button>
   )
 }

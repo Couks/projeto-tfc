@@ -6,6 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@ui/chart'
+import { Spinner } from '@ui/spinner'
 import type { SearchAnalyticsResponse } from '@/lib/types/insights'
 
 interface TopFinalidadesChartProps {
@@ -24,12 +25,18 @@ export function TopFinalidadesChart({
   data,
   isLoading,
 }: TopFinalidadesChartProps) {
-  if (isLoading || !data || !data.topFinalidades.length) {
+  if (isLoading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? 'Carregando dados...' : 'Sem dados disponíveis'}
-        </p>
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
+
+  if (!data || !data.topFinalidades.length) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
       </div>
     )
   }
@@ -50,7 +57,11 @@ export function TopFinalidadesChart({
           <XAxis dataKey="finalidade" />
           <YAxis />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey="count" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+          <Bar
+            dataKey="count"
+            fill="hsl(var(--chart-1))"
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </ChartContainer>

@@ -52,6 +52,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { Spinner } from '@ui/spinner'
 import { SiteProvider } from '@/lib/providers/SiteProvider'
 import {
   Collapsible,
@@ -227,6 +228,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       onClick={handleLogout}
                       disabled={logoutMutation.isPending}
                     >
+                      {logoutMutation.isPending && (
+                        <Spinner className="mr-2 h-4 w-4" />
+                      )}
                       {logoutMutation.isPending ? 'Saindo...' : 'Sair'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>

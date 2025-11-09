@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { Spinner } from '@ui/spinner'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useLogin } from '@/lib/hooks'
 
@@ -105,6 +106,9 @@ export default function LoginPage() {
                 size="lg"
                 disabled={loginMutation.isPending}
               >
+                {loginMutation.isPending && (
+                  <Spinner className="mr-2 h-4 w-4" />
+                )}
                 {loginMutation.isPending ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>

@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@ui/card'
 import { Alert, AlertDescription } from '@ui/alert'
+import { Spinner } from '@ui/spinner'
 import { Globe, Building2, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { useCreateSite } from '@/lib/hooks'
 
@@ -123,6 +124,9 @@ export default function NewSitePage() {
                 disabled={createSiteMutation.isPending}
                 className="min-w-[120px]"
               >
+                {createSiteMutation.isPending && (
+                  <Spinner className="mr-2 h-4 w-4" />
+                )}
                 {createSiteMutation.isPending ? 'Criando...' : 'Criar Site'}
               </Button>
             </div>

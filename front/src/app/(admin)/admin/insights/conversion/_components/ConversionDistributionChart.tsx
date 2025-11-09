@@ -6,6 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@ui/chart'
+import { Spinner } from '@ui/spinner'
 import type { ConversionRateResponse } from '@/lib/types/insights'
 
 interface ConversionDistributionChartProps {
@@ -31,12 +32,18 @@ export function ConversionDistributionChart({
   data,
   isLoading,
 }: ConversionDistributionChartProps) {
-  if (isLoading || !data || !data.conversionsByType.length) {
+  if (isLoading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? 'Carregando dados...' : 'Sem dados disponíveis'}
-        </p>
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
+
+  if (!data || !data.conversionsByType.length) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
       </div>
     )
   }
@@ -56,13 +63,18 @@ export function ConversionDistributionChart({
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+            label={({ name, percentage }) =>
+              `${name}: ${percentage.toFixed(1)}%`
+            }
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
           <ChartTooltip content={<ChartTooltipContent />} />

@@ -14,6 +14,7 @@ import {
 import { Alert, AlertDescription } from '@ui/alert'
 import { Building2, Activity } from 'lucide-react'
 import Link from 'next/link'
+import { Spinner } from '@ui/spinner'
 import { useUpdateSite } from '@/lib/hooks'
 
 export function EditSiteForm({
@@ -99,6 +100,7 @@ export function EditSiteForm({
           disabled={updateSiteMutation.isPending}
           className="min-w-[120px]"
         >
+          {updateSiteMutation.isPending && <Spinner className="mr-2 h-4 w-4" />}
           {updateSiteMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
         <Button asChild variant="ghost">

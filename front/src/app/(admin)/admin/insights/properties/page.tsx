@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@ui/card'
 import { Skeleton } from '@ui/skeleton'
+import { Spinner } from '@ui/spinner'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   usePopularProperties,
@@ -62,7 +63,9 @@ export default function PropertiesAnalyticsPage() {
             </CardHeader>
             <CardContent>
               {engagementLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <div className="flex items-center justify-center h-20">
+                  <Spinner className="h-6 w-6" />
+                </div>
               ) : (
                 <>
                   <div className="text-2xl font-bold">
@@ -84,7 +87,9 @@ export default function PropertiesAnalyticsPage() {
             </CardHeader>
             <CardContent>
               {engagementLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <div className="flex items-center justify-center h-20">
+                  <Spinner className="h-6 w-6" />
+                </div>
               ) : (
                 <>
                   <div className="text-2xl font-bold">

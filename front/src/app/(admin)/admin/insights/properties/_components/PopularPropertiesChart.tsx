@@ -6,6 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@ui/chart'
+import { Spinner } from '@ui/spinner'
 import type { PopularPropertiesResponse } from '@/lib/types/insights'
 
 interface PopularPropertiesChartProps {
@@ -24,12 +25,18 @@ export function PopularPropertiesChart({
   data,
   isLoading,
 }: PopularPropertiesChartProps) {
-  if (isLoading || !data || !data.properties.length) {
+  if (isLoading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? 'Carregando dados...' : 'Sem dados disponíveis'}
-        </p>
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
+
+  if (!data || !data.properties.length) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
       </div>
     )
   }
@@ -44,9 +51,7 @@ export function PopularPropertiesChart({
   return (
     <ChartContainer config={chartConfig} className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-        >
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="codigo" />
           <YAxis />

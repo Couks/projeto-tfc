@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@ui/card'
-import { Skeleton } from '@ui/skeleton'
+import { Spinner } from '@ui/spinner'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   useConversionRate,
@@ -17,6 +17,7 @@ import {
 import { Progress } from '@ui/progress'
 import { Alert, AlertDescription } from '@ui/alert'
 import { ConversionDistributionChart } from './_components/ConversionDistributionChart'
+import { Skeleton } from '@/lib/components/ui/skeleton'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -78,7 +79,9 @@ export default function ConversionAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {rateLoading ? (
-              <Skeleton className="h-8 w-24" />
+              <div className="flex items-center justify-center h-20">
+                <Spinner className="h-6 w-6" />
+              </div>
             ) : (
               <>
                 <div className="text-2xl font-bold">
@@ -101,7 +104,9 @@ export default function ConversionAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {rateLoading ? (
-              <Skeleton className="h-8 w-24" />
+              <div className="flex items-center justify-center h-20">
+                <Spinner className="h-6 w-6" />
+              </div>
             ) : (
               <div className="text-2xl font-bold">
                 {(rateData?.totalConversions || 0).toLocaleString()}
@@ -116,7 +121,9 @@ export default function ConversionAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {formLoading ? (
-              <Skeleton className="h-8 w-24" />
+              <div className="flex items-center justify-center h-20">
+                <Spinner className="h-6 w-6" />
+              </div>
             ) : (
               <div className="text-2xl font-bold">
                 {(formData?.totalSubmits || 0).toLocaleString()}
@@ -133,7 +140,9 @@ export default function ConversionAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {formLoading ? (
-              <Skeleton className="h-8 w-24" />
+              <div className="flex items-center justify-center h-20">
+                <Spinner className="h-6 w-6" />
+              </div>
             ) : (
               <>
                 <div className="text-2xl font-bold">

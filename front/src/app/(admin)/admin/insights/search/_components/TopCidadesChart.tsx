@@ -6,6 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@ui/chart'
+import { Spinner } from '@ui/spinner'
 import type { SearchAnalyticsResponse } from '@/lib/types/insights'
 
 interface TopCidadesChartProps {
@@ -20,16 +21,19 @@ const chartConfig = {
   },
 }
 
-export function TopCidadesChart({
-  data,
-  isLoading,
-}: TopCidadesChartProps) {
-  if (isLoading || !data || !data.topCidades.length) {
+export function TopCidadesChart({ data, isLoading }: TopCidadesChartProps) {
+  if (isLoading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? 'Carregando dados...' : 'Sem dados disponíveis'}
-        </p>
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
+
+  if (!data || !data.topCidades.length) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
       </div>
     )
   }
@@ -42,14 +46,16 @@ export function TopCidadesChart({
   return (
     <ChartContainer config={chartConfig} className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-        >
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="cidade" />
           <YAxis />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+          <Bar
+            dataKey="count"
+            fill="hsl(var(--chart-2))"
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </ChartContainer>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
+import { Spinner } from '@ui/spinner'
 import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react'
 import { useRegister } from '@/lib/hooks'
 
@@ -156,6 +157,9 @@ export default function RegisterPage() {
                 size="lg"
                 disabled={registerMutation.isPending}
               >
+                {registerMutation.isPending && (
+                  <Spinner className="mr-2 h-4 w-4" />
+                )}
                 {registerMutation.isPending
                   ? 'Criando conta...'
                   : 'Criar conta'}
