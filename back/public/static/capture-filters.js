@@ -1,4 +1,4 @@
-// InsightHouse Analytics (versão simplificada)
+// InsightHouse Analytics
 // Foco: Busca, Engajamento de Imóveis e Conversão.
 // A orquestração é feita através de uma classe única para encapsular estado e lógica.
 // Eventos são delegados para evitar múltiplos listeners, melhorando a performance.
@@ -148,6 +148,14 @@ class InsightHouseAnalytics {
     };
   };
 
+  // Retorna userId e sessionId para serem incluídos no nível do evento (não em properties).
+  getUserSessionIds = () => {
+    return {
+      userId: this.getUserId(),
+      sessionId: localStorage.getItem(this.LS_SESSION) || 'unknown',
+    };
+  };
+
   // ==========================
   // FILA E ENVIO DE EVENTOS
   // Orquestra o envio de eventos em lote para o backend.
@@ -179,16 +187,23 @@ class InsightHouseAnalytics {
     this.setLS(this.LS_FAILED, merged);
   };
 
-  // Tenta enviar eventos usando a API sendBeacon, ideal para quando a página está sendo descarregada.
-  sendWithBeacon = (events) => {
+  // Envia eventos usando fetch com keepalive, ideal para quando a página está sendo descarregada.
+  sendBatchKeepalive = async (events) => {
     try {
-      if (!navigator.sendBeacon) return false;
-      const ok = navigator.sendBeacon(
-        this.BATCH_ENDPOINT,
-        new Blob([JSON.stringify({ events })], { type: 'application/json' }),
-      );
-      if (ok) this.log('Lote enviado via sendBeacon:', events.length);
-      return ok;
+      const res = await fetch(this.BATCH_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Site-Key': this.SITE_KEY,
+        },
+        body: JSON.stringify({ events }),
+        keepalive: true, // Garante que a requisição continue mesmo se a página estiver sendo descarregada.
+      });
+      if (res.ok) {
+        this.log('Lote enviado via fetch (keepalive):', events.length);
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -207,7 +222,17 @@ class InsightHouseAnalytics {
         body: JSON.stringify({ events }),
         keepalive: true,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Tenta ler a mensagem de erro do backend para debug.
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // Se não conseguir ler o JSON, usa a mensagem padrão.
+        }
+        throw new Error(errorMessage);
+      }
       this.log('Lote enviado com sucesso:', events.length);
       this.backoffMs = 1000;
     } catch (err) {
@@ -241,8 +266,12 @@ class InsightHouseAnalytics {
   capture = (eventName, properties = {}) => {
     if (this.disabled) return;
     try {
+      const userSessionIds = this.getUserSessionIds();
       const event = {
         name: eventName,
+        userId: userSessionIds.userId,
+        sessionId: userSessionIds.sessionId,
+        ts: Date.now(),
         // Adiciona o contexto da jornada do usuário a cada evento.
         properties: { ...properties, ...this.getUserJourneyContext() },
         context: {
@@ -253,7 +282,6 @@ class InsightHouseAnalytics {
           screen: { width: screen.width, height: screen.height },
           viewport: { width: innerWidth, height: innerHeight },
         },
-        ts: Date.now(),
       };
       this.queueEvent(event);
       this.log('Evento:', eventName, event.properties);
@@ -315,9 +343,12 @@ class InsightHouseAnalytics {
         if (document.visibilityState === 'hidden' && this.eventQueue.length) {
           const snapshot = this.eventQueue.slice();
           this.eventQueue = [];
-          if (!this.sendWithBeacon(snapshot)) {
-            this.persistFailed(snapshot);
-          }
+          // Usa .then() porque não podemos usar await em um event listener.
+          this.sendBatchKeepalive(snapshot).then((success) => {
+            if (!success) {
+              this.persistFailed(snapshot);
+            }
+          });
         }
       },
       { passive: true },
@@ -327,9 +358,12 @@ class InsightHouseAnalytics {
     window.addEventListener('beforeunload', () => {
       const snapshot = this.eventQueue.slice();
       this.eventQueue = [];
-      if (!this.sendWithBeacon(snapshot)) {
-        this.persistFailed(snapshot);
-      }
+      // O navegador completará a Promise mesmo se a página fechar.
+      this.sendBatchKeepalive(snapshot).then((success) => {
+        if (!success) {
+          this.persistFailed(snapshot);
+        }
+      });
     });
   };
 
