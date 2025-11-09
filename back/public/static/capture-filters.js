@@ -188,23 +188,40 @@ class InsightHouseAnalytics {
   };
 
   // Envia eventos usando fetch com keepalive, ideal para quando a página está sendo descarregada.
+  // Usa fetch com keepalive em vez de sendBeacon para permitir o envio do header X-Site-Key.
   sendBatchKeepalive = async (events) => {
+    if (!events?.length) {
+      this.log('Tentativa de enviar array vazio, ignorando');
+      return false;
+    }
     try {
+      const payload = { events };
+      const body = JSON.stringify(payload);
+      this.log('Enviando lote (keepalive):', events.length, 'eventos');
+
       const res = await fetch(this.BATCH_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Site-Key': this.SITE_KEY,
         },
-        body: JSON.stringify({ events }),
+        body,
         keepalive: true, // Garante que a requisição continue mesmo se a página estiver sendo descarregada.
       });
       if (res.ok) {
         this.log('Lote enviado via fetch (keepalive):', events.length);
         return true;
       }
+      // Tenta ler a mensagem de erro para debug.
+      try {
+        const errorData = await res.json();
+        this.log('Erro ao enviar lote (keepalive):', res.status, errorData);
+      } catch {
+        this.log('Erro ao enviar lote (keepalive):', res.status);
+      }
       return false;
-    } catch {
+    } catch (err) {
+      this.log('Exceção ao enviar lote (keepalive):', err);
       return false;
     }
   };
@@ -601,31 +618,86 @@ class InsightHouseAnalytics {
       );
 
     // Captura o envio do formulário de contato, outro ponto chave de conversão.
+    // Usa delegação de eventos para capturar mesmo se o formulário for carregado dinamicamente.
     this.on(
       'submit',
-      '#imovel-contato form',
-      (_e, form) => {
+      '#imovel-contato form, form[action*="obrigado"], form[action*="/obrigado"]',
+      (e, form) => {
         const fd = new FormData(form);
         const nome = fd.get('nome') || '';
         const email = fd.get('email') || '';
         const telefone = fd.get('celular') || fd.get('telefone') || '';
         const mensagem = fd.get('mensagem') || '';
-        this.capture('contact_form_submit', {
-          codigo: propertyCode,
-          has_nome: !!nome,
-          has_email: !!email,
-          has_telefone: !!telefone,
-          has_mensagem: !!mensagem,
+
+        this.log('Formulário de contato submetido:', {
+          nome: !!nome,
+          email: !!email,
+          telefone: !!telefone,
         });
-        // Envia um evento de conversão genérico para facilitar a agregação no backend.
-        this.capture('conversion_contact_form', {
-          codigo: propertyCode,
-          contact_type: 'form',
-          user_id: this.getUserId(),
-          session_id: this.getSessionId(),
+
+        // Cria os eventos diretamente para garantir que sejam enviados antes do redirecionamento.
+        const userSessionIds = this.getUserSessionIds();
+        const journeyContext = this.getUserJourneyContext();
+
+        const submitEvent = {
+          name: 'contact_form_submit',
+          userId: userSessionIds.userId,
+          sessionId: userSessionIds.sessionId,
+          ts: Date.now(),
+          properties: {
+            codigo: propertyCode,
+            has_nome: !!nome,
+            has_email: !!email,
+            has_telefone: !!telefone,
+            has_mensagem: !!mensagem,
+            ...journeyContext,
+          },
+          context: {
+            url: location.href,
+            title: document.title,
+            referrer: document.referrer,
+            userAgent: navigator.userAgent,
+            screen: { width: screen.width, height: screen.height },
+            viewport: { width: innerWidth, height: innerHeight },
+          },
+        };
+
+        const conversionEvent = {
+          name: 'conversion_contact_form',
+          userId: userSessionIds.userId,
+          sessionId: userSessionIds.sessionId,
+          ts: Date.now(),
+          properties: {
+            codigo: propertyCode,
+            contact_type: 'form',
+            user_id: userSessionIds.userId,
+            session_id: userSessionIds.sessionId,
+            ...journeyContext,
+          },
+          context: {
+            url: location.href,
+            title: document.title,
+            referrer: document.referrer,
+            userAgent: navigator.userAgent,
+            screen: { width: screen.width, height: screen.height },
+            viewport: { width: innerWidth, height: innerHeight },
+          },
+        };
+
+        // Envia imediatamente usando keepalive para garantir que seja enviado mesmo se a página redirecionar.
+        this.log(
+          'Enviando eventos de conversão:',
+          submitEvent.name,
+          conversionEvent.name,
+        );
+        this.sendBatchKeepalive([submitEvent, conversionEvent]).catch((err) => {
+          this.log('Erro ao enviar eventos de conversão:', err);
+          // Se falhar, adiciona à fila para retry posterior.
+          this.queueEvent(submitEvent);
+          this.queueEvent(conversionEvent);
         });
       },
-      { passive: true },
+      { passive: false }, // Não é passive para garantir que seja executado antes do submit.
     );
   };
 
