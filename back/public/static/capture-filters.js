@@ -607,34 +607,6 @@ class InsightHouseAnalytics {
         },
         { passive: true },
       );
-
-    // Captura o envio do formulário de contato, outro ponto chave de conversão.
-    this.on(
-      'submit',
-      '#imovel-contato form',
-      (_e, form) => {
-        const fd = new FormData(form);
-        const nome = fd.get('nome') || '';
-        const email = fd.get('email') || '';
-        const telefone = fd.get('celular') || fd.get('telefone') || '';
-        const mensagem = fd.get('mensagem') || '';
-        this.capture('contact_form_submit', {
-          codigo: propertyCode,
-          has_nome: !!nome,
-          has_email: !!email,
-          has_telefone: !!telefone,
-          has_mensagem: !!mensagem,
-        });
-        // Envia um evento de conversão genérico para facilitar a agregação no backend.
-        this.capture('conversion_contact_form', {
-          codigo: propertyCode,
-          contact_type: 'form',
-          user_id: this.getUserId(),
-          session_id: this.getSessionId(),
-        });
-      },
-      { passive: true },
-    );
   };
 
   bindThankYouPage = () => {

@@ -51,7 +51,9 @@ export const EVENT_CATEGORY_MAP: Record<string, EventCategory> = {
   conversion_whatsapp_click: EventCategory.CONVERSION,
   conversion_phone_click: EventCategory.CONVERSION,
   conversion_email_click: EventCategory.CONVERSION,
+  conversion_generate_lead: EventCategory.CONVERSION,
   thank_you_page_view: EventCategory.CONVERSION,
+  thank_you_view: EventCategory.CONVERSION,
 
   // Funnel
   funnel_stage_reached: EventCategory.FUNNEL,
