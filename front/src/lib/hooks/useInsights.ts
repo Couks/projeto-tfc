@@ -12,7 +12,7 @@ import type {
   PropertyEngagementResponse,
   PropertyCTAPerformanceResponse,
   FormPerformanceResponse,
-  FormAbandonmentResponse,
+  DevicesResponse,
 } from '../types/insights'
 
 export function useRefreshInsights() {
@@ -231,22 +231,16 @@ export function useFormPerformance(siteKey: string, query?: InsightsQuery) {
   })
 }
 
-export function useFormAbandonment(siteKey: string, query?: InsightsQuery) {
-  return useQuery<FormAbandonmentResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'forms',
-      'abandonment',
-      siteKey,
-      query,
-    ],
+// ===== DEVICES =====
+
+export function useDevices(siteKey: string, query?: InsightsQuery) {
+  return useQuery<DevicesResponse>({
+    queryKey: queryKeys.insights.devices(siteKey, query),
     queryFn: async () => {
-      return apiClient.get<FormAbandonmentResponse>(
-        `/api/insights/forms/abandonment`,
-        {
-          siteKey,
-        }
-      )
+      return apiClient.get<DevicesResponse>(`/api/insights/devices`, {
+        siteKey,
+        ...query,
+      })
     },
     enabled: !!siteKey,
     staleTime: 2 * 60 * 1000,

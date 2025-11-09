@@ -51,9 +51,9 @@ export default function PropertiesAnalyticsPage() {
       </div>
 
       {/* Top Row: Grid Assimétrico - 2 cards pequenos à esquerda + 1 card grande com gráfico à direita */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         {/* Esquerda: 2 cards pequenos empilhados */}
-        <div className="space-y-4 md:col-span-1">
+        <div className="grid gap-4 md:grid-rows-2">
           <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -64,9 +64,14 @@ export default function PropertiesAnalyticsPage() {
               {engagementLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="text-2xl font-bold">
-                  {engagementData?.totalViews.toLocaleString() || 0}
-                </div>
+                <>
+                  <div className="text-2xl font-bold">
+                    {engagementData?.totalViews.toLocaleString() || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Visualizações realizadas
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
@@ -81,16 +86,21 @@ export default function PropertiesAnalyticsPage() {
               {engagementLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="text-2xl font-bold">
-                  {engagementData?.totalFavorites.toLocaleString() || 0}
-                </div>
+                <>
+                  <div className="text-2xl font-bold">
+                    {engagementData?.totalFavorites.toLocaleString() || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Favoritos salvos
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
         </div>
 
         {/* Direita: Card grande com gráfico de imóveis populares */}
-        <Card className="shadow-layer-5 md:col-span-2">
+        <Card className="shadow-layer-5 md:col-span-3">
           <CardHeader>
             <CardTitle>Top 5 Imóveis Mais Populares</CardTitle>
             <CardDescription>

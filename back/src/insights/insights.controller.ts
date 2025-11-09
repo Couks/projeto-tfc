@@ -6,12 +6,7 @@ import { RefreshMaterializedViewsDto } from './dto/refresh-materialized-views.dt
 import { UnifiedGuard } from '../common/guards/unified.guard';
 import { RequireTenant } from '../common/decorators/require-tenant.decorator';
 import { SiteKey } from '../common/decorators/site-key.decorator';
-import {
-  OverviewResponse,
-  TopEventsResponse,
-  TopCitiesResponse,
-  DevicesResponse,
-} from './interfaces/insights.interface';
+import { DevicesResponse } from './interfaces/insights.interface';
 import {
   SearchAnalyticsResponse,
   FiltersUsageResponse,
@@ -22,7 +17,6 @@ import {
   PropertyEngagementResponse,
   PropertyCTAPerformanceResponse,
   FormPerformanceResponse,
-  FormAbandonmentResponse,
 } from './interfaces/categorized-insights.interface';
 import { SearchAnalyzerService } from './analyzers/search-analyzer.service';
 import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.service';
@@ -41,60 +35,6 @@ export class InsightsController {
     private readonly propertyAnalyzer: PropertyAnalyzerService,
     private readonly formAnalyzer: FormAnalyzerService,
   ) {}
-
-  /**
-   * Gets overview analytics for a site
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Overview data
-   */
-  @Get('overview')
-  @ApiOperation({ summary: 'Get overview analytics for a site' })
-  @ApiResponse({ status: 200, description: 'Return overview analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getOverview(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<OverviewResponse> {
-    return this.insightsService.getOverview(siteKey, queryDto);
-  }
-
-  /**
-   * Gets top events for a site
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Top events data
-   */
-  @Get('top-events')
-  @ApiOperation({ summary: 'Get top events for a site' })
-  @ApiResponse({ status: 200, description: 'Return top events.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getTopEvents(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<TopEventsResponse> {
-    return this.insightsService.getTopEvents(siteKey, queryDto);
-  }
-
-  /**
-   * Gets top cities for a site
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Top cities data
-   */
-  @Get('cities')
-  @ApiOperation({ summary: 'Get top cities for a site' })
-  @ApiResponse({ status: 200, description: 'Return top cities.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getTopCities(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<TopCitiesResponse> {
-    return this.insightsService.getTopCities(siteKey, queryDto);
-  }
 
   /**
    * Gets device analytics for a site
@@ -327,23 +267,5 @@ export class InsightsController {
     @Query() queryDto: InsightsQueryDto,
   ): Promise<FormPerformanceResponse> {
     return this.formAnalyzer.getFormPerformance(siteKey, queryDto);
-  }
-
-  /**
-   * Gets form abandonment analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Form abandonment data
-   */
-  @Get('forms/abandonment')
-  @ApiOperation({ summary: 'Get form abandonment analytics' })
-  @ApiResponse({ status: 200, description: 'Return form abandonment data.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getFormAbandonmentReasons(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<FormAbandonmentResponse> {
-    return this.formAnalyzer.getFormAbandonmentReasons(siteKey, queryDto);
   }
 }

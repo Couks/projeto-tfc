@@ -22,8 +22,6 @@
 
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -72,7 +70,7 @@ import { HealthModule } from './health/health.module';
     EventsModule,
 
     // InsightsModule: Queries de analytics e geração de insights
-    // Endpoints: /api/insights/overview, /api/insights/conversions, etc
+    // Endpoints: /api/insights/devices, /api/insights/search/analytics, /api/insights/conversion/*, etc
     // Protegido por UnifiedGuard com @RequireTenant(), usa cache em memória
     InsightsModule,
 
@@ -80,7 +78,5 @@ import { HealthModule } from './health/health.module';
     // Endpoints: /api/health, /api/health/db
     HealthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

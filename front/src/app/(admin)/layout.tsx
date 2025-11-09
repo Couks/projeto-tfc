@@ -50,7 +50,6 @@ import {
   User,
   Search,
   BarChart3,
-  FormInput,
 } from 'lucide-react'
 import { ThemeToggle } from '@/lib/components/ThemeToggle'
 import { SiteProvider } from '@/lib/providers/SiteProvider'
@@ -132,21 +131,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/insights/conversion">
-                          <Target className="w-4 h-4" />
-                          <span>Conversões</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/admin/insights/properties">
                           <Building2 className="w-4 h-4" />
                           <span>Imóveis</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/admin/insights/forms">
-                          <FormInput className="w-4 h-4" />
-                          <span>Formulários</span>
+                        <SidebarMenuSubButton href="/admin/insights/conversion">
+                          <Target className="w-4 h-4" />
+                          <span>Conversões</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

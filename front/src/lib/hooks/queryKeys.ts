@@ -89,15 +89,9 @@ export const queryKeys = {
           siteKey,
           query,
         ] as const,
-      abandonment: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'forms',
-          'abandonment',
-          siteKey,
-          query,
-        ] as const,
     },
+    devices: (siteKey: string, query?: any) =>
+      [...queryKeys.insights.all, 'devices', siteKey, query] as const,
   },
   auth: {
     all: ['auth'] as const,

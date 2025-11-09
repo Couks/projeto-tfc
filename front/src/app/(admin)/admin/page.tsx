@@ -10,11 +10,11 @@ import {
 } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
+import { Skeleton } from '@ui/skeleton'
 import {
   Search,
   Target,
   Building2,
-  FormInput,
   Globe,
   Code,
   BarChart3,
@@ -22,9 +22,32 @@ import {
   ArrowRight,
   Lightbulb,
   TrendingUp,
+  Smartphone,
+  Monitor,
+  Tablet,
 } from 'lucide-react'
+import { useSiteContext } from '@/lib/providers/SiteProvider'
+import { useDevices } from '@/lib/hooks/useInsights'
 
 export default function AdminHome() {
+  const { selectedSiteKey } = useSiteContext()
+  const { data: devicesData, isLoading: devicesLoading } = useDevices(
+    selectedSiteKey || '',
+    { limit: 5 }
+  )
+
+  const getDeviceIcon = (deviceType: string) => {
+    switch (deviceType.toLowerCase()) {
+      case 'mobile':
+        return Smartphone
+      case 'desktop':
+        return Monitor
+      case 'tablet':
+        return Tablet
+      default:
+        return Monitor
+    }
+  }
   return (
     <div className="space-y-8 max-w-6xl">
       {/* Hero Section */}
@@ -276,31 +299,6 @@ export default function AdminHome() {
               </CardContent>
             </Card>
           </Link>
-
-          {/* Forms Analytics */}
-          <Link href="/admin/insights/forms">
-            <Card className="h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer shadow-layer-1">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <FormInput className="h-6 w-6 text-muted-foreground" />
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <CardTitle className="mt-4">Formulários</CardTitle>
-                <CardDescription>Otimize a captura de leads</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• Taxa de conclusão de formulários</p>
-                  <p>• Campos que causam abandono</p>
-                  <p>• Tempo médio de preenchimento</p>
-                  <p>• Abandono por estágio</p>
-                </div>
-                <Badge className="mt-4" variant="outline">
-                  Complementar
-                </Badge>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
       </div>
 
@@ -352,6 +350,67 @@ export default function AdminHome() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Devices Analytics */}
+      {selectedSiteKey && (
+        <Card className="shadow-layer-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Monitor className="h-5 w-5 text-primary" />
+              Dispositivos Mais Acessados
+            </CardTitle>
+            <CardDescription>
+              Principais dispositivos, sistemas operacionais e navegadores dos
+              visitantes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {devicesLoading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : devicesData?.devices && devicesData.devices.length > 0 ? (
+              <div className="space-y-3">
+                {devicesData.devices.map((device, index) => {
+                  const DeviceIcon = getDeviceIcon(device.deviceType)
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <DeviceIcon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium capitalize">
+                            {device.deviceType}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {device.os} • {device.browser}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">
+                          {(device.count || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">acessos</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">
+                Nenhum dado de dispositivo disponível ainda
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Access */}
       <Card>

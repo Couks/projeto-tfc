@@ -27,7 +27,17 @@ export function ConversionFunnelChart({
   if (isLoading || !data) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Carregando dados...</p>
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? 'Carregando dados...' : 'Sem dados disponíveis'}
+        </p>
+      </div>
+    )
+  }
+
+  if (!data.stages || data.stages.length === 0) {
+    return (
+      <div className="flex h-[300px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
       </div>
     )
   }

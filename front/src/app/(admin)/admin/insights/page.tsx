@@ -9,14 +9,7 @@ import {
   CardTitle,
 } from '@ui/card'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
-import {
-  Search,
-  Target,
-  Building2,
-  FormInput,
-  ArrowRight,
-  TrendingUp,
-} from 'lucide-react'
+import { Search, Target, Building2, ArrowRight, TrendingUp } from 'lucide-react'
 
 export default function InsightsOverviewPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -54,14 +47,6 @@ export default function InsightsOverviewPage() {
       icon: Target,
       href: '/admin/insights/conversion',
       priority: 'high',
-    },
-    {
-      title: 'Formulários',
-      description:
-        'Otimize formulários identificando campos problemáticos e abandono',
-      icon: FormInput,
-      href: '/admin/insights/forms',
-      priority: 'medium',
     },
   ]
 
@@ -184,14 +169,6 @@ export default function InsightsOverviewPage() {
               Acompanhe o funil de conversão completo: de visitante a lead.
               Identifique pontos de abandono e otimize as etapas com menor taxa
               de conversão para aumentar seus resultados.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">Formulários</h3>
-            <p className="text-sm text-muted-foreground">
-              Otimize seus formulários de contato identificando campos que
-              causam abandono. Simplifique o processo de captura de leads para
-              aumentar conversões.
             </p>
           </div>
         </CardContent>

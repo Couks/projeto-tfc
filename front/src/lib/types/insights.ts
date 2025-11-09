@@ -144,37 +144,21 @@ export interface PropertyCTAPerformanceResponse {
 
 // ===== FORMS =====
 export interface FormPerformanceResponse {
-  totalStarts: number
   totalSubmits: number
-  totalAbandons: number
   completionRate: number
-  abandonmentRate: number
-  avgCompletionTime: number
-  fieldAnalytics: Array<{
-    field: string
-    focusCount: number
-    fillRate: number
-  }>
   period: {
     start: string
     end: string
   }
 }
 
-export interface FormAbandonmentResponse {
-  totalAbandons: number
-  abandonmentsByStage: Array<{
-    stage: string
+// ===== DEVICES =====
+export interface DevicesResponse {
+  devices: Array<{
+    deviceType: string
+    os: string
+    browser: string
     count: number
-    percentage: number
   }>
-  commonlyAbandonedFields: Array<{
-    field: string
-    abandonCount: number
-  }>
-  period: {
-    start: string
-    end: string
-  }
 }
 

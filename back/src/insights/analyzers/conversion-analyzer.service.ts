@@ -128,8 +128,8 @@ export class ConversionAnalyzerService {
     const totalSessions = Number(sessionsResult[0]?.total || 0);
 
     // Get conversions by type
-    const conversionsByType = await this.prisma.$queryRaw<
-      Array<{ conversion_type: string; count: bigint }>
+    const conversionsByTypeResult = await this.prisma.$queryRaw<
+      Array<{ conversion_type: string | null; count: bigint }>
     >`
       SELECT
         conversion_type,
@@ -138,9 +138,14 @@ export class ConversionAnalyzerService {
       WHERE site_key = ${siteKey}
         AND bucket_date >= ${dateRange.start}
         AND bucket_date <= ${dateRange.end}
+        AND conversion_type IS NOT NULL
       GROUP BY conversion_type
       ORDER BY count DESC
     `;
+
+    const conversionsByType = (conversionsByTypeResult || []).filter(
+      (c) => c.conversion_type !== null,
+    );
 
     const conversionRate =
       totalSessions > 0
@@ -152,11 +157,13 @@ export class ConversionAnalyzerService {
       totalSessions,
       conversionRate,
       conversionsByType: conversionsByType.map((c) => ({
-        type: c.conversion_type,
-        count: Number(c.count),
+        type: c.conversion_type || 'unknown',
+        count: Number(c.count || 0),
         percentage:
           totalConversions > 0
-            ? Math.round((Number(c.count) / totalConversions) * 100 * 100) / 100
+            ? Math.round(
+                (Number(c.count || 0) / totalConversions) * 100 * 100,
+              ) / 100
             : 0,
       })),
       period: {
@@ -190,7 +197,7 @@ export class ConversionAnalyzerService {
     );
 
     // Get funnel stages
-    const stages = await this.prisma.$queryRaw<
+    const stagesResult = await this.prisma.$queryRaw<
       Array<{ stage: string; count: bigint }>
     >`
       SELECT
@@ -205,6 +212,8 @@ export class ConversionAnalyzerService {
       ORDER BY count DESC
     `;
 
+    const stages = stagesResult || [];
+
     // Define stage order for funnel calculation
     const stageOrder = [
       'search_submitted',
@@ -217,7 +226,9 @@ export class ConversionAnalyzerService {
     ];
 
     // Create a map of stage counts
-    const stageMap = new Map(stages.map((s) => [s.stage, Number(s.count)]));
+    const stageMap = new Map(
+      stages.map((s) => [s.stage, Number(s.count || 0)]),
+    );
 
     // Calculate funnel metrics
     const totalStarted = stageMap.get('search_submitted') || 0;
@@ -249,8 +260,9 @@ export class ConversionAnalyzerService {
       })
       .filter((s) => s.count > 0);
 
+    // Always return at least empty stages array, not filtered
     return {
-      stages: funnelStages,
+      stages: funnelStages.length > 0 ? funnelStages : [],
       totalStarted,
       totalCompleted,
       overallConversionRate,
@@ -285,7 +297,7 @@ export class ConversionAnalyzerService {
     );
 
     // Get conversion sources
-    const sources = await this.prisma.$queryRaw<
+    const sourcesResult = await this.prisma.$queryRaw<
       Array<{ source: string; count: bigint }>
     >`
       SELECT
@@ -300,18 +312,21 @@ export class ConversionAnalyzerService {
       LIMIT ${queryDto.limit || 10}
     `;
 
+    const sources = sourcesResult || [];
     const totalConversions = sources.reduce(
-      (sum, s) => sum + Number(s.count),
+      (sum, s) => sum + Number(s.count || 0),
       0,
     );
 
     return {
       sources: sources.map((s) => ({
-        source: s.source,
-        conversions: Number(s.count),
+        source: s.source || 'unknown',
+        conversions: Number(s.count || 0),
         percentage:
           totalConversions > 0
-            ? Math.round((Number(s.count) / totalConversions) * 100 * 100) / 100
+            ? Math.round(
+                (Number(s.count || 0) / totalConversions) * 100 * 100,
+              ) / 100
             : 0,
       })),
       period: {

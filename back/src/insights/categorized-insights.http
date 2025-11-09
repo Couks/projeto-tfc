@@ -140,16 +140,6 @@ X-Site-Key: {{siteKey}}
 GET {{apiUrl}}/api/insights/forms/performance?dateFilter=week
 X-Site-Key: {{siteKey}}
 
-###
-
-### Get Form Abandonment Analytics
-GET {{apiUrl}}/api/insights/forms/abandonment
-X-Site-Key: {{siteKey}}
-
-### Get Form Abandonment Analytics - Today
-GET {{apiUrl}}/api/insights/forms/abandonment?dateFilter=day&limit=10
-X-Site-Key: {{siteKey}}
-
 # =====================================================
 # PRODUCTION TESTS
 # =====================================================
