@@ -188,40 +188,23 @@ class InsightHouseAnalytics {
   };
 
   // Envia eventos usando fetch com keepalive, ideal para quando a página está sendo descarregada.
-  // Usa fetch com keepalive em vez de sendBeacon para permitir o envio do header X-Site-Key.
   sendBatchKeepalive = async (events) => {
-    if (!events?.length) {
-      this.log('Tentativa de enviar array vazio, ignorando');
-      return false;
-    }
     try {
-      const payload = { events };
-      const body = JSON.stringify(payload);
-      this.log('Enviando lote (keepalive):', events.length, 'eventos');
-
       const res = await fetch(this.BATCH_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Site-Key': this.SITE_KEY,
         },
-        body,
+        body: JSON.stringify({ events }),
         keepalive: true, // Garante que a requisição continue mesmo se a página estiver sendo descarregada.
       });
       if (res.ok) {
         this.log('Lote enviado via fetch (keepalive):', events.length);
         return true;
       }
-      // Tenta ler a mensagem de erro para debug.
-      try {
-        const errorData = await res.json();
-        this.log('Erro ao enviar lote (keepalive):', res.status, errorData);
-      } catch {
-        this.log('Erro ao enviar lote (keepalive):', res.status);
-      }
       return false;
-    } catch (err) {
-      this.log('Exceção ao enviar lote (keepalive):', err);
+    } catch {
       return false;
     }
   };
@@ -315,6 +298,14 @@ class InsightHouseAnalytics {
     // Tenta extrair o código do imóvel da URL, que é o método mais confiável.
     const m = location.pathname.match(/\/imovel\/(\d+)\//);
     if (m) return m[1];
+
+    // Se estiver na página de obrigado, tenta extrair da query string.
+    if (/\/obrigado\/?/.test(location.pathname)) {
+      const qs = new URLSearchParams(location.search);
+      const codigo = qs.get('codigo');
+      if (codigo) return codigo;
+    }
+
     // Como fallback, procura em links de formulário na página.
     const formBtn = document.querySelector('a[href*="codigo_imovel="]');
     if (formBtn) {
@@ -618,87 +609,72 @@ class InsightHouseAnalytics {
       );
 
     // Captura o envio do formulário de contato, outro ponto chave de conversão.
-    // Usa delegação de eventos para capturar mesmo se o formulário for carregado dinamicamente.
     this.on(
       'submit',
-      '#imovel-contato form, form[action*="obrigado"], form[action*="/obrigado"]',
-      (e, form) => {
+      '#imovel-contato form',
+      (_e, form) => {
         const fd = new FormData(form);
         const nome = fd.get('nome') || '';
         const email = fd.get('email') || '';
         const telefone = fd.get('celular') || fd.get('telefone') || '';
         const mensagem = fd.get('mensagem') || '';
-
-        this.log('Formulário de contato submetido:', {
-          nome: !!nome,
-          email: !!email,
-          telefone: !!telefone,
+        this.capture('contact_form_submit', {
+          codigo: propertyCode,
+          has_nome: !!nome,
+          has_email: !!email,
+          has_telefone: !!telefone,
+          has_mensagem: !!mensagem,
         });
-
-        // Cria os eventos diretamente para garantir que sejam enviados antes do redirecionamento.
-        const userSessionIds = this.getUserSessionIds();
-        const journeyContext = this.getUserJourneyContext();
-
-        const submitEvent = {
-          name: 'contact_form_submit',
-          userId: userSessionIds.userId,
-          sessionId: userSessionIds.sessionId,
-          ts: Date.now(),
-          properties: {
-            codigo: propertyCode,
-            has_nome: !!nome,
-            has_email: !!email,
-            has_telefone: !!telefone,
-            has_mensagem: !!mensagem,
-            ...journeyContext,
-          },
-          context: {
-            url: location.href,
-            title: document.title,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent,
-            screen: { width: screen.width, height: screen.height },
-            viewport: { width: innerWidth, height: innerHeight },
-          },
-        };
-
-        const conversionEvent = {
-          name: 'conversion_contact_form',
-          userId: userSessionIds.userId,
-          sessionId: userSessionIds.sessionId,
-          ts: Date.now(),
-          properties: {
-            codigo: propertyCode,
-            contact_type: 'form',
-            user_id: userSessionIds.userId,
-            session_id: userSessionIds.sessionId,
-            ...journeyContext,
-          },
-          context: {
-            url: location.href,
-            title: document.title,
-            referrer: document.referrer,
-            userAgent: navigator.userAgent,
-            screen: { width: screen.width, height: screen.height },
-            viewport: { width: innerWidth, height: innerHeight },
-          },
-        };
-
-        // Envia imediatamente usando keepalive para garantir que seja enviado mesmo se a página redirecionar.
-        this.log(
-          'Enviando eventos de conversão:',
-          submitEvent.name,
-          conversionEvent.name,
-        );
-        this.sendBatchKeepalive([submitEvent, conversionEvent]).catch((err) => {
-          this.log('Erro ao enviar eventos de conversão:', err);
-          // Se falhar, adiciona à fila para retry posterior.
-          this.queueEvent(submitEvent);
-          this.queueEvent(conversionEvent);
+        // Envia um evento de conversão genérico para facilitar a agregação no backend.
+        this.capture('conversion_contact_form', {
+          codigo: propertyCode,
+          contact_type: 'form',
+          user_id: this.getUserId(),
+          session_id: this.getSessionId(),
         });
       },
-      { passive: false }, // Não é passive para garantir que seja executado antes do submit.
+      { passive: true },
     );
+  };
+
+  bindThankYouPage = () => {
+    if (!/\/obrigado\/?/.test(location.pathname)) return;
+    const qs = new URLSearchParams(location.search);
+    const payload = {
+      target: qs.get('target') || '',
+      interesse: qs.get('interesse') || '',
+      codigo: qs.get('codigo') || '',
+      categoria: qs.get('categoria') || '',
+      tipo: qs.get('tipo') || '',
+      cidade: qs.get('cidade') || '',
+      bairro: qs.get('bairro') || '',
+      empreendimento: qs.get('empreendimento') || '',
+      valor_venda: Number(qs.get('valor_venda') || 0),
+      valor_aluguel: Number(qs.get('valor_aluguel') || 0),
+      dormitorios: qs.get('dormitorios') || '',
+      vagas: qs.get('vagas') || '',
+      titulo_anuncio: qs.get('titulo_anuncio') || '',
+      agencianome: qs.get('agencianome') || '',
+    };
+    this.capture('thank_you_view', payload);
+
+    // Opcional: intercepta dataLayer.push para observar generate_lead
+    const w = window;
+    const origDL = w.dataLayer;
+    if (Array.isArray(origDL)) {
+      const origPush = origDL.push.bind(origDL);
+      origDL.push = (...args) => {
+        args.forEach((evt) => {
+          if (
+            evt &&
+            (evt.event === 'gtm.formSubmit' || evt.ga_event === 'generate_lead')
+          ) {
+            this.capture('conversion_generate_lead', { ...evt, ...payload });
+          }
+        });
+        return origPush(...args);
+      };
+    }
   };
 
   // ==========================
@@ -724,6 +700,7 @@ class InsightHouseAnalytics {
     this.bindGlobalLifecycle();
     this.bindResultsAndActions();
     this.bindPropertyPage();
+    this.bindThankYouPage(); // Adicionado aqui
 
     // Expõe uma API pública no objeto window para depuração ou integrações externas.
     window.MyAnalytics = {
