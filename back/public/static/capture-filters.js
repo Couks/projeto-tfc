@@ -1,40 +1,41 @@
-/**
- * InsightHouse Analytics (versão delegada + modular ES6 + sem jQuery)
- *
- * Melhorias:
- * - Delegação de eventos (menos listeners, melhor performance)
- * - Classe ES6 com estado encapsulado e API pública controlada
- * - Remoção de dependência implícita de jQuery/Bootstrap; sliders por eventos nativos
- * - Fila com flush por timer/tamanho/visibilitychange + sendBeacon + retry/backoff
- * - PÁGINA DE OBRIGADO com leitura de query params e conversão final
- */
+// InsightHouse Analytics (versão simplificada)
+// Foco: Busca, Engajamento de Imóveis e Conversão.
+// A orquestração é feita através de uma classe única para encapsular estado e lógica.
+// Eventos são delegados para evitar múltiplos listeners, melhorando a performance.
 
 class InsightHouseAnalytics {
   // ==========================
-  // CONFIG
+  // CONFIGURAÇÕES
+  // Define o comportamento do envio de eventos em lote.
   // ==========================
-  MAX_QUEUE_SIZE = 10;
-  FLUSH_INTERVAL = 3000; // ms
+  MAX_QUEUE_SIZE = 10; // Envia o lote quando a fila atinge este tamanho.
+  FLUSH_INTERVAL = 3000; // Envia o lote após este tempo em ms, mesmo que a fila não esteja cheia.
   FAILED_LIMIT = 300; // máx eventos persistidos p/ retry
   BACKOFF_MAX = 30000;
-  SESSION_TIMEOUT = 30 * 60 * 1000;
+  SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutos para expirar a sessão.
 
-  // Storage keys
-  LS_FAILED = 'ih_failed_events';
-  LS_USER = 'ih_user_id';
-  LS_SESSION = 'ih_session_id';
-  LS_TIMEOUT = 'ih_session_timeout';
-  LS_FIRST_TS = 'ih_first_page_time';
-  LS_JOURNEY = 'ih_journey_pages';
-  LS_FUNNEL = 'ih_funnel_stages';
-  LS_NEW_SESS = 'ih_new_session_created';
+  // ==========================
+  // CHAVES DE ARMAZENAMENTO
+  // Centraliza as chaves do localStorage para evitar erros de digitação.
+  // ==========================
+  LS_FAILED = 'ih_failed_events'; // Eventos que falharam ao enviar.
+  LS_USER = 'ih_user_id'; // ID persistente do usuário.
+  LS_SESSION = 'ih_session_id'; // ID da sessão atual.
+  LS_TIMEOUT = 'ih_session_timeout'; // Timestamp da última atividade para controle da sessão.
+  LS_FIRST_TS = 'ih_first_page_time'; // Timestamp do carregamento da página.
+  LS_JOURNEY = 'ih_journey_pages'; // Array de páginas visitadas na sessão.
 
-  // Estado
-  eventQueue = [];
-  flushTimer = null;
+  // ==========================
+  // ESTADO INTERNO
+  // Gerencia o estado da instância da classe.
+  // ==========================
+  eventQueue = []; // Fila de eventos a serem enviados.
+  flushTimer = null; // Timer para o próximo envio da fila.
   backoffMs = 1000;
-  pageLoadTime = Date.now();
+  pageLoadTime = Date.now(); // Timestamp do carregamento da página.
 
+  // O construtor inicializa o SDK, valida a siteKey e define o endpoint.
+  // Se a siteKey não for encontrada, o SDK é desabilitado.
   constructor({ apiUrl, siteKey, debug = true } = {}) {
     const MyAnalytics = (window.MyAnalytics = window.MyAnalytics || {});
     this.debug = debug ?? MyAnalytics.debug ?? false;
@@ -52,7 +53,8 @@ class InsightHouseAnalytics {
   }
 
   // ==========================
-  // LOG & UTILS
+  // UTILITÁRIOS
+  // Funções de ajuda para logging, parsing e acesso ao localStorage.
   // ==========================
   log = (...args) => this.debug && console.log('[InsightHouse]', ...args);
 
@@ -74,8 +76,11 @@ class InsightHouseAnalytics {
   byId = (id) => (id ? document.getElementById(id) : null);
 
   // ==========================
-  // USER & SESSION
+  // GERENCIAMENTO DE USER & SESSION
+  // Orquestra a criação e renovação de IDs de usuário e sessão.
   // ==========================
+
+  // Retorna um ID de usuário persistente, criando um se não existir.
   getUserId = () => {
     let id = localStorage.getItem(this.LS_USER);
     if (!id) {
@@ -85,6 +90,8 @@ class InsightHouseAnalytics {
     return id;
   };
 
+  // Retorna o ID da sessão atual. Se a sessão expirou, cria uma nova.
+  // Isso garante que a jornada do usuário seja agrupada em sessões.
   getSessionId = () => {
     const now = Date.now();
     const last = parseInt(localStorage.getItem(this.LS_TIMEOUT) || '0', 10);
@@ -93,12 +100,13 @@ class InsightHouseAnalytics {
     if (!sid || now - last > this.SESSION_TIMEOUT) {
       sid = `session_${now}_${Math.random().toString(36).slice(2, 9)}`;
       localStorage.setItem(this.LS_SESSION, sid);
-      localStorage.setItem(this.LS_NEW_SESS, 'true');
     }
     localStorage.setItem(this.LS_TIMEOUT, String(now));
     return sid;
   };
 
+  // Adiciona a página atual à jornada do usuário no localStorage.
+  // Isso é útil para dar contexto a outros eventos (e.g., page_depth).
   trackPageView = () => {
     const journey = this.getLS(this.LS_JOURNEY, []);
     const safeJourney = Array.isArray(journey) ? journey : [];
@@ -126,6 +134,8 @@ class InsightHouseAnalytics {
     return Math.floor((Date.now() - firstTs) / 1000);
   };
 
+  // Adiciona contexto sobre a jornada do usuário a cada evento.
+  // Isso enriquece os dados, permitindo análises de comportamento.
   getUserJourneyContext = () => {
     const journey = this.getLS(this.LS_JOURNEY, []);
     const safeJourney = Array.isArray(journey) ? journey : [];
@@ -139,13 +149,18 @@ class InsightHouseAnalytics {
   };
 
   // ==========================
-  // QUEUE & DELIVERY
+  // FILA E ENVIO DE EVENTOS
+  // Orquestra o envio de eventos em lote para o backend.
+  // Usa sendBeacon para envios confiáveis ao sair da página.
   // ==========================
+
+  // Agenda o envio da fila de eventos.
   scheduleFlush = () => {
     if (this.flushTimer) clearTimeout(this.flushTimer);
     this.flushTimer = setTimeout(this.flushQueue, this.FLUSH_INTERVAL);
   };
 
+  // Adiciona um evento à fila e agenda o envio.
   queueEvent = (event) => {
     this.eventQueue.push(event);
     if (this.eventQueue.length >= this.MAX_QUEUE_SIZE) {
@@ -155,6 +170,7 @@ class InsightHouseAnalytics {
     }
   };
 
+  // Persiste eventos que falharam ao enviar para tentar novamente mais tarde.
   persistFailed = (events) => {
     if (!events?.length) return;
     const cur = this.getLS(this.LS_FAILED, []);
@@ -163,6 +179,7 @@ class InsightHouseAnalytics {
     this.setLS(this.LS_FAILED, merged);
   };
 
+  // Tenta enviar eventos usando a API sendBeacon, ideal para quando a página está sendo descarregada.
   sendWithBeacon = (events) => {
     try {
       if (!navigator.sendBeacon) return false;
@@ -177,6 +194,7 @@ class InsightHouseAnalytics {
     }
   };
 
+  // Envia um lote de eventos via fetch, com lógica de retry em caso de falha.
   sendBatch = async (events) => {
     if (!events?.length) return;
     try {
@@ -200,6 +218,7 @@ class InsightHouseAnalytics {
     }
   };
 
+  // Descarrega a fila de eventos, enviando-os para o backend.
   flushQueue = () => {
     if (!this.eventQueue.length) return;
     const toSend = this.eventQueue.slice();
@@ -207,21 +226,24 @@ class InsightHouseAnalytics {
     this.sendBatch(toSend);
   };
 
+  // Tenta reenviar eventos que falharam anteriormente.
   retryFailedEvents = () => {
     const failed = this.getLS(this.LS_FAILED, []);
     if (!failed || !Array.isArray(failed) || !failed.length) return;
-    this.setLS(this.LS_FAILED, []); // otimista
+    this.setLS(this.LS_FAILED, []); // Limpa a fila de falhas antes de tentar.
     this.sendBatch(failed);
   };
 
   // ==========================
-  // CAPTURE
+  // CAPTURA PRINCIPAL DE EVENTOS
+  // Ponto de entrada para todos os eventos rastreados.
   // ==========================
   capture = (eventName, properties = {}) => {
     if (this.disabled) return;
     try {
       const event = {
         name: eventName,
+        // Adiciona o contexto da jornada do usuário a cada evento.
         properties: { ...properties, ...this.getUserJourneyContext() },
         context: {
           url: location.href,
@@ -241,65 +263,14 @@ class InsightHouseAnalytics {
   };
 
   // ==========================
-  // FUNIL
+  // CONTEXTO DA PÁGINA
+  // Funções para extrair informações do estado atual da página (e.g., código do imóvel).
   // ==========================
-  trackFunnelStage = (stage) => {
-    const funnel = this.getLS(this.LS_FUNNEL, []);
-    const safeFunnel = Array.isArray(funnel) ? funnel : [];
-    const stageData = { stage, timestamp: Date.now(), url: location.href };
-    safeFunnel.push(stageData);
-    this.setLS(this.LS_FUNNEL, safeFunnel);
-
-    this.capture('funnel_stage_reached', {
-      stage,
-      funnel_length: safeFunnel.length,
-      previous_stage: safeFunnel[safeFunnel.length - 2]?.stage || 'none',
-    });
-  };
-
-  // ==========================
-  // THANK YOU / CONTEXTO
-  // ==========================
-  isThankYouPage = () => {
-    const p = (location.pathname || '').toLowerCase();
-    const t = (document.title || '').toLowerCase();
-    return p.includes('/obrigado') || t.includes('obrigado -');
-  };
-
-  getThankYouParams = () => {
-    const u = new URL(location.href);
-    const q = u.searchParams;
-    const toNumber = (v) => {
-      if (v == null) return null;
-      const s = String(v).replace(/\./g, '').replace(/,/g, '.').trim();
-      const n = Number(s);
-      return Number.isFinite(n) ? n : null;
-    };
-    const get = (k) => q.get(k) || '';
-    return {
-      target: get('target') || 'imovel',
-      interesse: get('interesse') || '',
-      codigo: get('codigo') || '',
-      categoria: get('categoria') || '',
-      tipo: get('tipo') || '',
-      cidade: get('cidade') || '',
-      bairro: get('bairro') || '',
-      empreendimento: get('empreendimento') || '',
-      valor_venda: toNumber(get('valor_venda')),
-      valor_aluguel: toNumber(get('valor_aluguel')),
-      dormitorios: toNumber(get('dormitorios')),
-      vagas: toNumber(get('vagas')),
-      titulo_anuncio: get('titulo_anuncio') || '',
-      lancamento: get('lancamento') || '',
-      agenciacodigo: get('agenciacodigo') || '',
-      agencianome: get('agencianome') || '',
-      thank_you_url: location.href,
-    };
-  };
-
   getPropertyCodeFromPage = () => {
+    // Tenta extrair o código do imóvel da URL, que é o método mais confiável.
     const m = location.pathname.match(/\/imovel\/(\d+)\//);
     if (m) return m[1];
+    // Como fallback, procura em links de formulário na página.
     const formBtn = document.querySelector('a[href*="codigo_imovel="]');
     if (formBtn) {
       const href = formBtn.getAttribute('href') || '';
@@ -311,6 +282,8 @@ class InsightHouseAnalytics {
 
   // ==========================
   // DELEGAÇÃO DE EVENTOS
+  // Um único listener no 'document' para capturar eventos em elementos específicos.
+  // Isso é mais performático do que adicionar um listener para cada elemento.
   // ==========================
   on = (type, selector, handler, opts) => {
     document.addEventListener(
@@ -325,14 +298,17 @@ class InsightHouseAnalytics {
   };
 
   // ==========================
-  // BINDINGS PRINCIPAIS
+  // BINDINGS (VINCULAÇÃO DE EVENTOS)
+  // Conecta as ações do usuário (e.g., cliques) à função de captura.
   // ==========================
+
+  // Gerencia o ciclo de vida da página: retries e envio de eventos ao sair.
   bindGlobalLifecycle = () => {
-    // Retry inicial e quando voltar online
+    // Garante que eventos offline sejam enviados quando a conexão voltar.
     this.retryFailedEvents();
     window.addEventListener('online', this.retryFailedEvents);
 
-    // Flush em visibilitychange
+    // Garante que eventos na fila sejam enviados se o usuário mudar de aba.
     document.addEventListener(
       'visibilitychange',
       () => {
@@ -347,7 +323,7 @@ class InsightHouseAnalytics {
       { passive: true },
     );
 
-    // Flush final
+    // Garante o envio final de eventos ao fechar a página.
     window.addEventListener('beforeunload', () => {
       const snapshot = this.eventQueue.slice();
       this.eventQueue = [];
@@ -355,92 +331,10 @@ class InsightHouseAnalytics {
         this.persistFailed(snapshot);
       }
     });
-
-    // Saída (page_exit)
-    window.addEventListener('beforeunload', () => {
-      const timeOnPage = Math.floor((Date.now() - this.pageLoadTime) / 1000);
-      this.capture('page_exit', { time_on_page: timeOnPage });
-      this.flushQueue();
-    });
   };
 
-  bindThankYouPage = () => {
-    if (!this.isThankYouPage()) return;
-    const ty = this.getThankYouParams();
-
-    // Diagnóstico
-    this.capture('thank_you_page_view', ty);
-
-    // Conversão final confirmada
-    this.capture('conversion_complete', {
-      ...ty,
-      confirmation_source: 'thank_you_page',
-      user_id: this.getUserId(),
-      session_id: this.getSessionId(),
-    });
-
-    // Estágio final
-    this.trackFunnelStage('conversion_confirmed');
-
-    // Pós-conversão: cliques (delegação)
-    this.on(
-      'click',
-      'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]',
-      (_e, a) => {
-        this.capture('conversion_whatsapp_click', {
-          codigo: ty.codigo || '',
-          href: a.href || '',
-          post_conversion: true,
-          source: 'thank_you_page',
-        });
-        this.trackFunnelStage('contacted_whatsapp');
-      },
-      { passive: true },
-    );
-
-    this.on(
-      'click',
-      'a[href^="tel:"]',
-      (_e, a) => {
-        this.capture('conversion_phone_click', {
-          codigo: ty.codigo || '',
-          href: a.href || '',
-          post_conversion: true,
-          source: 'thank_you_page',
-        });
-        this.trackFunnelStage('contacted_phone');
-      },
-      { passive: true },
-    );
-
-    this.on(
-      'click',
-      'a[href^="mailto:"]',
-      (_e, a) => {
-        this.capture('conversion_email_click', {
-          codigo: ty.codigo || '',
-          href: a.href || '',
-          post_conversion: true,
-          source: 'thank_you_page',
-        });
-        this.trackFunnelStage('contacted_email');
-      },
-      { passive: true },
-    );
-  };
-
-  bindSessionStart = () => {
-    if (localStorage.getItem(this.LS_NEW_SESS) === 'true') {
-      localStorage.removeItem(this.LS_NEW_SESS);
-      this.capture('session_start', {
-        session_id: this.getSessionId(),
-        referrer: document.referrer,
-        landing_page: location.href,
-      });
-    }
-  };
-
-  // ====== BUSCA (submit completo) ======
+  // ====== LÓGICA DE CAPTURA DA BUSCA ======
+  // Funções de ajuda para extrair valores dos diferentes tipos de campos de filtro.
   getVal = (id) => {
     const el = this.byId(id);
     return el && el.value ? String(el.value) : '';
@@ -467,6 +361,8 @@ class InsightHouseAnalytics {
     return !!(el && el.checked);
   };
 
+  // Orquestra a captura de todos os filtros no momento do submit da busca.
+  // Este é o evento principal para entender a intenção de busca do usuário.
   captureSearchSubmit = (source) => {
     const searchData = {
       source,
@@ -546,14 +442,14 @@ class InsightHouseAnalytics {
     };
 
     this.capture('search_submit', searchData);
-    this.trackFunnelStage('search_submitted');
   };
 
   // ==========================
-  // BINDINGS DE PÁGINAS/AÇÕES
+  // BINDINGS DE AÇÕES DO USUÁRIO
+  // Conecta cliques em resultados, favoritos e conversões à captura de eventos.
   // ==========================
   bindResultsAndActions = () => {
-    // Itens de resultado (todos links)
+    // Captura cliques nos resultados de busca para medir o interesse nos imóveis.
     this.on(
       'click',
       'a',
@@ -569,7 +465,6 @@ class InsightHouseAnalytics {
             kind: 'imovel',
             codigo,
           });
-          this.trackFunnelStage('viewed_property');
         } else if (href.includes('/condominio/')) {
           this.capture('results_item_click', {
             target: href,
@@ -579,13 +474,12 @@ class InsightHouseAnalytics {
           const box = a.closest('.imovel-box-single');
           const codigo = box?.getAttribute('data-codigo') || '';
           this.capture('results_saber_mais_click', { codigo, href });
-          this.trackFunnelStage('clicked_saber_mais');
         }
       },
       { passive: true },
     );
 
-    // Favoritos (lista/página)
+    // Captura o ato de favoritar um imóvel, um forte indicador de engajamento.
     this.on(
       'click',
       '.btn-favoritar, .btn-favoritar *',
@@ -596,12 +490,11 @@ class InsightHouseAnalytics {
           codigo,
           action: btn?.classList?.contains('favorited') ? 'remove' : 'add',
         });
-        this.trackFunnelStage('favorited_property');
       },
       { passive: true },
     );
 
-    // Conversões (WhatsApp / Telefone / Email)
+    // Captura cliques no WhatsApp, o principal ponto de conversão.
     this.on(
       'click',
       'a[href^="https://wa.me"],a[href*="api.whatsapp.com"]',
@@ -612,47 +505,11 @@ class InsightHouseAnalytics {
           codigo,
           href: a.href || '',
         });
-        this.trackFunnelStage('contacted_whatsapp');
       },
       { passive: true },
     );
 
-    this.on(
-      'click',
-      'a[href^="tel:"]',
-      (_e, a) => {
-        const codigo =
-          a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
-        this.capture('conversion_phone_click', { codigo, href: a.href || '' });
-        this.trackFunnelStage('contacted_phone');
-      },
-      { passive: true },
-    );
-
-    this.on(
-      'click',
-      'a[href^="mailto:"]',
-      (_e, a) => {
-        const codigo =
-          a.closest('.imovel-box-single')?.getAttribute('data-codigo') || '';
-        this.capture('conversion_email_click', { codigo, href: a.href || '' });
-        this.trackFunnelStage('contacted_email');
-      },
-      { passive: true },
-    );
-
-    // Ordenação (dropdown)
-    this.on(
-      'click',
-      '.dropdown-orderby ul li a',
-      (_e, link) => {
-        const order = link.getAttribute('data-value');
-        this.capture('results_order_changed', { order_by: order });
-      },
-      { passive: true },
-    );
-
-    // Submits dos formulários de busca
+    // Adiciona listeners aos diferentes botões de submit de busca.
     const mainSubmit = this.byId('submit-main-search-form');
     if (mainSubmit)
       mainSubmit.addEventListener(
@@ -668,7 +525,6 @@ class InsightHouseAnalytics {
         () => {
           const codigo = this.getVal('property-codigo');
           this.capture('search_submit', { source: 'codigo', codigo });
-          this.trackFunnelStage('search_by_code');
         },
         { passive: true },
       );
@@ -682,223 +538,20 @@ class InsightHouseAnalytics {
     });
   };
 
-  bindFiltersDelegated = () => {
-    // Filtros básicos via change/input delegados
-    document.addEventListener(
-      'change',
-      (e) => {
-        const t = e.target;
-        if (!(t instanceof HTMLElement)) return;
-
-        // Grupos (checkbox/radio)
-        if (
-          t.matches('input[type="checkbox"][name], input[type="radio"][name]')
-        ) {
-          const name = t.getAttribute('name');
-          const selected = Array.from(
-            document.querySelectorAll(`input[name="${name}"]:checked`),
-          ).map((i) => i.value);
-          this.capture('search_filter_group_changed', {
-            field: name,
-            selected,
-            count: selected.length,
-          });
-          return;
-        }
-
-        // Selects
-        if (t.matches('select')) {
-          const values = t.multiple
-            ? Array.from(t.selectedOptions)
-                .map((o) => o.value)
-                .join(',')
-            : String(t.value || '');
-          this.capture('search_filter_changed', {
-            field: t.id || t.name || 'select',
-            value: values,
-          });
-          // Cidades e Bairros com eventos dedicados
-          if (t.id === 'search-field-cidade' && t.selectedOptions?.length) {
-            const cidades = Array.from(t.selectedOptions).map((o) => o.value);
-            this.capture('search_filter_city', { cidades });
-          }
-          if (
-            t.id === 'search-field-cidadebairro' &&
-            t.selectedOptions?.length
-          ) {
-            const bairros = Array.from(t.selectedOptions).map((o) => o.value);
-            this.capture('search_filter_bairro', { bairros });
-          }
-          return;
-        }
-
-        // Sliders nativos (range) ou inputs com valor "min,max"
-        if (t.matches('input[type="range"], input[data-slider="range"]')) {
-          const [min, max] = String(t.value || '').split(',');
-          this.capture('search_filter_range_changed', {
-            field: t.id || 'range',
-            min: min || '0',
-            max: max || 'unlimited',
-            raw_value: t.value || '',
-          });
-        }
-      },
-      { passive: true },
-    );
-
-    document.addEventListener(
-      'input',
-      (e) => {
-        const t = e.target;
-        if (!(t instanceof HTMLElement)) return;
-
-        // Campos numéricos manuais
-        if (
-          t.matches(
-            '#input-number-valor-min, #input-number-valor-max, #input-number-area-min, #input-number-area-max',
-          )
-        ) {
-          const field = t.id.replace('input-number-', '');
-          if (String(t.value || '').trim()) {
-            this.capture('search_filter_manual_input', {
-              field,
-              value: t.value,
-            });
-          }
-        }
-      },
-      { passive: true },
-    );
-
-    // Botões de finalidade alias
-    this.on(
-      'click',
-      '.finalidade-alias-button[data-value]',
-      (_e, btn) => {
-        this.capture('search_filter_changed', {
-          field: 'finalidade',
-          value: btn.getAttribute('data-value'),
-        });
-      },
-      { passive: true },
-    );
-
-    // Toggle de avançados
-    const advancedTrigger = this.byId('collapseAdvFilter-trigger');
-    if (advancedTrigger) {
-      advancedTrigger.addEventListener(
-        'click',
-        () => {
-          const isExpanded =
-            !!this.byId('collapseAdvFilter')?.classList?.contains('show');
-          this.capture('advanced_filters_toggle', {
-            action: isExpanded ? 'collapse' : 'expand',
-          });
-        },
-        { passive: true },
-      );
-    }
-
-    // Sliders específicos (fallback compat)
-    // Tenta ouvir eventos nativos; se o plugin custom disparar 'slideStop', também captura.
-    const bindSlider = (id, field) => {
-      const el = this.byId(id);
-      if (!el) return;
-      const emit = (raw) => {
-        const val = raw ?? el.value ?? '';
-        const [min, max] = String(val).split(',');
-        this.capture('search_filter_range_changed', {
-          field,
-          min: min || '0',
-          max: max || 'unlimited',
-          raw_value: String(val),
-        });
-      };
-      el.addEventListener('input', () => emit(), { passive: true });
-      el.addEventListener('change', () => emit(), { passive: true });
-
-      // Se o plugin emitir CustomEvent('slideStop', {detail:{value:[min,max]}}) ou em ev.value
-      ['slideStop', 'slidestop'].forEach((evt) => {
-        el.addEventListener(
-          evt,
-          (ev) => {
-            const v =
-              ev?.detail?.value ??
-              (Array.isArray(ev?.value) ? ev.value.join(',') : el.value);
-            emit(v);
-          },
-          { passive: true },
-        );
-      });
-    };
-    bindSlider('input-slider-valor-venda', 'preco_venda');
-    bindSlider('input-slider-valor-aluguel', 'preco_aluguel');
-    bindSlider('input-slider-area', 'area');
-  };
-
+  // Adiciona listeners específicos para a página de um imóvel.
   bindPropertyPage = () => {
     const propertyCode = this.getPropertyCodeFromPage();
     if (!propertyCode) return;
 
     this.log('Página de propriedade detectada:', propertyCode);
+    // Este é o evento que contabiliza uma visualização de imóvel.
     this.capture('property_page_view', {
       codigo: propertyCode,
       url: location.href,
       title: document.title,
     });
 
-    // CTAs
-    const propostaBtn = document.querySelector('.cadastro-proposta-cta');
-    if (propostaBtn)
-      propostaBtn.addEventListener(
-        'click',
-        () => {
-          this.capture('cta_fazer_proposta_click', {
-            codigo: propertyCode,
-            href: propostaBtn?.getAttribute('href') || '',
-          });
-          this.trackFunnelStage('clicked_fazer_proposta');
-        },
-        { passive: true },
-      );
-
-    const alugarBtn = document.querySelector('.cadastro-inquilino-cta');
-    if (alugarBtn)
-      alugarBtn.addEventListener(
-        'click',
-        () => {
-          this.capture('cta_alugar_imovel_click', {
-            codigo: propertyCode,
-            href: alugarBtn?.getAttribute('href') || '',
-          });
-          this.trackFunnelStage('clicked_alugar_imovel');
-        },
-        { passive: true },
-      );
-
-    const maisInfoBtn = document.querySelector(
-      'a[data-toggle="modal"][href="#imovel-contato"]',
-    );
-    if (maisInfoBtn)
-      maisInfoBtn.addEventListener(
-        'click',
-        () => {
-          this.capture('cta_mais_informacoes_click', { codigo: propertyCode });
-          this.trackFunnelStage('opened_contact_form');
-        },
-        { passive: true },
-      );
-
-    const shareBtn = document.querySelector('a[href="#modal-compartilhar"]');
-    if (shareBtn)
-      shareBtn.addEventListener(
-        'click',
-        () => {
-          this.capture('property_share_click', { codigo: propertyCode });
-        },
-        { passive: true },
-      );
-
+    // Captura o ato de favoritar na própria página do imóvel.
     const favBtn = document.querySelector('.clb-form-fixed-fav a[data-codigo]');
     if (favBtn)
       favBtn.addEventListener(
@@ -909,171 +562,42 @@ class InsightHouseAnalytics {
             codigo: propertyCode,
             action: isFavorited ? 'remove' : 'add',
           });
-          this.trackFunnelStage('favorited_property');
         },
         { passive: true },
       );
 
-    // Form de contato (modal) - rastreio robusto
-    const calculateFormCompleteness = (fields) => {
-      const total = Object.keys(fields).length;
-      const filled = Object.values(fields).filter(
-        (v) => v && String(v).trim(),
-      ).length;
-      return Math.round((filled / total) * 100);
-    };
-
-    const trackContactForm = () => {
-      const start = Date.now();
-      const checkModal = setInterval(() => {
-        const modal = this.byId('imovel-contato');
-        const form = modal ? modal.querySelector('form') : null;
-        if (Date.now() - start > 10000) clearInterval(checkModal);
-        if (!form) return;
-
-        clearInterval(checkModal);
-        this.log('Form de contato encontrado');
-
-        const trackField = (selector, fieldName) => {
-          const field = form.querySelector(selector);
-          if (!field) return;
-
-          // usar focusin/out pois borbulham
-          field.addEventListener(
-            'focus',
-            () =>
-              this.capture('contact_form_field_focus', {
-                codigo: propertyCode,
-                field: fieldName,
-              }),
-            { passive: true, capture: true },
-          );
-          field.addEventListener(
-            'blur',
-            () => {
-              if (String(field.value || '').trim()) {
-                this.capture('contact_form_field_filled', {
-                  codigo: propertyCode,
-                  field: fieldName,
-                  has_value: true,
-                });
-              }
-            },
-            { passive: true, capture: true },
-          );
-        };
-
-        trackField('input[name="nome"], input[type="text"]', 'nome');
-        trackField('input[name="email"], input[type="email"]', 'email');
-        trackField(
-          'input[name="celular"], input[name="telefone"], input[type="tel"]',
-          'telefone',
-        );
-        trackField('textarea[name="mensagem"], textarea', 'mensagem');
-
-        form.addEventListener(
-          'submit',
-          () => {
-            const fd = new FormData(form);
-            const nome = fd.get('nome') || '';
-            const email = fd.get('email') || '';
-            const telefone = fd.get('celular') || fd.get('telefone') || '';
-            const mensagem = fd.get('mensagem') || '';
-            this.capture('contact_form_submit', {
-              codigo: propertyCode,
-              has_nome: !!nome,
-              has_email: !!email,
-              has_telefone: !!telefone,
-              has_mensagem: !!mensagem,
-              form_completeness: calculateFormCompleteness({
-                nome,
-                email,
-                telefone,
-                mensagem,
-              }),
-            });
-            this.trackFunnelStage('submitted_contact_form');
-            this.capture('conversion_contact_form', {
-              codigo: propertyCode,
-              contact_type: 'form',
-              user_id: this.getUserId(),
-              session_id: this.getSessionId(),
-            });
-          },
-          { passive: true },
-        );
-
-        // Abandono
-        let formStarted = false;
-        form.querySelectorAll('input, textarea').forEach((field) => {
-          field.addEventListener(
-            'input',
-            () => {
-              if (!formStarted) {
-                formStarted = true;
-                this.capture('contact_form_started', { codigo: propertyCode });
-              }
-            },
-            { passive: true },
-          );
+    // Captura o envio do formulário de contato, outro ponto chave de conversão.
+    this.on(
+      'submit',
+      '#imovel-contato form',
+      (_e, form) => {
+        const fd = new FormData(form);
+        const nome = fd.get('nome') || '';
+        const email = fd.get('email') || '';
+        const telefone = fd.get('celular') || fd.get('telefone') || '';
+        const mensagem = fd.get('mensagem') || '';
+        this.capture('contact_form_submit', {
+          codigo: propertyCode,
+          has_nome: !!nome,
+          has_email: !!email,
+          has_telefone: !!telefone,
+          has_mensagem: !!mensagem,
         });
-
-        const detectAbandonment = () => {
-          if (!formStarted) return;
-          const fd = new FormData(form);
-          const hasAny = Array.from(fd.values()).some(
-            (v) => v && String(v).trim(),
-          );
-          if (hasAny)
-            this.capture('contact_form_abandoned', {
-              codigo: propertyCode,
-              partial_data: true,
-            });
-        };
-
-        const closeBtn = modal.querySelector('[data-dismiss="modal"]');
-        // Suporte Bootstrap modal (se presente)
-        modal.addEventListener('hidden.bs.modal', detectAbandonment, {
-          passive: true,
+        // Envia um evento de conversão genérico para facilitar a agregação no backend.
+        this.capture('conversion_contact_form', {
+          codigo: propertyCode,
+          contact_type: 'form',
+          user_id: this.getUserId(),
+          session_id: this.getSessionId(),
         });
-        if (closeBtn)
-          closeBtn.addEventListener('click', detectAbandonment, {
-            passive: true,
-          });
-      }, 500);
-    };
-    trackContactForm();
-
-    // Galeria
-    document
-      .querySelectorAll('.swiper-button-next, .swiper-button-prev')
-      .forEach((btn) => {
-        btn.addEventListener(
-          'click',
-          () => {
-            this.capture('property_gallery_navigation', {
-              codigo: propertyCode,
-              direction: btn.classList.contains('swiper-button-next')
-                ? 'next'
-                : 'prev',
-            });
-          },
-          { passive: true },
-        );
-      });
-    document
-      .querySelectorAll('.foto-imovel, .swiper-slide')
-      .forEach((slide) => {
-        slide.addEventListener(
-          'click',
-          () => this.capture('property_image_click', { codigo: propertyCode }),
-          { passive: true },
-        );
-      });
+      },
+      { passive: true },
+    );
   };
 
   // ==========================
-  // INIT
+  // INICIALIZAÇÃO
+  // Orquestra a execução de todos os bindings e configurações iniciais.
   // ==========================
   init = () => {
     if (this.disabled) return;
@@ -1087,29 +611,24 @@ class InsightHouseAnalytics {
     this.log('API URL:', this.API_URL);
     this.log('Site Key:', this.SITE_KEY);
 
-    // Nova sessão?
-    this.getSessionId(); // garante timeout atualizado
-    this.bindSessionStart();
+    // Garante que a sessão seja iniciada ou renovada.
+    this.getSessionId();
 
-    // Bindings
+    // Ativa todos os listeners de eventos.
     this.bindGlobalLifecycle();
-    this.bindThankYouPage();
-    this.bindFiltersDelegated();
     this.bindResultsAndActions();
     this.bindPropertyPage();
 
-    // API pública
+    // Expõe uma API pública no objeto window para depuração ou integrações externas.
     window.MyAnalytics = {
       ...window.MyAnalytics,
       capture: this.capture,
       getUserId: this.getUserId,
       getSessionId: this.getSessionId,
       getJourney: () => this.getLS(this.LS_JOURNEY, []),
-      getFunnel: () => this.getLS(this.LS_FUNNEL, []),
       getPropertyCode: this.getPropertyCodeFromPage,
       clearJourney: () => {
         localStorage.removeItem(this.LS_JOURNEY);
-        localStorage.removeItem(this.LS_FUNNEL);
         localStorage.removeItem(this.LS_FIRST_TS);
         localStorage.removeItem(this.LS_SESSION);
         localStorage.removeItem(this.LS_TIMEOUT);
@@ -1125,7 +644,8 @@ class InsightHouseAnalytics {
 }
 
 // ==========================
-// BOOT
+// BOOTSTRAP
+// Garante que o script seja executado após o carregamento do DOM.
 // ==========================
 (() => {
   const analytics = new InsightHouseAnalytics({
@@ -1134,7 +654,7 @@ class InsightHouseAnalytics {
     debug: true,
   });
 
-  // DOM Ready helper
+  // Helper para executar o init() quando o DOM estiver pronto.
   const onReady = (fn) => {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', fn, { once: true });
