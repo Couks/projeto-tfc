@@ -126,22 +126,6 @@ export interface ConversionRateResponse {
   };
 }
 
-export interface ConversionFunnelResponse {
-  stages: Array<{
-    stage: string;
-    count: number;
-    percentage: number;
-    dropoffRate: number;
-  }>;
-  totalStarted: number;
-  totalCompleted: number;
-  overallConversionRate: number;
-  period: {
-    start: string;
-    end: string;
-  };
-}
-
 export interface ConversionSourcesResponse {
   sources: Array<{
     source: string;
@@ -163,7 +147,6 @@ export interface PopularPropertiesResponse {
     codigo: string;
     views: number;
     favorites: number;
-    ctaClicks: number;
     engagementScore: number;
   }>;
   period: {
@@ -175,13 +158,6 @@ export interface PopularPropertiesResponse {
 export interface PropertyEngagementResponse {
   totalViews: number;
   totalFavorites: number;
-  totalShares: number;
-  avgTimeOnProperty: number;
-  ctaPerformance: {
-    fazerProposta: number;
-    alugarImovel: number;
-    maisInformacoes: number;
-  };
   period: {
     start: string;
     end: string;

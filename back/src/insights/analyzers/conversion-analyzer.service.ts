@@ -4,7 +4,6 @@ import { InsightsQueryDto } from '../dto/insights-query.dto';
 import { DateFilter } from '../../events/dto/get-events.dto';
 import {
   ConversionRateResponse,
-  ConversionFunnelResponse,
   ConversionSourcesResponse,
 } from '../interfaces/categorized-insights.interface';
 
@@ -166,106 +165,6 @@ export class ConversionAnalyzerService {
               ) / 100
             : 0,
       })),
-      period: {
-        start: dateRange.start.toISOString(),
-        end: dateRange.end.toISOString(),
-      },
-    };
-  }
-
-  /**
-   * Gets conversion funnel analytics
-   */
-  async getConversionFunnel(
-    siteKey: string,
-    queryDto: InsightsQueryDto,
-  ): Promise<ConversionFunnelResponse> {
-    // Verify site exists
-    const site = await this.prisma.site.findUnique({
-      where: { siteKey },
-      select: { id: true },
-    });
-
-    if (!site) {
-      throw new NotFoundException('Site not found');
-    }
-
-    const dateRange = this.getDateRange(
-      queryDto.dateFilter,
-      queryDto.startDate,
-      queryDto.endDate,
-    );
-
-    // Get funnel stages
-    const stagesResult = await this.prisma.$queryRaw<
-      Array<{ stage: string; count: bigint }>
-    >`
-      SELECT
-        stage,
-        SUM(sessions_count) as count
-      FROM mv_conversion_funnel_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-        AND stage IS NOT NULL
-      GROUP BY stage
-      ORDER BY count DESC
-    `;
-
-    const stages = stagesResult || [];
-
-    // Define stage order for funnel calculation
-    const stageOrder = [
-      'search_submitted',
-      'viewed_property',
-      'clicked_saber_mais',
-      'clicked_fazer_proposta',
-      'opened_contact_form',
-      'submitted_contact_form',
-      'conversion_confirmed',
-    ];
-
-    // Create a map of stage counts
-    const stageMap = new Map(
-      stages.map((s) => [s.stage, Number(s.count || 0)]),
-    );
-
-    // Calculate funnel metrics
-    const totalStarted = stageMap.get('search_submitted') || 0;
-    const totalCompleted = stageMap.get('conversion_confirmed') || 0;
-    const overallConversionRate =
-      totalStarted > 0
-        ? Math.round((totalCompleted / totalStarted) * 100 * 100) / 100
-        : 0;
-
-    // Build stages with dropoff rates
-    const funnelStages = stageOrder
-      .map((stageName, index) => {
-        const count = stageMap.get(stageName) || 0;
-        const prevCount =
-          index > 0 ? stageMap.get(stageOrder[index - 1]) || 0 : totalStarted;
-
-        return {
-          stage: stageName,
-          count,
-          percentage:
-            totalStarted > 0
-              ? Math.round((count / totalStarted) * 100 * 100) / 100
-              : 0,
-          dropoffRate:
-            prevCount > 0
-              ? Math.round(((prevCount - count) / prevCount) * 100 * 100) / 100
-              : 0,
-        };
-      })
-      .filter((s) => s.count > 0);
-
-    // Always return at least empty stages array, not filtered
-    return {
-      stages: funnelStages.length > 0 ? funnelStages : [],
-      totalStarted,
-      totalCompleted,
-      overallConversionRate,
       period: {
         start: dateRange.start.toISOString(),
         end: dateRange.end.toISOString(),

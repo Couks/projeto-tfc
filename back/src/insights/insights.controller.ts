@@ -11,7 +11,6 @@ import {
   SearchAnalyticsResponse,
   FiltersUsageResponse,
   ConversionRateResponse,
-  ConversionFunnelResponse,
   ConversionSourcesResponse,
   PopularPropertiesResponse,
   PropertyEngagementResponse,
@@ -145,24 +144,6 @@ export class InsightsController {
     @Query() queryDto: InsightsQueryDto,
   ): Promise<ConversionRateResponse> {
     return this.conversionAnalyzer.getConversionRate(siteKey, queryDto);
-  }
-
-  /**
-   * Gets conversion funnel analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Conversion funnel data
-   */
-  @Get('conversion/funnel')
-  @ApiOperation({ summary: 'Get conversion funnel analytics' })
-  @ApiResponse({ status: 200, description: 'Return conversion funnel.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getConversionFunnel(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<ConversionFunnelResponse> {
-    return this.conversionAnalyzer.getConversionFunnel(siteKey, queryDto);
   }
 
   /**
