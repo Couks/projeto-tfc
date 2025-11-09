@@ -4,7 +4,6 @@ import { InsightsService } from './insights.service';
 import { SearchAnalyzerService } from './analyzers/search-analyzer.service';
 import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.service';
 import { PropertyAnalyzerService } from './analyzers/property-analyzer.service';
-import { FormAnalyzerService } from './analyzers/form-analyzer.service';
 import { AuthModule } from '../auth/auth.module';
 import { UnifiedGuard } from '../common/guards/unified.guard';
 
@@ -16,7 +15,6 @@ import { UnifiedGuard } from '../common/guards/unified.guard';
     SearchAnalyzerService,
     ConversionAnalyzerService,
     PropertyAnalyzerService,
-    FormAnalyzerService,
     UnifiedGuard,
   ],
   exports: [
@@ -24,7 +22,6 @@ import { UnifiedGuard } from '../common/guards/unified.guard';
     SearchAnalyzerService,
     ConversionAnalyzerService,
     PropertyAnalyzerService,
-    FormAnalyzerService,
   ],
 })
 export class InsightsModule {}

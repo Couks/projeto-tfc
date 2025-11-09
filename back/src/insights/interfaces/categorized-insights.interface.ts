@@ -163,28 +163,3 @@ export interface PropertyEngagementResponse {
     end: string;
   };
 }
-
-export interface PropertyCTAPerformanceResponse {
-  ctas: Array<{
-    ctaType: string;
-    clicks: number;
-    conversionRate: number;
-  }>;
-  period: {
-    start: string;
-    end: string;
-  };
-}
-
-// =====================
-// FORMS
-// =====================
-
-export interface FormPerformanceResponse {
-  totalSubmits: number;
-  completionRate: number;
-  period: {
-    start: string;
-    end: string;
-  };
-}

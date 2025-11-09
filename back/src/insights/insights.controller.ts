@@ -14,13 +14,10 @@ import {
   ConversionSourcesResponse,
   PopularPropertiesResponse,
   PropertyEngagementResponse,
-  PropertyCTAPerformanceResponse,
-  FormPerformanceResponse,
 } from './interfaces/categorized-insights.interface';
 import { SearchAnalyzerService } from './analyzers/search-analyzer.service';
 import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.service';
 import { PropertyAnalyzerService } from './analyzers/property-analyzer.service';
-import { FormAnalyzerService } from './analyzers/form-analyzer.service';
 
 @ApiTags('Insights')
 @Controller('insights')
@@ -32,7 +29,6 @@ export class InsightsController {
     private readonly searchAnalyzer: SearchAnalyzerService,
     private readonly conversionAnalyzer: ConversionAnalyzerService,
     private readonly propertyAnalyzer: PropertyAnalyzerService,
-    private readonly formAnalyzer: FormAnalyzerService,
   ) {}
 
   /**
@@ -205,48 +201,5 @@ export class InsightsController {
     @Query() queryDto: InsightsQueryDto,
   ): Promise<PropertyEngagementResponse> {
     return this.propertyAnalyzer.getPropertyEngagement(siteKey, queryDto);
-  }
-
-  /**
-   * Gets property CTA performance analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Property CTA performance data
-   */
-  @Get('properties/cta-performance')
-  @ApiOperation({ summary: 'Get property CTA performance analytics' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return property CTA performance.',
-  })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getCTAPerformance(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<PropertyCTAPerformanceResponse> {
-    return this.propertyAnalyzer.getCTAPerformance(siteKey, queryDto);
-  }
-
-  // =====================================================
-  // FORM ANALYTICS
-  // =====================================================
-
-  /**
-   * Gets form performance analytics
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters
-   * @returns Form performance data
-   */
-  @Get('forms/performance')
-  @ApiOperation({ summary: 'Get form performance analytics' })
-  @ApiResponse({ status: 200, description: 'Return form performance.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getFormPerformance(
-    @SiteKey() siteKey: string,
-    @Query() queryDto: InsightsQueryDto,
-  ): Promise<FormPerformanceResponse> {
-    return this.formAnalyzer.getFormPerformance(siteKey, queryDto);
   }
 }
