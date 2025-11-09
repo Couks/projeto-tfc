@@ -98,15 +98,4 @@ export class EventsController {
       metadata,
     );
   }
-
-  /**
-   * Smoke test endpoint for health checks
-   * @returns Service status
-   */
-  @Get('admin/test')
-  @ApiOperation({ summary: 'Smoke test endpoint' })
-  @ApiResponse({ status: 200, description: 'Service is healthy.' })
-  test(): Promise<{ status: string }> {
-    return Promise.resolve({ status: 'ok' });
-  }
 }
