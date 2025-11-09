@@ -20,6 +20,69 @@ export interface SearchAnalyticsResponse {
     cidade: string;
     count: number;
   }>;
+  topBairros: Array<{
+    bairro: string;
+    count: number;
+  }>;
+  topQuartos: Array<{
+    quartos: string;
+    count: number;
+  }>;
+  topSuites: Array<{
+    suites: string;
+    count: number;
+  }>;
+  topBanheiros: Array<{
+    banheiros: string;
+    count: number;
+  }>;
+  topVagas: Array<{
+    vagas: string;
+    count: number;
+  }>;
+  topSalas: Array<{
+    salas: string;
+    count: number;
+  }>;
+  topGalpoes: Array<{
+    galpoes: string;
+    count: number;
+  }>;
+  topComodos: Array<{
+    comodo: string;
+    count: number;
+  }>;
+  priceRanges: {
+    venda: Array<{
+      range: string;
+      count: number;
+    }>;
+    aluguel: Array<{
+      range: string;
+      count: number;
+    }>;
+  };
+  areaRanges: Array<{
+    range: string;
+    count: number;
+  }>;
+  topSwitches: Array<{
+    switch: string;
+    count: number;
+    percentage: number;
+  }>;
+  topComodidades: Array<{
+    comodidade: string;
+    count: number;
+  }>;
+  topLazer: Array<{
+    lazer: string;
+    count: number;
+  }>;
+  topSeguranca: Array<{
+    seguranca: string;
+    count: number;
+  }>;
   avgFiltersUsed: number;
   period: {
     start: string;

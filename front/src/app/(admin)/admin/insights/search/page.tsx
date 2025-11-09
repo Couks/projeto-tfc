@@ -167,6 +167,479 @@ export default function SearchAnalyticsPage() {
         </Card>
       </div>
 
+      {/* Bairros Section */}
+      <Card className="shadow-layer-3">
+        <CardHeader>
+          <CardTitle>Bairros Mais Buscados</CardTitle>
+          <CardDescription>
+            Localidades específicas de maior interesse
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {searchLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : searchData?.topBairros && searchData.topBairros.length > 0 ? (
+            <div className="space-y-2">
+              {searchData.topBairros.map((item, index) => (
+                <div
+                  key={item.bairro}
+                  className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {index + 1}
+                    </span>
+                    <p className="font-medium">{item.bairro}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{item.count.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Sem dados disponíveis</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Numeric Filters Row - Residencial */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Quartos */}
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Quartos Mais Buscados</CardTitle>
+            <CardDescription>Número de quartos preferidos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topQuartos && searchData.topQuartos.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topQuartos.map((item, index) => (
+                  <div
+                    key={item.quartos}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">{item.quartos} quartos</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vagas */}
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Vagas de Garagem</CardTitle>
+            <CardDescription>Número de vagas preferidas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topVagas && searchData.topVagas.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topVagas.map((item, index) => (
+                  <div
+                    key={item.vagas}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">{item.vagas} vagas</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Numeric Filters Row - Comercial */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Salas */}
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Salas Mais Buscadas</CardTitle>
+            <CardDescription>
+              Número de salas para imóveis comerciais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topSalas && searchData.topSalas.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topSalas.map((item, index) => (
+                  <div
+                    key={item.salas}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">{item.salas} salas</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Galpões */}
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Galpões Mais Buscados</CardTitle>
+            <CardDescription>
+              Tamanho de galpões para imóveis comerciais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topGalpoes && searchData.topGalpoes.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topGalpoes.map((item, index) => (
+                  <div
+                    key={item.galpoes}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">{item.galpoes} galpões</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Price Ranges */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Faixas de Preço - Venda</CardTitle>
+            <CardDescription>
+              Distribuição das buscas por faixa de preço para venda
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.priceRanges?.venda &&
+              searchData.priceRanges.venda.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.priceRanges.venda.map((item, index) => (
+                  <div
+                    key={item.range}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">R$ {item.range}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-layer-3">
+          <CardHeader>
+            <CardTitle>Faixas de Preço - Aluguel</CardTitle>
+            <CardDescription>
+              Distribuição das buscas por faixa de preço para aluguel
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : searchData?.priceRanges?.aluguel &&
+              searchData.priceRanges.aluguel.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.priceRanges.aluguel.map((item, index) => (
+                  <div
+                    key={item.range}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <p className="font-medium">R$ {item.range}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.count.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Sem dados disponíveis</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Switches/Filters */}
+      <Card className="shadow-layer-3">
+        <CardHeader>
+          <CardTitle>Filtros Especiais Mais Usados</CardTitle>
+          <CardDescription>
+            Características específicas mais buscadas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {searchLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : searchData?.topSwitches && searchData.topSwitches.length > 0 ? (
+            <div className="space-y-2">
+              {searchData.topSwitches.map((item, index) => (
+                <div
+                  key={item.switch}
+                  className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {index + 1}
+                    </span>
+                    <p className="font-medium">{item.switch}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{item.count.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.percentage.toFixed(1)}% das buscas
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Sem dados disponíveis</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Amenities Grid */}
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+        {/* Comodidades */}
+        <Card className="shadow-layer-2">
+          <CardHeader>
+            <CardTitle>Comodidades</CardTitle>
+            <CardDescription>Recursos mais procurados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topComodidades &&
+              searchData.topComodidades.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topComodidades.map((item) => (
+                  <div
+                    key={item.comodidade}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <p className="font-medium text-sm">{item.comodidade}</p>
+                    <p className="font-bold text-sm">
+                      {item.count.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Sem dados disponíveis
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Lazer */}
+        <Card className="shadow-layer-2">
+          <CardHeader>
+            <CardTitle>Áreas de Lazer</CardTitle>
+            <CardDescription>Espaços de lazer desejados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topLazer && searchData.topLazer.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topLazer.map((item) => (
+                  <div
+                    key={item.lazer}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <p className="font-medium text-sm">{item.lazer}</p>
+                    <p className="font-bold text-sm">
+                      {item.count.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Sem dados disponíveis
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Segurança */}
+        <Card className="shadow-layer-2">
+          <CardHeader>
+            <CardTitle>Segurança</CardTitle>
+            <CardDescription>Itens de segurança valorizados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topSeguranca &&
+              searchData.topSeguranca.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topSeguranca.map((item) => (
+                  <div
+                    key={item.seguranca}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <p className="font-medium text-sm">{item.seguranca}</p>
+                    <p className="font-bold text-sm">
+                      {item.count.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Sem dados disponíveis
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cômodos */}
+        <Card className="shadow-layer-2">
+          <CardHeader>
+            <CardTitle>Cômodos</CardTitle>
+            <CardDescription>Cômodos mais desejados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {searchLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+            ) : searchData?.topComodos && searchData.topComodos.length > 0 ? (
+              <div className="space-y-2">
+                {searchData.topComodos.map((item) => (
+                  <div
+                    key={item.comodo}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
+                  >
+                    <p className="font-medium text-sm">{item.comodo}</p>
+                    <p className="font-bold text-sm">
+                      {item.count.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Sem dados disponíveis
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Bottom Row: Card full-width com tabela de combinações de filtros */}
       <Card className="shadow-layer-2">
         <CardHeader>
