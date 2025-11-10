@@ -1,6 +1,18 @@
 'use client'
 
-import Link from 'next/link'
+import { useSiteContext } from '@/lib/providers/SiteProvider'
+import {
+  useSearchSummary,
+  useConversionSummary,
+  usePopularProperties,
+  useDevices,
+  useTopConvertingFilters,
+} from '@/lib/hooks/useInsights'
+import { useCampaignRecommendations } from '@/lib/hooks/useCampaignRecommendations'
+import { QuickMetricsGrid } from './_components/QuickMetricsGrid'
+import { InsightsSummaryCharts } from './_components/InsightsSummaryCharts'
+import { QuickActionsSection } from './_components/QuickActionsSection'
+import { RecommendationCard } from '@/lib/components/insights/RecommendationCard'
 import {
   Card,
   CardContent,
@@ -8,11 +20,62 @@ import {
   CardHeader,
   CardTitle,
 } from '@ui/card'
-import { useSiteContext } from '@/lib/providers/SiteProvider'
-import { Search, Target, Building2, ArrowRight, TrendingUp } from 'lucide-react'
+import { Lightbulb } from 'lucide-react'
 
 export default function InsightsOverviewPage() {
   const { selectedSiteKey } = useSiteContext()
+
+  // Fetch data from all categories
+  const { data: searchData, isLoading: isLoadingSearch } = useSearchSummary(
+    selectedSiteKey || '',
+    { limit: 10 }
+  )
+
+  const { data: conversionData, isLoading: isLoadingConversion } =
+    useConversionSummary(selectedSiteKey || '')
+
+  const { data: propertiesData, isLoading: isLoadingProperty } =
+    usePopularProperties(selectedSiteKey || '', { limit: 10 })
+
+  const { data: devicesData, isLoading: isLoadingDevices } = useDevices(
+    selectedSiteKey || '',
+    { limit: 10 }
+  )
+
+  const { data: topFiltersData } = useTopConvertingFilters(
+    selectedSiteKey || '',
+    { limit: 10 }
+  )
+
+  // Generate campaign recommendations
+  const recommendations = useCampaignRecommendations({
+    searchData,
+    conversionData,
+    propertiesData,
+    devicesData,
+    topFiltersData,
+  })
+
+  // Calculate metrics for QuickMetricsGrid
+  const totalSearches = searchData?.totalSearches || 0
+  const conversionRate = conversionData?.conversionRate || 0
+  const topPropertyViews = propertiesData?.properties?.[0]?.views || 0
+
+  // Transform properties data to match expected format
+  const transformedProperties = propertiesData?.properties?.map((prop) => ({
+    propertyCode: prop.codigo,
+    views: prop.views,
+    favorites: prop.favorites,
+  }))
+
+  const totalDevices =
+    devicesData?.devices?.reduce((sum, d) => sum + (d.count || 0), 0) || 0
+  const mobileCount =
+    devicesData?.devices
+      ?.filter((d) => d.deviceType.toLowerCase() === 'mobile')
+      ?.reduce((sum, d) => sum + (d.count || 0), 0) || 0
+  const mobilePercent =
+    totalDevices > 0 ? (mobileCount / totalDevices) * 100 : 0
 
   if (!selectedSiteKey) {
     return (
@@ -24,151 +87,123 @@ export default function InsightsOverviewPage() {
     )
   }
 
-  const categories = [
-    {
-      title: 'Análise de Buscas',
-      description:
-        'Entenda o que seus clientes procuram e como usam os filtros',
-      icon: Search,
-      href: '/admin/insights/search',
-      priority: 'high',
-    },
-    {
-      title: 'Imóveis Populares',
-      description: 'Descubra quais imóveis geram mais interesse e engajamento',
-      icon: Building2,
-      href: '/admin/insights/properties',
-      priority: 'high',
-    },
-    {
-      title: 'Conversões',
-      description:
-        'Acompanhe taxas de conversão, funil de vendas e fontes de leads',
-      icon: Target,
-      href: '/admin/insights/conversion',
-      priority: 'high',
-    },
-  ]
-
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Central de Análises
+          Visão Geral - Insights
         </h1>
         <p className="text-muted-foreground text-lg mt-2">
-          Insights estratégicos para impulsionar suas campanhas imobiliárias
+          Dashboard consolidado com métricas principais e recomendações de
+          campanhas
         </p>
       </div>
-      {/* Métricas Prioritárias */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Análises Prioritárias</h2>
+
+      {/* Quick Metrics Grid */}
+      <QuickMetricsGrid
+        totalSearches={totalSearches}
+        conversionRate={conversionRate}
+        topPropertyViews={topPropertyViews}
+        mobilePercent={mobilePercent}
+        isLoadingSearch={isLoadingSearch}
+        isLoadingConversion={isLoadingConversion}
+        isLoadingProperty={isLoadingProperty}
+        isLoadingDevices={isLoadingDevices}
+      />
+
+      {/* Campaign Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-semibold">
+              Recomendações de Campanhas
+            </h2>
+          </div>
+          <p className="text-muted-foreground">
+            Insights acionáveis baseados no comportamento dos visitantes do seu
+            site
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {recommendations.map((recommendation) => (
+              <RecommendationCard
+                key={recommendation.id}
+                recommendation={recommendation}
+              />
+            ))}
+          </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {categories
-            .filter((c) => c.priority === 'high')
-            .map((category, index) => {
-              const Icon = category.icon
-              const shadowClasses = [
-                'shadow-layer-5',
-                'shadow-layer-4',
-                'shadow-layer-3',
-              ]
-              const shadowClass =
-                shadowClasses[index] || shadowClasses[shadowClasses.length - 1]
-              return (
-                <Link key={category.href} href={category.href}>
-                  <Card
-                    className={`h-full transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 ${shadowClass}`}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <Icon className="h-6 w-6 text-muted-foreground" />
-                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <CardTitle className="mt-4">{category.title}</CardTitle>
-                      <CardDescription>{category.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-primary font-medium">
-                        Ver Detalhes →
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
+      )}
+
+      {/* Summary Charts */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold">Resumo das Análises</h2>
+          <p className="text-muted-foreground mt-1">
+            Visualização rápida dos dados principais de cada categoria
+          </p>
         </div>
+        <InsightsSummaryCharts
+          topCities={searchData?.topCidades}
+          conversionsByType={conversionData?.conversionsByType}
+          topProperties={transformedProperties}
+          topDevices={devicesData?.devices}
+          isLoadingSearch={isLoadingSearch}
+          isLoadingConversion={isLoadingConversion}
+          isLoadingProperty={isLoadingProperty}
+          isLoadingDevices={isLoadingDevices}
+        />
       </div>
-      {/* Análises Complementares */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Análises Complementares</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {categories
-            .filter((c) => c.priority === 'medium')
-            .map((category, index) => {
-              const Icon = category.icon
-              const shadowClasses = ['shadow-layer-2', 'shadow-layer-1']
-              const shadowClass =
-                shadowClasses[index] || shadowClasses[shadowClasses.length - 1]
-              return (
-                <Link key={category.href} href={category.href}>
-                  <Card
-                    className={`h-full transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer ${shadowClass}`}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <Icon className="h-6 w-6 text-muted-foreground" />
-                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <CardTitle className="mt-4">{category.title}</CardTitle>
-                      <CardDescription>{category.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-primary font-medium">
-                        Ver Detalhes →
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
-        </div>
-      </div>
-      {/* Guia de Uso */}
+
+      {/* Quick Actions */}
+      <QuickActionsSection />
+
+      {/* Guide */}
       <Card className="border-primary/20">
         <CardHeader>
-          <CardTitle>Como Usar Estas Análises</CardTitle>
+          <CardTitle>Como Usar Esta Plataforma</CardTitle>
           <CardDescription>
-            Guia prático para criar campanhas efetivas
+            Guia prático para transformar dados em campanhas efetivas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-semibold mb-2">Análise de Buscas</h3>
+            <h3 className="font-semibold mb-2">
+              1. Analise as Métricas Principais
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Identifique as preferências do seu público: quais tipos de
-              imóveis, regiões e características são mais buscadas. Use esses
-              dados para direcionar campanhas e destacar imóveis alinhados com a
-              demanda.
+              Comece observando os cards de métricas no topo. Eles mostram um
+              panorama geral do comportamento dos visitantes: volume de buscas,
+              taxa de conversão, imóveis mais populares e dispositivos
+              utilizados.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">Imóveis Populares</h3>
+            <h3 className="font-semibold mb-2">2. Priorize as Recomendações</h3>
             <p className="text-sm text-muted-foreground">
-              Descubra quais imóveis geram mais visualizações, favoritos e
-              cliques em CTAs. Priorize esses imóveis em campanhas pagas e
-              destaque-os em materiais de marketing.
+              Nossa IA analisa seus dados e sugere ações práticas. Recomendações
+              de alta prioridade (em vermelho) indicam oportunidades imediatas
+              de melhoria ou riscos que precisam de atenção.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-2">Conversões</h3>
+            <h3 className="font-semibold mb-2">
+              3. Explore Análises Detalhadas
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Acompanhe o funil de conversão completo: de visitante a lead.
-              Identifique pontos de abandono e otimize as etapas com menor taxa
-              de conversão para aumentar seus resultados.
+              Use os botões de &quot;Análises Avançadas&quot; para aprofundar em
+              cada categoria: Buscas, Imóveis ou Conversões. Lá você encontrará
+              dados granulares e modais com detalhamentos específicos.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">4. Aplique os Insights</h3>
+            <p className="text-sm text-muted-foreground">
+              Use os dados para criar campanhas segmentadas, otimizar landing
+              pages, destacar imóveis estratégicos e melhorar a experiência do
+              usuário. Acompanhe as mudanças nas métricas ao longo do tempo para
+              validar suas ações.
             </p>
           </div>
         </CardContent>

@@ -7,7 +7,7 @@ Backend de análise e rastreamento de eventos construído com NestJS, TypeScript
 - 🔐 **Autenticação**: Autenticação baseada em sessão com hash seguro de senhas.
 - 🏢 **Multi-Tenancy**: Suporte a múltiplos sites com validação de domínio.
 - 📊 **Rastreamento de Eventos**: Ingestão de eventos de alta performance com suporte a lotes (batch).
-- 🎯 **Analytics**: Insights em tempo real e análise de comportamento do usuário através de views materializadas.
+- 🎯 **Analytics**: Insights em tempo real e análise de comportamento do usuário através de queries SQL.
 - 🔒 **Segurança**: CORS, Helmet, limitação de taxa (rate limiting).
 - 📝 **Validação**: Validação automática de requisições com `class-validator`.
 - 🚀 **Performance**: Consultas otimizadas ao banco de dados e pronto para cache.
@@ -150,7 +150,6 @@ Todos os endpoints protegidos requerem autenticação via cookie de sessão. End
 - `GET /api/insights/conversion/sources` - Retorna as fontes de tráfego que mais convertem.
 - `GET /api/insights/properties/popular` - Retorna os imóveis mais populares com base no engajamento.
 - `GET /api/insights/properties/engagement` - Retorna métricas de engajamento gerais dos imóveis (total de visualizações, favoritos, etc).
-- `POST /api/insights/admin/refresh` - (Admin) Força a atualização das views materializadas.
 
 ### Saúde (Health)
 

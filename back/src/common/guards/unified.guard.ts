@@ -14,7 +14,7 @@
  * Usado em:
  * - SitesController: Requer auth apenas
  * - EventsController: Requer tenant apenas
- * - InsightsController: Requer tenant apenas
+ * - OverviewController, SearchController, PropertyController, ConversionController: Requer tenant apenas
  * - AuthController: Requer auth apenas (pode usar este guard também)
  *
  * Dependências:

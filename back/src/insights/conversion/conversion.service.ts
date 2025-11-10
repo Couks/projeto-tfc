@@ -99,11 +99,12 @@ export class ConversionService {
     const conversionsResult = await this.prisma.$queryRaw<
       Array<{ total: bigint }>
     >`
-      SELECT SUM(conversion_count) as total
-      FROM mv_conversion_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
+      SELECT COUNT(*) as total
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name IN ('conversion_whatsapp_click', 'thank_you_view', 'conversion_generate_lead')
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
     `;
 
     const totalConversions = Number(conversionsResult[0]?.total || 0);
@@ -112,11 +113,11 @@ export class ConversionService {
     const sessionsResult = await this.prisma.$queryRaw<
       Array<{ total: bigint }>
     >`
-      SELECT SUM(unique_sessions) as total
-      FROM mv_conversion_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
+      SELECT COUNT(DISTINCT "sessionId") as total
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
     `;
 
     const totalSessions = Number(sessionsResult[0]?.total || 0);
@@ -126,14 +127,14 @@ export class ConversionService {
       Array<{ conversion_type: string | null; count: bigint }>
     >`
       SELECT
-        conversion_type,
-        SUM(conversion_count) as count
-      FROM mv_conversion_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-        AND conversion_type IS NOT NULL
-      GROUP BY conversion_type
+        name as conversion_type,
+        COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name IN ('conversion_whatsapp_click', 'thank_you_view', 'conversion_generate_lead')
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+      GROUP BY name
       ORDER BY count DESC
     `;
 
@@ -192,13 +193,14 @@ export class ConversionService {
       Array<{ source: string; count: bigint }>
     >`
       SELECT
-        COALESCE(conversion_source, 'unknown') as source,
-        SUM(conversion_count) as count
-      FROM mv_conversion_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-      GROUP BY COALESCE(conversion_source, 'unknown')
+        COALESCE(properties->>'source', 'unknown') as source,
+        COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name IN ('conversion_whatsapp_click', 'thank_you_view', 'conversion_generate_lead')
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+      GROUP BY COALESCE(properties->>'source', 'unknown')
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;

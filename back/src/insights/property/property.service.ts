@@ -104,16 +104,17 @@ export class PropertyService {
       }>
     >`
       SELECT
-        property_code,
-        SUM(views) as views,
-        SUM(favorites) as favorites
-      FROM mv_property_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-        AND property_code IS NOT NULL
-        AND property_code != ''
-      GROUP BY property_code
+        properties->>'codigo' as property_code,
+        COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
+        COUNT(CASE WHEN name = 'property_favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+        AND properties->>'codigo' IS NOT NULL
+        AND properties->>'codigo' != ''
+        AND name IN ('property_page_view', 'property_favorite_toggle')
+      GROUP BY properties->>'codigo'
       ORDER BY views DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -168,12 +169,13 @@ export class PropertyService {
       }>
     >`
       SELECT
-        SUM(views) as total_views,
-        SUM(favorites) as total_favorites
-      FROM mv_property_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
+        COUNT(*) FILTER (WHERE name = 'property_page_view') as total_views,
+        COUNT(*) FILTER (WHERE name = 'property_favorite_toggle' AND properties->>'action' = 'add') as total_favorites
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+        AND name IN ('property_page_view', 'property_favorite_toggle')
     `;
 
     const data = engagement[0] || {

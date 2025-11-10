@@ -17,7 +17,7 @@
  * - AuthService: CRUD de usuários
  * - SitesService: CRUD de sites e domínios
  * - EventsService: Inserção de eventos
- * - InsightsService: Queries SQL para analytics
+ * - OverviewService, SearchService, PropertyService, ConversionService: Queries SQL para analytics
  * - HealthService: Health check do banco
  * - Guards: UnifiedGuard busca sites
  *

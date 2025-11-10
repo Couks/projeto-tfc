@@ -102,15 +102,18 @@ export class OverviewService {
       }>
     >`
       SELECT
-        device_type,
-        os,
-        browser,
-        SUM(events_count) as count
-      FROM mv_devices_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-      GROUP BY device_type, os, browser
+        properties->>'device_type' as device_type,
+        properties->>'os' as os,
+        properties->>'browser' as browser,
+        COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+        AND properties->>'device_type' IS NOT NULL
+        AND properties->>'os' IS NOT NULL
+        AND properties->>'browser' IS NOT NULL
+      GROUP BY properties->>'device_type', properties->>'os', properties->>'browser'
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -152,15 +155,15 @@ export class OverviewService {
       }>
     >`
       SELECT
-        bucket_date,
-        device_type,
-        SUM(events_count) as count
-      FROM mv_devices_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-        AND device_type IN ('mobile', 'desktop')
-      GROUP BY bucket_date, device_type
+        DATE(ts) as bucket_date,
+        properties->>'device_type' as device_type,
+        COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+        AND properties->>'device_type' IN ('mobile', 'desktop')
+      GROUP BY DATE(ts), properties->>'device_type'
       ORDER BY bucket_date ASC
     `;
 

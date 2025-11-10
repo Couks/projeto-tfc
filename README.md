@@ -45,7 +45,10 @@ graph TB
         AuthController[Auth Controller<br/>/api/auth/*]
         SitesController[Sites Controller<br/>/api/sites/*]
         EventsController[Events Controller<br/>/api/events/*]
-        InsightsController[Insights Controller<br/>/api/insights/*]
+        OverviewController[Overview Controller<br/>/api/insights/overview/*]
+        SearchController[Search Controller<br/>/api/insights/search/*]
+        PropertyController[Property Controller<br/>/api/insights/properties/*]
+        ConversionController[Conversion Controller<br/>/api/insights/conversion/*]
         SdkController[SDK Controller<br/>/api/sdk/*]
         HealthController[Health Controller<br/>/api/health]
     end
@@ -54,7 +57,10 @@ graph TB
         AuthService[Auth Service<br/>Login, Register, Session]
         SitesService[Sites Service<br/>CRUD Sites & Domains]
         EventsService[Events Service<br/>Ingestão & Enriquecimento]
-        InsightsService[Insights Service<br/>Queries SQL & Cache]
+        OverviewService[Overview Service<br/>Queries SQL Diretas]
+        SearchService[Search Service<br/>Queries SQL Diretas]
+        PropertyService[Property Service<br/>Queries SQL Diretas]
+        ConversionService[Conversion Service<br/>Queries SQL Diretas]
         SdkService[SDK Service<br/>Config & Loader]
         HealthService[Health Service<br/>Status Checks]
     end
@@ -84,7 +90,10 @@ graph TB
     SDK -->|2. Track Events| EventsController
     NextJS -->|3. API Calls| AuthController
     NextJS -->|4. API Calls| SitesController
-    NextJS -->|5. API Calls| InsightsController
+    NextJS -->|5. API Calls| OverviewController
+    NextJS -->|5. API Calls| SearchController
+    NextJS -->|5. API Calls| PropertyController
+    NextJS -->|5. API Calls| ConversionController
 
     %% Entry Point
     Main --> AppModule
@@ -104,13 +113,19 @@ graph TB
     AuthController -.->|protegido por| AuthGuard
     SitesController -.->|protegido por| AuthGuard
     EventsController -.->|protegido por| TenantGuard
-    InsightsController -.->|protegido por| TenantGuard
+    OverviewController -.->|protegido por| TenantGuard
+    SearchController -.->|protegido por| TenantGuard
+    PropertyController -.->|protegido por| TenantGuard
+    ConversionController -.->|protegido por| TenantGuard
 
     %% Controller to Service
     AuthController --> AuthService
     SitesController --> SitesService
     EventsController --> EventsService
-    InsightsController --> InsightsService
+    OverviewController --> OverviewService
+    SearchController --> SearchService
+    PropertyController --> PropertyService
+    ConversionController --> ConversionService
     SdkController --> SdkService
     HealthController --> HealthService
 
@@ -118,15 +133,15 @@ graph TB
     AuthService --> PrismaModule
     SitesService --> PrismaModule
     EventsService --> PrismaModule
-    InsightsService --> PrismaModule
+    OverviewService --> PrismaModule
+    SearchService --> PrismaModule
+    PropertyService --> PrismaModule
+    ConversionService --> PrismaModule
     SdkService --> PrismaModule
     HealthService --> PrismaModule
 
     %% Database Connection
     PrismaModule --> PostgreSQL
-
-    %% Cache
-    InsightsService -.->|usa| MemoryCache
 
     %% Utils
     AuthService -.->|usa| AuthUtils
@@ -211,30 +226,22 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Frontend as Next.js Frontend
-    participant InsightsController as Insights Controller
+    participant OverviewController as Overview Controller
     participant TenantGuard as Tenant Guard
-    participant InsightsService as Insights Service
-    participant Cache as Memory Cache
+    participant OverviewService as Overview Service
     participant DB as PostgreSQL
 
-    Frontend->>InsightsController: 1. GET /api/insights/overview?site=KEY
-    InsightsController->>TenantGuard: 2. Valida siteKey
+    Frontend->>OverviewController: 1. GET /api/insights/overview/devices?site=KEY
+    OverviewController->>TenantGuard: 2. Valida siteKey
     TenantGuard->>DB: 3. Busca site
     DB-->>TenantGuard: 4. Site válido
-    TenantGuard-->>InsightsController: 5. Autorizado
-    InsightsController->>InsightsService: 6. getOverview(siteKey)
-    InsightsService->>Cache: 7. Busca no cache
-    alt Cache Hit
-        Cache-->>InsightsService: 8a. Retorna dados em cache
-    else Cache Miss
-        Cache-->>InsightsService: 8b. Cache vazio/expirado
-        InsightsService->>DB: 9. Executa queries SQL paralelas<br/>(12 queries agregando JSONB)
-        DB-->>InsightsService: 10. Retorna resultados
-        InsightsService->>InsightsService: 11. Converte BigInt para Number
-        InsightsService->>Cache: 12. Armazena em cache (TTL: 2 min)
-    end
-    InsightsService-->>InsightsController: 13. Retorna dados
-    InsightsController-->>Frontend: 14. JSON com analytics
+    TenantGuard-->>OverviewController: 5. Autorizado
+    OverviewController->>OverviewService: 6. getDevices(siteKey)
+    OverviewService->>DB: 7. Executa queries SQL diretas<br/>(agregando JSONB da tabela Event)
+    DB-->>OverviewService: 8. Retorna resultados
+    OverviewService->>OverviewService: 9. Converte BigInt para Number
+    OverviewService-->>OverviewController: 10. Retorna dados
+    OverviewController-->>Frontend: 11. JSON com analytics
 ```
 
 ### 4. Fluxo de Multi-Tenancy (Criação de Site)
@@ -278,7 +285,7 @@ sequenceDiagram
 | **AuthModule** | Autenticação, registro, sessões | PrismaModule, ConfigModule |
 | **SitesModule** | CRUD de sites e domínios, multi-tenancy | PrismaModule |
 | **EventsModule** | Ingestão de eventos, enriquecimento | PrismaModule |
-| **InsightsModule** | Analytics, queries SQL, cache | PrismaModule, ConfigModule |
+| **InsightsModule** | Analytics modular (overview, search, property, conversion), queries SQL diretas | PrismaModule |
 | **SdkModule** | Servir SDK JavaScript e configurações | SitesModule |
 | **HealthModule** | Health checks e monitoramento | PrismaModule |
 

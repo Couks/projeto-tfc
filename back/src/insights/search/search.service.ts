@@ -98,11 +98,12 @@ export class SearchService {
 
     // Get total searches
     const totalResult = await this.prisma.$queryRaw<Array<{ total: bigint }>>`
-      SELECT SUM(total_searches) as total
-      FROM mv_search_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
+      SELECT COUNT(*) as total
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name = 'search_submit'
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
     `;
 
     const totalSearches = Number(totalResult[0]?.total || 0);
@@ -112,14 +113,15 @@ export class SearchService {
       Array<{ finalidade: string; count: bigint }>
     >`
       SELECT
-        finalidade,
-        SUM(search_count) as count
-      FROM mv_search_analytics_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-        AND finalidade IS NOT NULL
-      GROUP BY finalidade
+        properties->>'finalidade' as finalidade,
+        COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name = 'search_submit'
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+        AND properties->>'finalidade' IS NOT NULL
+      GROUP BY properties->>'finalidade'
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;

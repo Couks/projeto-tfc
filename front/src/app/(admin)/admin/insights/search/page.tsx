@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   Card,
   CardContent,
@@ -7,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@ui/card'
-import { Skeleton } from '@ui/skeleton'
+import { Button } from '@ui/button'
 import { Spinner } from '@ui/spinner'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
@@ -15,10 +16,25 @@ import {
   useFiltersUsage,
   useTopConvertingFilters,
 } from '@/lib/hooks/useInsights'
-import { TrendingUp, MapPin, Home, Target, Filter } from 'lucide-react'
+import {
+  TrendingUp,
+  MapPin,
+  Home,
+  Target,
+  Filter,
+  DollarSign,
+  Maximize2,
+  MoreHorizontal,
+  ArrowLeft,
+} from 'lucide-react'
 import { TopFinalidadesChart } from './_components/TopFinalidadesChart'
 import { TopCidadesChart } from './_components/TopCidadesChart'
 import { TopConvertingFiltersTable } from './_components/TopConvertingFiltersTable'
+import {
+  DetailsModal,
+  type DetailsDataItem,
+} from '@/lib/components/insights/DetailsModal'
+import Link from 'next/link'
 
 export default function SearchAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -33,6 +49,30 @@ export default function SearchAnalyticsPage() {
     isLoading: topConvertingFiltersLoading,
   } = useTopConvertingFilters(selectedSiteKey || '')
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalData, setModalData] = useState<{
+    title: string
+    description?: string
+    data: DetailsDataItem[]
+    visualization?: 'table' | 'list' | 'chart-bars'
+    recommendations?: string[]
+  }>({
+    title: '',
+    data: [],
+  })
+
+  const openDetailsModal = (
+    title: string,
+    data: DetailsDataItem[],
+    description?: string,
+    recommendations?: string[],
+    visualization: 'table' | 'list' | 'chart-bars' = 'chart-bars'
+  ) => {
+    setModalData({ title, description, data, visualization, recommendations })
+    setModalOpen(true)
+  }
+
   if (!selectedSiteKey) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -45,14 +85,25 @@ export default function SearchAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Análise de Buscas</h1>
-        <p className="text-muted-foreground text-lg">
-          Entenda o que seus clientes procuram e otimize seu inventário
-        </p>
+      {/* Header with back button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <Button variant="ghost" size="sm" asChild className="mb-2">
+            <Link href="/admin/insights">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para Visão Geral
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Análise de Buscas
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Entenda o que seus clientes procuram e otimize seu inventário
+          </p>
+        </div>
       </div>
 
-      {/* Top Row: Grid com 4 cards quadrados */}
+      {/* Quick Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-layer-5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -107,7 +158,7 @@ export default function SearchAnalyticsPage() {
         <Card className="shadow-layer-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Mudanças de Filtros
+              Total de Mudanças
             </CardTitle>
             <Filter className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -122,7 +173,7 @@ export default function SearchAnalyticsPage() {
                   {filtersData?.totalFilterChanges.toLocaleString() || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Total de alterações
+                  Mudanças de filtro
                 </p>
               </>
             )}
@@ -132,9 +183,9 @@ export default function SearchAnalyticsPage() {
         <Card className="shadow-layer-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Taxa de Conversão
+              Filtros que Convertem
             </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {topConvertingFiltersLoading ? (
@@ -144,10 +195,10 @@ export default function SearchAnalyticsPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {topConvertingFiltersData?.filters.length || 0}
+                  {topConvertingFiltersData?.filters?.length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Filtros que convertem
+                  Combinações identificadas
                 </p>
               </>
             )}
@@ -155,784 +206,526 @@ export default function SearchAnalyticsPage() {
         </Card>
       </div>
 
-      {/* Finalidades Chart */}
-      <Card className="shadow-layer-5">
+      {/* Section: Location Analysis */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-semibold">Análise de Localização</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="shadow-inner-3">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Cidades Mais Buscadas</CardTitle>
+                <CardDescription>
+                  Top 10 cidades com mais pesquisas
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const cities = searchData?.topCidades || []
+                  openDetailsModal(
+                    'Todas as Cidades',
+                    cities.map((c) => ({
+                      label: c.cidade,
+                      value: c.count,
+                      percentage:
+                        (c.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Ranking completo de todas as cidades buscadas',
+                    [
+                      `${cities[0]?.cidade || 'A cidade mais buscada'} representa ${(((cities[0]?.count || 0) / (searchData?.totalSearches || 1)) * 100).toFixed(1)}% de todas as buscas`,
+                      'Considere aumentar o inventário nesta região',
+                      'Crie campanhas segmentadas para as top 3 cidades',
+                    ]
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              ) : (
+                <TopCidadesChart data={searchData} />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-inner-3">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Bairros Mais Buscados</CardTitle>
+                <CardDescription>
+                  Top 10 bairros com mais interesse
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const bairros = searchData?.topBairros || []
+                  openDetailsModal(
+                    'Todos os Bairros',
+                    bairros.map((b) => ({
+                      label: b.bairro,
+                      value: b.count,
+                      percentage:
+                        (b.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Ranking completo de todos os bairros buscados',
+                    [
+                      'Bairros específicos indicam público mais segmentado',
+                      'Use estes dados para destacar imóveis nestas regiões',
+                    ]
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              ) : searchData?.topBairros && searchData.topBairros.length > 0 ? (
+                <div className="space-y-2">
+                  {searchData.topBairros.slice(0, 10).map((bairro, index) => {
+                    const maxCount = searchData.topBairros[0]?.count || 1
+                    const widthPercent = (bairro.count / maxCount) * 100
+                    return (
+                      <div key={index} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{bairro.bairro}</span>
+                          <span className="text-muted-foreground">
+                            {bairro.count.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-500"
+                            style={{ width: `${widthPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum dado disponível
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Section: Property Purpose */}
+      <Card className="shadow-inner-3">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Finalidades Mais Buscadas</CardTitle>
+              <CardDescription>
+                Distribuição entre venda, aluguel e outras finalidades
+              </CardDescription>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const finalidades = searchData?.topFinalidades || []
+              openDetailsModal(
+                'Finalidades Detalhadas',
+                finalidades.map((f) => ({
+                  label: f.finalidade,
+                  value: f.count,
+                  percentage:
+                    (f.count / (searchData?.totalSearches || 1)) * 100,
+                })),
+                'Análise completa de todas as finalidades de busca',
+                [
+                  `A finalidade predominante é ${finalidades[0]?.finalidade || 'N/A'}`,
+                  'Ajuste seu inventário para atender esta demanda',
+                  'Considere criar landing pages específicas por finalidade',
+                ]
+              )
+            }}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {searchLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Spinner className="h-8 w-8" />
+            </div>
+          ) : (
+            <TopFinalidadesChart data={searchData} />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Section: Property Features */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Home className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-semibold">Características de Imóveis</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Quartos */}
+          <Card className="shadow-inner-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Quartos</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const quartos = searchData?.topQuartos || []
+                  openDetailsModal(
+                    'Quartos Mais Buscados',
+                    quartos.map((q) => ({
+                      label: `${q.quartos} quartos`,
+                      value: q.count,
+                      percentage:
+                        (q.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Distribuição de buscas por número de quartos',
+                    [
+                      'Priorize imóveis com o número de quartos mais buscado',
+                      'Destaque esta característica em anúncios',
+                    ]
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <Spinner className="h-6 w-6" />
+              ) : searchData?.topQuartos && searchData.topQuartos.length > 0 ? (
+                <div className="text-2xl font-bold">
+                  {searchData.topQuartos[0].quartos}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem dados</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Mais buscado</p>
+            </CardContent>
+          </Card>
+
+          {/* Suites */}
+          <Card className="shadow-inner-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Suítes</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const suites = searchData?.topSuites || []
+                  openDetailsModal(
+                    'Suítes Mais Buscadas',
+                    suites.map((s) => ({
+                      label: `${s.suites} suítes`,
+                      value: s.count,
+                      percentage:
+                        (s.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Distribuição de buscas por número de suítes'
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <Spinner className="h-6 w-6" />
+              ) : searchData?.topSuites && searchData.topSuites.length > 0 ? (
+                <div className="text-2xl font-bold">
+                  {searchData.topSuites[0].suites}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem dados</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Mais buscado</p>
+            </CardContent>
+          </Card>
+
+          {/* Banheiros */}
+          <Card className="shadow-inner-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Banheiros</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const banheiros = searchData?.topBanheiros || []
+                  openDetailsModal(
+                    'Banheiros Mais Buscados',
+                    banheiros.map((b) => ({
+                      label: `${b.banheiros} banheiros`,
+                      value: b.count,
+                      percentage:
+                        (b.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Distribuição de buscas por número de banheiros'
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <Spinner className="h-6 w-6" />
+              ) : searchData?.topBanheiros &&
+                searchData.topBanheiros.length > 0 ? (
+                <div className="text-2xl font-bold">
+                  {searchData.topBanheiros[0].banheiros}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem dados</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Mais buscado</p>
+            </CardContent>
+          </Card>
+
+          {/* Vagas */}
+          <Card className="shadow-inner-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vagas</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const vagas = searchData?.topVagas || []
+                  openDetailsModal(
+                    'Vagas Mais Buscadas',
+                    vagas.map((v) => ({
+                      label: `${v.vagas} vagas`,
+                      value: v.count,
+                      percentage:
+                        (v.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Distribuição de buscas por número de vagas'
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <Spinner className="h-6 w-6" />
+              ) : searchData?.topVagas && searchData.topVagas.length > 0 ? (
+                <div className="text-2xl font-bold">
+                  {searchData.topVagas[0].vagas}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem dados</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Mais buscado</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Section: Price & Area Ranges */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-semibold">Faixas de Preço e Área</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="shadow-inner-3">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Faixas de Preço</CardTitle>
+                <CardDescription>
+                  Distribuição de buscas por faixa de preço
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const prices = [
+                    ...(searchData?.priceRanges?.venda || []),
+                    ...(searchData?.priceRanges?.aluguel || []),
+                  ]
+                  openDetailsModal(
+                    'Faixas de Preço Detalhadas',
+                    prices.map((p) => ({
+                      label: p.range,
+                      value: p.count,
+                      percentage:
+                        (p.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Análise completa das faixas de preço mais buscadas',
+                    [
+                      'A faixa de preço mais popular indica o poder aquisitivo do seu público',
+                      'Ajuste seu inventário para atender esta demanda',
+                    ]
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              ) : searchData?.priceRanges?.venda &&
+                searchData.priceRanges.venda.length > 0 ? (
+                <div className="space-y-2">
+                  {searchData.priceRanges.venda
+                    .slice(0, 8)
+                    .map((range, index) => {
+                      const maxCount =
+                        searchData.priceRanges.venda[0]?.count || 1
+                      const widthPercent = (range.count / maxCount) * 100
+                      return (
+                        <div key={index} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{range.range}</span>
+                            <span className="text-muted-foreground">
+                              {range.count.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all duration-500"
+                              style={{ width: `${widthPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum dado disponível
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-inner-3">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Faixas de Área</CardTitle>
+                <CardDescription>
+                  Distribuição de buscas por área em m²
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const areas = searchData?.areaRanges || []
+                  openDetailsModal(
+                    'Faixas de Área Detalhadas',
+                    areas.map((a) => ({
+                      label: a.range,
+                      value: a.count,
+                      percentage:
+                        (a.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Análise completa das faixas de área mais buscadas'
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {searchLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              ) : searchData?.areaRanges && searchData.areaRanges.length > 0 ? (
+                <div className="space-y-2">
+                  {searchData.areaRanges.slice(0, 8).map((range, index) => {
+                    const maxCount = searchData.areaRanges[0]?.count || 1
+                    const widthPercent = (range.count / maxCount) * 100
+                    return (
+                      <div key={index} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{range.range}</span>
+                          <span className="text-muted-foreground">
+                            {range.count.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-500"
+                            style={{ width: `${widthPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum dado disponível
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Section: Top Converting Filters */}
+      <Card className="shadow-inner-4">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-primary" />
-            <CardTitle>Finalidades Mais Buscadas</CardTitle>
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Filtros que Mais Convertem</CardTitle>
+              <CardDescription>
+                Combinações de filtros com maior taxa de conversão
+              </CardDescription>
+            </div>
           </div>
-          <CardDescription>
-            Priorize imóveis para essas finalidades em suas campanhas
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <TopFinalidadesChart data={searchData} isLoading={searchLoading} />
-        </CardContent>
-      </Card>
-
-      {/* Middle Row: Grid 2 colunas - Gráfico de cidades + Lista de tipos */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Top Cidades - Gráfico */}
-        <Card className="shadow-layer-4">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <CardTitle>Cidades Mais Buscadas</CardTitle>
-            </div>
-            <CardDescription>
-              Concentre seu inventário nessas localidades
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TopCidadesChart data={searchData} isLoading={searchLoading} />
-          </CardContent>
-        </Card>
-
-        {/* Top Tipos - Lista */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Tipos de Imóveis</CardTitle>
-            <CardDescription>Categorias mais procuradas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {searchData?.topTipos.map((item, index) => (
-                  <div
-                    key={item.tipo}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.tipo}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                )) || (
-                  <p className="text-muted-foreground">Sem dados disponíveis</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bairros Section */}
-      <Card className="shadow-inner-5">
-        <CardHeader>
-          <CardTitle>Bairros Mais Buscados</CardTitle>
-          <CardDescription>
-            Localidades específicas de maior interesse
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {searchLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : searchData?.topBairros && searchData.topBairros.length > 0 ? (
-            <div className="space-y-2">
-              {searchData.topBairros.map((item, index) => (
-                <div
-                  key={item.bairro}
-                  className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {index + 1}
-                    </span>
-                    <p className="font-medium">{item.bairro}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{item.count.toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
+          {topConvertingFiltersLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <Spinner className="h-8 w-8" />
             </div>
           ) : (
-            <p className="text-muted-foreground">Sem dados disponíveis</p>
+            <TopConvertingFiltersTable
+              data={topConvertingFiltersData}
+              isLoading={topConvertingFiltersLoading}
+            />
           )}
         </CardContent>
       </Card>
 
-      {/* Numeric Filters Row - Residencial */}
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-        {/* Quartos */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Quartos Mais Buscados</CardTitle>
-            <CardDescription>Número de quartos preferidos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topQuartos && searchData.topQuartos.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topQuartos.map((item, index) => (
-                  <div
-                    key={item.quartos}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.quartos} quartos</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Suites */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Suítes Mais Buscadas</CardTitle>
-            <CardDescription>Número de suítes preferidas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topSuites && searchData.topSuites.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topSuites.map((item, index) => (
-                  <div
-                    key={item.suites}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.suites} suítes</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Banheiros */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Banheiros Mais Buscados</CardTitle>
-            <CardDescription>Número de banheiros preferidos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topBanheiros &&
-              searchData.topBanheiros.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topBanheiros.map((item, index) => (
-                  <div
-                    key={item.banheiros}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.banheiros} banheiros</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Vagas */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Vagas de Garagem</CardTitle>
-            <CardDescription>Número de vagas preferidas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topVagas && searchData.topVagas.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topVagas.map((item, index) => (
-                  <div
-                    key={item.vagas}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.vagas} vagas</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Numeric Filters Row - Comercial */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Salas */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Salas Mais Buscadas</CardTitle>
-            <CardDescription>
-              Número de salas para imóveis comerciais
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topSalas && searchData.topSalas.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topSalas.map((item, index) => (
-                  <div
-                    key={item.salas}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.salas} salas</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Galpões */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Galpões Mais Buscados</CardTitle>
-            <CardDescription>
-              Tamanho de galpões para imóveis comerciais
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topGalpoes && searchData.topGalpoes.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topGalpoes.map((item, index) => (
-                  <div
-                    key={item.galpoes}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.galpoes} galpões</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Price and Area Ranges */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Faixas de Preço - Venda</CardTitle>
-            <CardDescription>
-              Distribuição das buscas por faixa de preço para venda
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.priceRanges?.venda &&
-              searchData.priceRanges.venda.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.priceRanges.venda.map((item, index) => (
-                  <div
-                    key={item.range}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">R$ {item.range}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Faixas de Preço - Aluguel</CardTitle>
-            <CardDescription>
-              Distribuição das buscas por faixa de preço para aluguel
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.priceRanges?.aluguel &&
-              searchData.priceRanges.aluguel.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.priceRanges.aluguel.map((item, index) => (
-                  <div
-                    key={item.range}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">R$ {item.range}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Faixas de Área</CardTitle>
-            <CardDescription>
-              Distribuição das buscas por faixa de área
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : searchData?.areaRanges && searchData.areaRanges.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.areaRanges.map((item, index) => (
-                  <div
-                    key={item.range}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium">{item.range} m²</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Switches/Filters */}
-      <Card className="shadow-inner-5">
-        <CardHeader>
-          <CardTitle>Filtros Especiais Mais Usados</CardTitle>
-          <CardDescription>
-            Características específicas mais buscadas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {searchLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : searchData?.topSwitches && searchData.topSwitches.length > 0 ? (
-            <div className="space-y-2">
-              {searchData.topSwitches.map((item, index) => (
-                <div
-                  key={item.switch}
-                  className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {index + 1}
-                    </span>
-                    <p className="font-medium">{item.switch}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{item.count.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.percentage.toFixed(1)}% das buscas
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Sem dados disponíveis</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Amenities Grid */}
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-        {/* Comodidades */}
-        <Card className="shadow-layer-2">
-          <CardHeader>
-            <CardTitle>Comodidades</CardTitle>
-            <CardDescription>Recursos mais procurados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topComodidades &&
-              searchData.topComodidades.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topComodidades.map((item) => (
-                  <div
-                    key={item.comodidade}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <p className="font-medium text-sm">{item.comodidade}</p>
-                    <p className="font-bold text-sm">
-                      {item.count.toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Sem dados disponíveis
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Lazer */}
-        <Card className="shadow-layer-2">
-          <CardHeader>
-            <CardTitle>Áreas de Lazer</CardTitle>
-            <CardDescription>Espaços de lazer desejados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topLazer && searchData.topLazer.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topLazer.map((item) => (
-                  <div
-                    key={item.lazer}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <p className="font-medium text-sm">{item.lazer}</p>
-                    <p className="font-bold text-sm">
-                      {item.count.toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Sem dados disponíveis
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Segurança */}
-        <Card className="shadow-layer-2">
-          <CardHeader>
-            <CardTitle>Segurança</CardTitle>
-            <CardDescription>Itens de segurança valorizados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topSeguranca &&
-              searchData.topSeguranca.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topSeguranca.map((item) => (
-                  <div
-                    key={item.seguranca}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <p className="font-medium text-sm">{item.seguranca}</p>
-                    <p className="font-bold text-sm">
-                      {item.count.toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Sem dados disponíveis
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Cômodos */}
-        <Card className="shadow-layer-2">
-          <CardHeader>
-            <CardTitle>Cômodos</CardTitle>
-            <CardDescription>Cômodos mais desejados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {searchLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : searchData?.topComodos && searchData.topComodos.length > 0 ? (
-              <div className="space-y-2">
-                {searchData.topComodos.map((item) => (
-                  <div
-                    key={item.comodo}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <p className="font-medium text-sm">{item.comodo}</p>
-                    <p className="font-bold text-sm">
-                      {item.count.toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Sem dados disponíveis
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters Usage Section */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Filters by Type */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Filtros por Tipo</CardTitle>
-            <CardDescription>
-              Distribuição de uso de cada tipo de filtro
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filtersLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : filtersData?.filtersByType &&
-              filtersData.filtersByType.length > 0 ? (
-              <div className="space-y-3">
-                {filtersData.filtersByType.map((item, index) => (
-                  <div key={item.filterType} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">{item.filterType}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.percentage.toFixed(1)}% do total
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">
-                          {item.count.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">usos</p>
-                      </div>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-primary"
-                        style={{ width: `${item.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Top Filter Combinations */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Combinações de Filtros Populares</CardTitle>
-            <CardDescription>
-              Padrões comuns de busca dos usuários
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filtersLoading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : filtersData?.topFilterCombinations &&
-              filtersData.topFilterCombinations.length > 0 ? (
-              <div className="space-y-2">
-                {filtersData.topFilterCombinations.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                        {index + 1}
-                      </span>
-                      <p className="font-medium text-sm">
-                        {item.combination.join(' + ')}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{item.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">usos</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Sem dados disponíveis</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Top Converting Filters */}
-      <Card className="shadow-inner-5">
-        <CardHeader>
-          <CardTitle>Filtros que Mais Convertem</CardTitle>
-          <CardDescription>
-            Combinações de filtros que geram mais conversões
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TopConvertingFiltersTable
-            data={topConvertingFiltersData}
-            isLoading={topConvertingFiltersLoading}
-          />
-        </CardContent>
-      </Card>
+      {/* Details Modal */}
+      <DetailsModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={modalData.title}
+        description={modalData.description}
+        data={modalData.data}
+        visualization={modalData.visualization}
+        recommendations={modalData.recommendations}
+      />
     </div>
   )
 }

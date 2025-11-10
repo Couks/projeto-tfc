@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from './queryKeys'
 import { apiClient } from '../api'
 import type {
@@ -15,21 +15,6 @@ import type {
   PropertyFunnelResponse,
   TopConvertingFiltersResponse,
 } from '../types/insights'
-
-export function useRefreshInsights() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (payload: { fromDate: string; toDate: string }) => {
-      return apiClient.post<{ success: boolean; message: string }>(
-        `/api/insights/admin/refresh`,
-        payload
-      )
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.insights.all })
-    },
-  })
-}
 
 // =====================================================
 // OVERVIEW INSIGHTS
@@ -212,4 +197,3 @@ export function useLeadProfile(siteKey: string, query?: InsightsQuery) {
     enabled: !!siteKey,
   })
 }
-
