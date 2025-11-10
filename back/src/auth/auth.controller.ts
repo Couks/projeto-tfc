@@ -64,7 +64,7 @@ export class AuthController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 401 },
-        message: { type: 'string', example: 'Invalid credentials' },
+        message: { type: 'string', example: 'Credenciais inválidas' },
       },
     },
   })
@@ -124,7 +124,7 @@ export class AuthController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 409 },
-        message: { type: 'string', example: 'Email already exists' },
+        message: { type: 'string', example: 'E-mail já cadastrado' },
       },
     },
   })
