@@ -159,55 +159,7 @@ export default function InsightsOverviewPage() {
       {/* Quick Actions */}
       <QuickActionsSection />
 
-      {/* Guide */}
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle>Como Usar Esta Plataforma</CardTitle>
-          <CardDescription>
-            Guia prático para transformar dados em campanhas efetivas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold mb-2">
-              1. Analise as Métricas Principais
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Comece observando os cards de métricas no topo. Eles mostram um
-              panorama geral do comportamento dos visitantes: volume de buscas,
-              taxa de conversão, imóveis mais populares e dispositivos
-              utilizados.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">2. Priorize as Recomendações</h3>
-            <p className="text-sm text-muted-foreground">
-              Nossa IA analisa seus dados e sugere ações práticas. Recomendações
-              de alta prioridade (em vermelho) indicam oportunidades imediatas
-              de melhoria ou riscos que precisam de atenção.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">
-              3. Explore Análises Detalhadas
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Use os botões de &quot;Análises Avançadas&quot; para aprofundar em
-              cada categoria: Buscas, Imóveis ou Conversões. Lá você encontrará
-              dados granulares e modais com detalhamentos específicos.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">4. Aplique os Insights</h3>
-            <p className="text-sm text-muted-foreground">
-              Use os dados para criar campanhas segmentadas, otimizar landing
-              pages, destacar imóveis estratégicos e melhorar a experiência do
-              usuário. Acompanhe as mudanças nas métricas ao longo do tempo para
-              validar suas ações.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }
