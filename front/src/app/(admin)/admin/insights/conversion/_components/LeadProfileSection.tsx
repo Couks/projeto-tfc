@@ -23,13 +23,6 @@ export function LeadProfileSection({
 }: LeadProfileSectionProps) {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">Perfil de Leads</h2>
-        <p className="text-muted-foreground">
-          Características dos leads que convertem
-        </p>
-      </div>
-
       {/* Average Values */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-layer-4">
