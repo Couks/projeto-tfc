@@ -5,17 +5,15 @@ import { DateFilter } from '../../events/dto/get-events.dto';
 import {
   ConversionRateResponse,
   ConversionSourcesResponse,
+  LeadProfileResponse,
 } from '../interfaces/categorized-insights.interface';
 
 @Injectable()
-export class ConversionAnalyzerService {
-  private readonly logger = new Logger(ConversionAnalyzerService.name);
+export class ConversionService {
+  private readonly logger = new Logger(ConversionService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Gets date range based on filter type
-   */
   private getDateRange(
     dateFilter?: DateFilter,
     startDate?: string,
@@ -77,9 +75,6 @@ export class ConversionAnalyzerService {
     return { start, end };
   }
 
-  /**
-   * Gets conversion rate analytics
-   */
   async getConversionRate(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -172,9 +167,6 @@ export class ConversionAnalyzerService {
     };
   }
 
-  /**
-   * Gets conversion sources analytics
-   */
   async getConversionSources(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -228,6 +220,109 @@ export class ConversionAnalyzerService {
               ) / 100
             : 0,
       })),
+      period: {
+        start: dateRange.start.toISOString(),
+        end: dateRange.end.toISOString(),
+      },
+    };
+  }
+
+  async getLeadProfile(
+    siteKey: string,
+    queryDto: InsightsQueryDto,
+  ): Promise<LeadProfileResponse> {
+    const site = await this.prisma.site.findUnique({
+      where: { siteKey },
+      select: { id: true },
+    });
+
+    if (!site) {
+      throw new NotFoundException('Site not found');
+    }
+
+    const dateRange = this.getDateRange(
+      queryDto.dateFilter,
+      queryDto.startDate,
+      queryDto.endDate,
+    );
+
+    const interests = this.prisma.$queryRaw<
+      Array<{ interest: string; count: bigint }>
+    >`
+      SELECT properties->>'interesse' as interest, COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND properties->>'interesse' IS NOT NULL
+      GROUP BY interest ORDER BY count DESC LIMIT 5
+    `;
+
+    const categories = this.prisma.$queryRaw<
+      Array<{ category: string; count: bigint }>
+    >`
+      SELECT properties->>'categoria' as category, COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND properties->>'categoria' IS NOT NULL
+      GROUP BY category ORDER BY count DESC LIMIT 5
+    `;
+
+    const propertyTypes = this.prisma.$queryRaw<
+      Array<{ type: string; count: bigint }>
+    >`
+      SELECT properties->>'tipo' as type, COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND properties->>'tipo' IS NOT NULL
+      GROUP BY type ORDER BY count DESC LIMIT 5
+    `;
+
+    const cities = this.prisma.$queryRaw<
+      Array<{ city: string; count: bigint }>
+    >`
+      SELECT properties->>'cidade' as city, COUNT(*) as count
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND properties->>'cidade' IS NOT NULL
+      GROUP BY city ORDER BY count DESC LIMIT 5
+    `;
+
+    const avgSale = this.prisma.$queryRaw<Array<{ avg_sale: number }>>`
+      SELECT AVG((properties->>'valor_venda')::numeric) as avg_sale
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND (properties->>'valor_venda')::numeric > 0
+    `;
+
+    const avgRental = this.prisma.$queryRaw<Array<{ avg_rental: number }>>`
+      SELECT AVG((properties->>'valor_aluguel')::numeric) as avg_rental
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND (properties->>'valor_aluguel')::numeric > 0
+    `;
+
+    const [
+      topInterests,
+      topCategories,
+      topPropertyTypes,
+      topCities,
+      avgSaleValue,
+      avgRentalValue,
+    ] = await Promise.all([
+      interests,
+      categories,
+      propertyTypes,
+      cities,
+      avgSale,
+      avgRental,
+    ]);
+
+    return {
+      topInterests: topInterests.map((i) => ({ ...i, count: Number(i.count) })),
+      topCategories: topCategories.map((c) => ({
+        ...c,
+        count: Number(c.count),
+      })),
+      topPropertyTypes: topPropertyTypes.map((t) => ({
+        ...t,
+        count: Number(t.count),
+      })),
+      topCities: topCities.map((c) => ({ ...c, count: Number(c.count) })),
+      averageSaleValue: Math.round(avgSaleValue[0]?.avg_sale || 0),
+      averageRentalValue: Math.round(avgRentalValue[0]?.avg_rental || 0),
       period: {
         start: dateRange.start.toISOString(),
         end: dateRange.end.toISOString(),

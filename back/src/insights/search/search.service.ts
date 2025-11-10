@@ -5,17 +5,16 @@ import { DateFilter } from '../../events/dto/get-events.dto';
 import {
   SearchAnalyticsResponse,
   FiltersUsageResponse,
+  TopConvertingFiltersResponse,
 } from '../interfaces/categorized-insights.interface';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class SearchAnalyzerService {
-  private readonly logger = new Logger(SearchAnalyzerService.name);
+export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Gets date range based on filter type
-   */
   private getDateRange(
     dateFilter?: DateFilter,
     startDate?: string,
@@ -77,9 +76,6 @@ export class SearchAnalyzerService {
     return { start, end };
   }
 
-  /**
-   * Gets search analytics from materialized view
-   */
   async getSearchAnalytics(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -774,9 +770,6 @@ export class SearchAnalyzerService {
     };
   }
 
-  /**
-   * Gets filters usage analytics
-   */
   async getFiltersUsage(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -797,29 +790,56 @@ export class SearchAnalyzerService {
       queryDto.endDate,
     );
 
-    // Get total filter changes
+    // Calculate total filter changes from search_submit events
+    // Each search_submit represents a filter usage
     const totalResult = await this.prisma.$queryRaw<Array<{ total: bigint }>>`
-      SELECT SUM(usage_count) as total
-      FROM mv_filters_usage_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
+      SELECT COUNT(*) as total
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND name = 'search_submit'
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
     `;
 
     const totalFilterChanges = Number(totalResult[0]?.total || 0);
 
-    // Get filters by type
+    // Get filters by type from search_submit events
+    // Extract filter fields from properties JSONB and count each occurrence
     const filtersByType = await this.prisma.$queryRaw<
       Array<{ filter_field: string; count: bigint }>
     >`
+      WITH expanded_filters AS (
+        SELECT
+          unnest(ARRAY[
+            CASE WHEN properties->>'finalidade' IS NOT NULL THEN 'finalidade' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'tipos', '[]'::jsonb)) > 0 THEN 'tipos' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'cidades', '[]'::jsonb)) > 0 THEN 'cidades' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'bairros', '[]'::jsonb)) > 0 THEN 'bairros' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'quartos', '[]'::jsonb)) > 0 THEN 'quartos' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'suites', '[]'::jsonb)) > 0 THEN 'suites' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'banheiros', '[]'::jsonb)) > 0 THEN 'banheiros' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'vagas', '[]'::jsonb)) > 0 THEN 'vagas' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'salas', '[]'::jsonb)) > 0 THEN 'salas' END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'galpoes', '[]'::jsonb)) > 0 THEN 'galpoes' END,
+            CASE WHEN properties->'preco_venda' IS NOT NULL AND (properties->'preco_venda'->>'min') IS NOT NULL AND (properties->'preco_venda'->>'min') != '0' THEN 'preco_venda' END,
+            CASE WHEN properties->'preco_aluguel' IS NOT NULL AND (properties->'preco_aluguel'->>'min') IS NOT NULL AND (properties->'preco_aluguel'->>'min') != '0' THEN 'preco_aluguel' END,
+            CASE WHEN properties->'area' IS NOT NULL AND (properties->'area'->>'min') IS NOT NULL AND (properties->'area'->>'min') != '0' THEN 'area' END,
+            CASE WHEN (properties->>'mobiliado')::BOOLEAN = true THEN 'mobiliado' END,
+            CASE WHEN (properties->>'promocao')::BOOLEAN = true THEN 'promocao' END,
+            CASE WHEN (properties->>'pet_friendly')::BOOLEAN = true THEN 'pet_friendly' END
+          ]) as filter_field
+        FROM "Event"
+        WHERE "siteKey" = ${siteKey}
+          AND name = 'search_submit'
+          AND ts >= ${dateRange.start}
+          AND ts <= ${dateRange.end}
+      )
       SELECT
-        COALESCE(filter_field, event_name) as filter_field,
-        SUM(usage_count) as count
-      FROM mv_filters_usage_daily
-      WHERE site_key = ${siteKey}
-        AND bucket_date >= ${dateRange.start}
-        AND bucket_date <= ${dateRange.end}
-      GROUP BY COALESCE(filter_field, event_name)
+        filter_field,
+        COUNT(*) as count
+      FROM expanded_filters
+      WHERE filter_field IS NOT NULL
+      GROUP BY filter_field
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -883,6 +903,75 @@ export class SearchAnalyzerService {
       topFilterCombinations: combinations.map((c) => ({
         combination: Array.isArray(c.filters) ? c.filters : [],
         count: Number(c.count),
+      })),
+      period: {
+        start: dateRange.start.toISOString(),
+        end: dateRange.end.toISOString(),
+      },
+    };
+  }
+
+  async getTopConvertingFilters(
+    siteKey: string,
+    queryDto: InsightsQueryDto,
+  ): Promise<TopConvertingFiltersResponse> {
+    const site = await this.prisma.site.findUnique({
+      where: { siteKey },
+      select: { id: true },
+    });
+    if (!site) throw new NotFoundException('Site not found');
+
+    const dateRange = this.getDateRange(
+      queryDto.dateFilter,
+      queryDto.startDate,
+      queryDto.endDate,
+    );
+
+    // This is a complex query. It joins search_submit events with conversion events
+    // that happen in the same session.
+    const results = await this.prisma.$queryRaw<
+      Array<{ combination: Prisma.JsonValue; conversions: bigint }>
+    >`
+      WITH SessionConversions AS (
+        SELECT DISTINCT "sessionId"
+        FROM "Event"
+        WHERE "siteKey" = ${siteKey}
+          AND name IN ('conversion_whatsapp_click', 'thank_you_view')
+          AND ts >= ${dateRange.start}
+          AND ts <= ${dateRange.end}
+      ),
+      SearchFilters AS (
+        SELECT
+          "sessionId",
+          jsonb_strip_nulls(
+            jsonb_build_object(
+              'finalidade', properties->>'finalidade',
+              'cidade', properties->'cidades'->>0, -- Assuming single city for simplicity
+              'tipo', properties->'tipos'->>0, -- Assuming single type
+              'quartos', properties->'quartos'->>0 -- Assuming single bedroom count
+            )
+          ) as combination
+        FROM "Event"
+        WHERE "siteKey" = ${siteKey}
+          AND name = 'search_submit'
+          AND ts >= ${dateRange.start}
+          AND ts <= ${dateRange.end}
+          AND "sessionId" IN (SELECT "sessionId" FROM SessionConversions)
+      )
+      SELECT
+        combination,
+        COUNT(*) as conversions
+      FROM SearchFilters
+      WHERE jsonb_build_object() != combination -- Filter out empty combinations
+      GROUP BY combination
+      ORDER BY conversions DESC
+      LIMIT ${queryDto.limit || 10}
+    `;
+
+    return {
+      filters: results.map((r) => ({
+        combination: r.combination as Record<string, string | string[]>,
+        conversions: Number(r.conversions),
       })),
       period: {
         start: dateRange.start.toISOString(),

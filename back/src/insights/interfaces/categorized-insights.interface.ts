@@ -107,6 +107,17 @@ export interface FiltersUsageResponse {
   };
 }
 
+export interface TopConvertingFiltersResponse {
+  filters: Array<{
+    combination: Record<string, string | string[]>;
+    conversions: number;
+  }>;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
 // =====================
 // CONVERSION
 // =====================
@@ -138,6 +149,31 @@ export interface ConversionSourcesResponse {
   };
 }
 
+export interface LeadProfileResponse {
+  topInterests: Array<{
+    interest: string;
+    count: number;
+  }>;
+  topCategories: Array<{
+    category: string;
+    count: number;
+  }>;
+  topPropertyTypes: Array<{
+    type: string;
+    count: number;
+  }>;
+  topCities: Array<{
+    city: string;
+    count: number;
+  }>;
+  averageSaleValue: number;
+  averageRentalValue: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
 // =====================
 // PROPERTIES
 // =====================
@@ -158,6 +194,17 @@ export interface PopularPropertiesResponse {
 export interface PropertyEngagementResponse {
   totalViews: number;
   totalFavorites: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface PropertyFunnelResponse {
+  views: number;
+  favorites: number;
+  leads: number;
+  viewToLeadRate: number;
   period: {
     start: string;
     end: string;

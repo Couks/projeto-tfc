@@ -5,17 +5,15 @@ import { DateFilter } from '../../events/dto/get-events.dto';
 import {
   PopularPropertiesResponse,
   PropertyEngagementResponse,
+  PropertyFunnelResponse,
 } from '../interfaces/categorized-insights.interface';
 
 @Injectable()
-export class PropertyAnalyzerService {
-  private readonly logger = new Logger(PropertyAnalyzerService.name);
+export class PropertyService {
+  private readonly logger = new Logger(PropertyService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Gets date range based on filter type
-   */
   private getDateRange(
     dateFilter?: DateFilter,
     startDate?: string,
@@ -77,9 +75,6 @@ export class PropertyAnalyzerService {
     return { start, end };
   }
 
-  /**
-   * Gets popular properties analytics
-   */
   async getPopularProperties(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -145,9 +140,6 @@ export class PropertyAnalyzerService {
     };
   }
 
-  /**
-   * Gets property engagement analytics
-   */
   async getPropertyEngagement(
     siteKey: string,
     queryDto: InsightsQueryDto,
@@ -192,6 +184,64 @@ export class PropertyAnalyzerService {
     return {
       totalViews: Number(data.total_views),
       totalFavorites: Number(data.total_favorites),
+      period: {
+        start: dateRange.start.toISOString(),
+        end: dateRange.end.toISOString(),
+      },
+    };
+  }
+
+  async getPropertyFunnel(
+    siteKey: string,
+    propertyCode: string,
+    queryDto: InsightsQueryDto,
+  ): Promise<PropertyFunnelResponse> {
+    const site = await this.prisma.site.findUnique({
+      where: { siteKey },
+      select: { id: true },
+    });
+    if (!site) throw new NotFoundException('Site not found');
+
+    const dateRange = this.getDateRange(
+      queryDto.dateFilter,
+      queryDto.startDate,
+      queryDto.endDate,
+    );
+
+    const funnelData = await this.prisma.$queryRaw<
+      Array<{
+        views: bigint;
+        favorites: bigint;
+        leads: bigint;
+      }>
+    >`
+      SELECT
+        COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
+        COUNT(CASE WHEN name = 'property_favorite_toggle' AND (properties->>'action' = 'add') THEN 1 END) as favorites,
+        COUNT(CASE WHEN name IN ('conversion_whatsapp_click', 'thank_you_view') THEN 1 END) as leads
+      FROM "Event"
+      WHERE "siteKey" = ${siteKey}
+        AND properties->>'codigo' = ${propertyCode}
+        AND ts >= ${dateRange.start}
+        AND ts <= ${dateRange.end}
+    `;
+
+    const data = funnelData[0] || {
+      views: BigInt(0),
+      favorites: BigInt(0),
+      leads: BigInt(0),
+    };
+
+    const views = Number(data.views);
+    const leads = Number(data.leads);
+    const viewToLeadRate =
+      views > 0 ? Math.round((leads / views) * 100 * 100) / 100 : 0;
+
+    return {
+      views,
+      favorites: Number(data.favorites),
+      leads,
+      viewToLeadRate,
       period: {
         start: dateRange.start.toISOString(),
         end: dateRange.end.toISOString(),

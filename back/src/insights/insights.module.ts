@@ -1,27 +1,22 @@
 import { Module } from '@nestjs/common';
+import { OverviewModule } from './overview/overview.module';
+import { SearchModule } from './search/search.module';
+import { PropertyModule } from './property/property.module';
+import { ConversionModule } from './conversion/conversion.module';
 import { InsightsController } from './insights.controller';
 import { InsightsService } from './insights.service';
-import { SearchAnalyzerService } from './analyzers/search-analyzer.service';
-import { ConversionAnalyzerService } from './analyzers/conversion-analyzer.service';
-import { PropertyAnalyzerService } from './analyzers/property-analyzer.service';
 import { AuthModule } from '../auth/auth.module';
 import { UnifiedGuard } from '../common/guards/unified.guard';
 
 @Module({
-  imports: [AuthModule], // Import AuthModule to access JwtService for UnifiedGuard
-  controllers: [InsightsController],
-  providers: [
-    InsightsService,
-    SearchAnalyzerService,
-    ConversionAnalyzerService,
-    PropertyAnalyzerService,
-    UnifiedGuard,
+  imports: [
+    AuthModule,
+    OverviewModule,
+    SearchModule,
+    PropertyModule,
+    ConversionModule,
   ],
-  exports: [
-    InsightsService,
-    SearchAnalyzerService,
-    ConversionAnalyzerService,
-    PropertyAnalyzerService,
-  ],
+  controllers: [InsightsController], // Mantido para o endpoint admin/refresh
+  providers: [InsightsService, UnifiedGuard], // Mantido para o endpoint admin/refresh
 })
 export class InsightsModule {}

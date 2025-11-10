@@ -6,3 +6,15 @@ export interface DevicesResponse {
     count: number;
   }>;
 }
+
+export interface DevicesTimeSeriesResponse {
+  data: Array<{
+    date: string;
+    mobile: number;
+    desktop: number;
+  }>;
+  period: {
+    start: string;
+    end: string;
+  };
+}
