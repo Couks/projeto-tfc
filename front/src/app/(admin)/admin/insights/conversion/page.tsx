@@ -10,32 +10,33 @@ import {
 import { Spinner } from '@ui/spinner'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
-  useConversionRate,
+  useConversionSummary,
   useConversionSources,
-  useFormPerformance,
+  useLeadProfile,
 } from '@/lib/hooks/useInsights'
 import { Progress } from '@ui/progress'
 import { Alert, AlertDescription } from '@ui/alert'
 import { ConversionDistributionChart } from './_components/ConversionDistributionChart'
+import { LeadProfileSection } from './_components/LeadProfileSection'
 import { Skeleton } from '@/lib/components/ui/skeleton'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
   const {
-    data: rateData,
-    isLoading: rateLoading,
-    error: rateError,
-  } = useConversionRate(selectedSiteKey || '')
+    data: summaryData,
+    isLoading: summaryLoading,
+    error: summaryError,
+  } = useConversionSummary(selectedSiteKey || '')
   const {
     data: sourcesData,
     isLoading: sourcesLoading,
     error: sourcesError,
   } = useConversionSources(selectedSiteKey || '')
   const {
-    data: formData,
-    isLoading: formLoading,
-    error: formError,
-  } = useFormPerformance(selectedSiteKey || '')
+    data: leadProfileData,
+    isLoading: leadProfileLoading,
+    error: leadProfileError,
+  } = useLeadProfile(selectedSiteKey || '')
 
   if (!selectedSiteKey) {
     return (
@@ -48,7 +49,7 @@ export default function ConversionAnalyticsPage() {
   }
 
   // Check for errors
-  const hasError = rateError || sourcesError || formError
+  const hasError = summaryError || sourcesError || leadProfileError
 
   return (
     <div className="space-y-6">
@@ -78,18 +79,18 @@ export default function ConversionAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {rateLoading ? (
+            {summaryLoading ? (
               <div className="flex items-center justify-center h-20">
                 <Spinner className="h-6 w-6" />
               </div>
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {rateData?.conversionRate?.toFixed(2) || '0.00'}%
+                  {summaryData?.conversionRate?.toFixed(2) || '0.00'}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {rateData?.totalConversions || 0} /{' '}
-                  {rateData?.totalSessions || 0} sessões
+                  {summaryData?.totalConversions || 0} /{' '}
+                  {summaryData?.totalSessions || 0} sessões
                 </p>
               </>
             )}
@@ -103,56 +104,14 @@ export default function ConversionAnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {rateLoading ? (
+            {summaryLoading ? (
               <div className="flex items-center justify-center h-20">
                 <Spinner className="h-6 w-6" />
               </div>
             ) : (
               <div className="text-2xl font-bold">
-                {(rateData?.totalConversions || 0).toLocaleString()}
+                {(summaryData?.totalConversions || 0).toLocaleString()}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Envios</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {formLoading ? (
-              <div className="flex items-center justify-center h-20">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              <div className="text-2xl font-bold">
-                {(formData?.totalSubmits || 0).toLocaleString()}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-layer-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Conclusão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {formLoading ? (
-              <div className="flex items-center justify-center h-20">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {formData?.completionRate?.toFixed(2) || '0.00'}%
-                </div>
-                <Progress
-                  value={formData?.completionRate || 0}
-                  className="mt-2 h-2"
-                />
-              </>
             )}
           </CardContent>
         </Card>
@@ -168,8 +127,8 @@ export default function ConversionAnalyticsPage() {
         </CardHeader>
         <CardContent>
           <ConversionDistributionChart
-            data={rateData}
-            isLoading={rateLoading}
+            data={summaryData}
+            isLoading={summaryLoading}
           />
         </CardContent>
       </Card>
@@ -223,6 +182,12 @@ export default function ConversionAnalyticsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Lead Profile Section */}
+      <LeadProfileSection
+        data={leadProfileData}
+        isLoading={leadProfileLoading}
+      />
     </div>
   )
 }

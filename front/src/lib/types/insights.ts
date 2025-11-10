@@ -118,6 +118,17 @@ export interface FiltersUsageResponse {
   }
 }
 
+export interface TopConvertingFiltersResponse {
+  filters: Array<{
+    combination: Record<string, string | string[]>
+    conversions: number
+  }>
+  period: {
+    start: string
+    end: string
+  }
+}
+
 // ===== CONVERSION =====
 export interface ConversionRateResponse {
   totalConversions: number
@@ -146,13 +157,37 @@ export interface ConversionSourcesResponse {
   }
 }
 
+export interface LeadProfileResponse {
+  topInterests: Array<{
+    interest: string
+    count: number
+  }>
+  topCategories: Array<{
+    category: string
+    count: number
+  }>
+  topPropertyTypes: Array<{
+    type: string
+    count: number
+  }>
+  topCities: Array<{
+    city: string
+    count: number
+  }>
+  averageSaleValue: number
+  averageRentalValue: number
+  period: {
+    start: string
+    end: string
+  }
+}
+
 // ===== PROPERTIES =====
 export interface PopularPropertiesResponse {
   properties: Array<{
     codigo: string
     views: number
     favorites: number
-    ctaClicks: number
     engagementScore: number
   }>
   period: {
@@ -164,35 +199,17 @@ export interface PopularPropertiesResponse {
 export interface PropertyEngagementResponse {
   totalViews: number
   totalFavorites: number
-  totalShares: number
-  avgTimeOnProperty: number
-  ctaPerformance: {
-    fazerProposta: number
-    alugarImovel: number
-    maisInformacoes: number
-  }
   period: {
     start: string
     end: string
   }
 }
 
-export interface PropertyCTAPerformanceResponse {
-  ctas: Array<{
-    ctaType: string
-    clicks: number
-    conversionRate: number
-  }>
-  period: {
-    start: string
-    end: string
-  }
-}
-
-// ===== FORMS =====
-export interface FormPerformanceResponse {
-  totalSubmits: number
-  completionRate: number
+export interface PropertyFunnelResponse {
+  views: number
+  favorites: number
+  leads: number
+  viewToLeadRate: number
   period: {
     start: string
     end: string
@@ -207,5 +224,17 @@ export interface DevicesResponse {
     browser: string
     count: number
   }>
+}
+
+export interface DevicesTimeSeriesResponse {
+  data: Array<{
+    date: string
+    mobile: number
+    desktop: number
+  }>
+  period: {
+    start: string
+    end: string
+  }
 }
 

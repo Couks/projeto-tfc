@@ -9,9 +9,11 @@ import type {
   ConversionSourcesResponse,
   PopularPropertiesResponse,
   PropertyEngagementResponse,
-  PropertyCTAPerformanceResponse,
-  FormPerformanceResponse,
   DevicesResponse,
+  DevicesTimeSeriesResponse,
+  LeadProfileResponse,
+  PropertyFunnelResponse,
+  TopConvertingFiltersResponse,
 } from '../types/insights'
 
 export function useRefreshInsights() {
@@ -30,197 +32,184 @@ export function useRefreshInsights() {
 }
 
 // =====================================================
-// CATEGORIZED INSIGHTS HOOKS - NEW ENDPOINTS
+// OVERVIEW INSIGHTS
 // =====================================================
 
-// ===== SEARCH & FILTERS =====
+export function useDevices(siteKey: string, query?: InsightsQuery) {
+  return useQuery<DevicesResponse>({
+    queryKey: queryKeys.insights.overview.devices(siteKey, query),
+    queryFn: () =>
+      apiClient.get<DevicesResponse>(`/api/insights/overview/devices`, {
+        siteKey,
+        ...query,
+      }),
+    enabled: !!siteKey,
+  })
+}
 
-export function useSearchAnalytics(siteKey: string, query?: InsightsQuery) {
-  return useQuery<SearchAnalyticsResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'search',
-      'analytics',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<SearchAnalyticsResponse>(
-        `/api/insights/search/analytics`,
+export function useDevicesTimeSeries(siteKey: string, query?: InsightsQuery) {
+  return useQuery<DevicesTimeSeriesResponse>({
+    queryKey: queryKeys.insights.overview.devicesTimeSeries(siteKey, query),
+    queryFn: () =>
+      apiClient.get<DevicesTimeSeriesResponse>(
+        `/api/insights/overview/devices/timeseries`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+// =====================================================
+// SEARCH INSIGHTS
+// =====================================================
+
+export function useSearchSummary(siteKey: string, query?: InsightsQuery) {
+  return useQuery<SearchAnalyticsResponse>({
+    queryKey: queryKeys.insights.search.summary(siteKey, query),
+    queryFn: () =>
+      apiClient.get<SearchAnalyticsResponse>(`/api/insights/search/summary`, {
+        siteKey,
+        ...query,
+      }),
+    enabled: !!siteKey,
   })
 }
 
 export function useFiltersUsage(siteKey: string, query?: InsightsQuery) {
   return useQuery<FiltersUsageResponse>({
-    queryKey: [...queryKeys.insights.all, 'filters', 'usage', siteKey, query],
-    queryFn: async () => {
-      return apiClient.get<FiltersUsageResponse>(
-        `/api/insights/filters/usage`,
+    queryKey: queryKeys.insights.search.filtersUsage(siteKey, query),
+    queryFn: () =>
+      apiClient.get<FiltersUsageResponse>(
+        `/api/insights/search/filters-usage`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   })
 }
 
-// ===== CONVERSION =====
-
-export function useConversionRate(siteKey: string, query?: InsightsQuery) {
-  return useQuery<ConversionRateResponse>({
-    queryKey: [...queryKeys.insights.all, 'conversion', 'rate', siteKey, query],
-    queryFn: async () => {
-      return apiClient.get<ConversionRateResponse>(
-        `/api/insights/conversion/rate`,
+export function useTopConvertingFilters(
+  siteKey: string,
+  query?: InsightsQuery
+) {
+  return useQuery<TopConvertingFiltersResponse>({
+    queryKey: queryKeys.insights.search.topConvertingFilters(siteKey, query),
+    queryFn: () =>
+      apiClient.get<TopConvertingFiltersResponse>(
+        `/api/insights/search/top-converting-filters`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   })
 }
 
-export function useConversionSources(siteKey: string, query?: InsightsQuery) {
-  return useQuery<ConversionSourcesResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'conversion',
-      'sources',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<ConversionSourcesResponse>(
-        `/api/insights/conversion/sources`,
-        {
-          siteKey,
-        }
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  })
-}
-
-// ===== PROPERTIES =====
+// =====================================================
+// PROPERTY INSIGHTS
+// =====================================================
 
 export function usePopularProperties(siteKey: string, query?: InsightsQuery) {
   return useQuery<PopularPropertiesResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'properties',
-      'popular',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<PopularPropertiesResponse>(
+    queryKey: queryKeys.insights.property.popular(siteKey, query),
+    queryFn: () =>
+      apiClient.get<PopularPropertiesResponse>(
         `/api/insights/properties/popular`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   })
 }
 
 export function usePropertyEngagement(siteKey: string, query?: InsightsQuery) {
   return useQuery<PropertyEngagementResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'properties',
-      'engagement',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<PropertyEngagementResponse>(
+    queryKey: queryKeys.insights.property.engagement(siteKey, query),
+    queryFn: () =>
+      apiClient.get<PropertyEngagementResponse>(
         `/api/insights/properties/engagement`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   })
 }
 
-export function useCTAPerformance(siteKey: string, query?: InsightsQuery) {
-  return useQuery<PropertyCTAPerformanceResponse>({
-    queryKey: [...queryKeys.insights.all, 'properties', 'cta', siteKey, query],
-    queryFn: async () => {
-      return apiClient.get<PropertyCTAPerformanceResponse>(
-        `/api/insights/properties/cta-performance`,
+export function usePropertyFunnel(
+  siteKey: string,
+  propertyCode: string,
+  query?: InsightsQuery
+) {
+  return useQuery<PropertyFunnelResponse>({
+    queryKey: queryKeys.insights.property.funnel(siteKey, propertyCode, query),
+    queryFn: () =>
+      apiClient.get<PropertyFunnelResponse>(
+        `/api/insights/properties/${propertyCode}/funnel`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
-    enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+      ),
+    enabled: !!siteKey && !!propertyCode,
   })
 }
 
-// ===== FORMS =====
+// =====================================================
+// CONVERSION INSIGHTS
+// =====================================================
 
-export function useFormPerformance(siteKey: string, query?: InsightsQuery) {
-  return useQuery<FormPerformanceResponse>({
-    queryKey: [
-      ...queryKeys.insights.all,
-      'forms',
-      'performance',
-      siteKey,
-      query,
-    ],
-    queryFn: async () => {
-      return apiClient.get<FormPerformanceResponse>(
-        `/api/insights/forms/performance`,
+export function useConversionSummary(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ConversionRateResponse>({
+    queryKey: queryKeys.insights.conversion.summary(siteKey, query),
+    queryFn: () =>
+      apiClient.get<ConversionRateResponse>(
+        `/api/insights/conversion/summary`,
         {
           siteKey,
+          ...query,
         }
-      )
-    },
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   })
 }
 
-// ===== DEVICES =====
-
-export function useDevices(siteKey: string, query?: InsightsQuery) {
-  return useQuery<DevicesResponse>({
-    queryKey: queryKeys.insights.devices(siteKey, query),
-    queryFn: async () => {
-      return apiClient.get<DevicesResponse>(`/api/insights/devices`, {
-        siteKey,
-        ...query,
-      })
-    },
+export function useConversionSources(siteKey: string, query?: InsightsQuery) {
+  return useQuery<ConversionSourcesResponse>({
+    queryKey: queryKeys.insights.conversion.sources(siteKey, query),
+    queryFn: () =>
+      apiClient.get<ConversionSourcesResponse>(
+        `/api/insights/conversion/sources`,
+        {
+          siteKey,
+          ...query,
+        }
+      ),
     enabled: !!siteKey,
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+  })
+}
+
+export function useLeadProfile(siteKey: string, query?: InsightsQuery) {
+  return useQuery<LeadProfileResponse>({
+    queryKey: queryKeys.insights.conversion.leadProfile(siteKey, query),
+    queryFn: () =>
+      apiClient.get<LeadProfileResponse>(
+        `/api/insights/conversion/lead-profile`,
+        {
+          siteKey,
+          ...query,
+        }
+      ),
+    enabled: !!siteKey,
   })
 }
 

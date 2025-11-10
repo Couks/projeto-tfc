@@ -10,25 +10,38 @@ import {
 import { Skeleton } from '@ui/skeleton'
 import { Spinner } from '@ui/spinner'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
+import { useState } from 'react'
 import {
   usePopularProperties,
   usePropertyEngagement,
-  useCTAPerformance,
+  usePropertyFunnel,
 } from '@/lib/hooks/useInsights'
 import { PopularPropertiesTable } from './_components/PopularPropertiesTable'
 import { PopularPropertiesChart } from './_components/PopularPropertiesChart'
-import { CTADistributionChart } from './_components/CTADistributionChart'
+import { PropertyFunnelModal } from './_components/PropertyFunnelModal'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
+  const [selectedPropertyCode, setSelectedPropertyCode] = useState<
+    string | null
+  >(null)
+  const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false)
+
   const { data: popularData, isLoading: popularLoading } = usePopularProperties(
     selectedSiteKey || ''
   )
   const { data: engagementData, isLoading: engagementLoading } =
     usePropertyEngagement(selectedSiteKey || '')
-  const { data: ctaData, isLoading: ctaLoading } = useCTAPerformance(
-    selectedSiteKey || ''
+  const { data: funnelData, isLoading: funnelLoading } = usePropertyFunnel(
+    selectedSiteKey || '',
+    selectedPropertyCode || '',
+    undefined
   )
+
+  const handleViewFunnel = (propertyCode: string) => {
+    setSelectedPropertyCode(propertyCode)
+    setIsFunnelModalOpen(true)
+  }
 
   if (!selectedSiteKey) {
     return (
@@ -121,73 +134,6 @@ export default function PropertiesAnalyticsPage() {
         </Card>
       </div>
 
-      {/* Middle Row: Grid 2 colunas - Gráfico de CTAs + Lista de desempenho */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Distribuição de CTAs - Gráfico */}
-        <Card className="shadow-layer-4">
-          <CardHeader>
-            <CardTitle>Distribuição de Chamadas para Ação</CardTitle>
-            <CardDescription>
-              Como os usuários interagem com CTAs de imóveis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CTADistributionChart
-              data={engagementData}
-              isLoading={engagementLoading}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Taxa de Conversão de CTAs - Lista */}
-        <Card className="shadow-layer-3">
-          <CardHeader>
-            <CardTitle>Taxa de Cliques e Conversão de CTAs</CardTitle>
-            <CardDescription>
-              Métricas de desempenho para cada tipo de CTA
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {ctaLoading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {ctaData?.ctas.map((item, index) => (
-                  <div
-                    key={item.ctaType}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{item.ctaType}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.conversionRate.toFixed(2)}% taxa de conversão
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">
-                        {item.clicks.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">cliques</p>
-                    </div>
-                  </div>
-                )) || (
-                  <p className="text-muted-foreground">Sem dados disponíveis</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Bottom Row: Card full-width com tabela de imóveis populares */}
       <Card className="shadow-inner-5">
         <CardHeader>
@@ -204,10 +150,24 @@ export default function PropertiesAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <PopularPropertiesTable data={popularData?.properties || []} />
+            <PopularPropertiesTable
+              data={popularData?.properties || []}
+              onViewFunnel={handleViewFunnel}
+            />
           )}
         </CardContent>
       </Card>
+
+      {/* Property Funnel Modal */}
+      {selectedPropertyCode && (
+        <PropertyFunnelModal
+          propertyCode={selectedPropertyCode}
+          open={isFunnelModalOpen}
+          onOpenChange={setIsFunnelModalOpen}
+          data={funnelData}
+          isLoading={funnelLoading}
+        />
+      )}
     </div>
   )
 }

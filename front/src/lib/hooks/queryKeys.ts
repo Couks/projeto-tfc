@@ -9,89 +9,96 @@ export const queryKeys = {
   },
   insights: {
     all: ['insights'] as const,
-    // Categorized insights
-    search: {
-      analytics: (siteKey: string, query?: any) =>
+    overview: {
+      all: () => [...queryKeys.insights.all, 'overview'] as const,
+      devices: (siteKey, params) =>
         [
-          ...queryKeys.insights.all,
-          'search',
-          'analytics',
+          ...queryKeys.insights.overview.all(),
+          'devices',
           siteKey,
-          query,
+          params,
         ] as const,
-      filters: (siteKey: string, query?: any) =>
+      devicesTimeSeries: (siteKey, params) =>
         [
-          ...queryKeys.insights.all,
-          'filters',
-          'usage',
+          ...queryKeys.insights.overview.all(),
+          'devicesTimeSeries',
           siteKey,
-          query,
+          params,
+        ] as const,
+    },
+    search: {
+      all: () => [...queryKeys.insights.all, 'search'] as const,
+      summary: (siteKey, params) =>
+        [
+          ...queryKeys.insights.search.all(),
+          'summary',
+          siteKey,
+          params,
+        ] as const,
+      filtersUsage: (siteKey, params) =>
+        [
+          ...queryKeys.insights.search.all(),
+          'filtersUsage',
+          siteKey,
+          params,
+        ] as const,
+      topConvertingFilters: (siteKey, params) =>
+        [
+          ...queryKeys.insights.search.all(),
+          'topConvertingFilters',
+          siteKey,
+          params,
+        ] as const,
+    },
+    property: {
+      all: () => [...queryKeys.insights.all, 'property'] as const,
+      popular: (siteKey, params) =>
+        [
+          ...queryKeys.insights.property.all(),
+          'popular',
+          siteKey,
+          params,
+        ] as const,
+      engagement: (siteKey, params) =>
+        [
+          ...queryKeys.insights.property.all(),
+          'engagement',
+          siteKey,
+          params,
+        ] as const,
+      funnel: (siteKey, propertyCode, params) =>
+        [
+          ...queryKeys.insights.property.all(),
+          'funnel',
+          siteKey,
+          propertyCode,
+          params,
         ] as const,
     },
     conversion: {
-      rate: (siteKey: string, query?: any) =>
+      all: () => [...queryKeys.insights.all, 'conversion'] as const,
+      summary: (siteKey, params) =>
         [
-          ...queryKeys.insights.all,
-          'conversion',
-          'rate',
+          ...queryKeys.insights.conversion.all(),
+          'summary',
           siteKey,
-          query,
+          params,
         ] as const,
-      funnel: (siteKey: string, query?: any) =>
+      sources: (siteKey, params) =>
         [
-          ...queryKeys.insights.all,
-          'conversion',
-          'funnel',
-          siteKey,
-          query,
-        ] as const,
-      sources: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'conversion',
+          ...queryKeys.insights.conversion.all(),
           'sources',
           siteKey,
-          query,
+          params,
+        ] as const,
+      leadProfile: (siteKey, params) =>
+        [
+          ...queryKeys.insights.conversion.all(),
+          'leadProfile',
+          siteKey,
+          params,
         ] as const,
     },
-    properties: {
-      popular: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'properties',
-          'popular',
-          siteKey,
-          query,
-        ] as const,
-      engagement: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'properties',
-          'engagement',
-          siteKey,
-          query,
-        ] as const,
-      cta: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'properties',
-          'cta',
-          siteKey,
-          query,
-        ] as const,
-    },
-    forms: {
-      performance: (siteKey: string, query?: any) =>
-        [
-          ...queryKeys.insights.all,
-          'forms',
-          'performance',
-          siteKey,
-          query,
-        ] as const,
-    },
-    devices: (siteKey: string, query?: any) =>
-      [...queryKeys.insights.all, 'devices', siteKey, query] as const,
   },
   auth: {
     all: ['auth'] as const,

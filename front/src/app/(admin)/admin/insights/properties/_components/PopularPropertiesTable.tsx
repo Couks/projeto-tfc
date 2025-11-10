@@ -9,7 +9,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, BarChart3 } from 'lucide-react'
 import { Button } from '@ui/button'
 import {
   Table,
@@ -24,8 +24,12 @@ interface Property {
   codigo: string
   views: number
   favorites: number
-  ctaClicks: number
   engagementScore: number
+}
+
+interface PopularPropertiesTableProps {
+  data: Property[]
+  onViewFunnel?: (propertyCode: string) => void
 }
 
 const columns: ColumnDef<Property>[] = [
@@ -98,27 +102,6 @@ const columns: ColumnDef<Property>[] = [
     ),
   },
   {
-    accessorKey: 'ctaClicks',
-    header: ({ column }) => {
-      return (
-        <div className="text-right">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            CTA Clicks
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      )
-    },
-    cell: ({ row }) => (
-      <div className="text-right">
-        {row.getValue<number>('ctaClicks').toLocaleString()}
-      </div>
-    ),
-  },
-  {
     accessorKey: 'engagementScore',
     header: ({ column }) => {
       return (
@@ -141,13 +124,36 @@ const columns: ColumnDef<Property>[] = [
       </div>
     ),
   },
+  {
+    id: 'actions',
+    header: 'Ações',
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as {
+        onViewFunnel?: (propertyCode: string) => void
+      }
+      return (
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const propertyCode = row.getValue('codigo') as string
+              meta?.onViewFunnel?.(propertyCode)
+            }}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Ver Funil
+          </Button>
+        </div>
+      )
+    },
+  },
 ]
 
-interface PopularPropertiesTableProps {
-  data: Property[]
-}
-
-export function PopularPropertiesTable({ data }: PopularPropertiesTableProps) {
+export function PopularPropertiesTable({
+  data,
+  onViewFunnel,
+}: PopularPropertiesTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
 
   const table = useReactTable({
@@ -158,6 +164,9 @@ export function PopularPropertiesTable({ data }: PopularPropertiesTableProps) {
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
+    },
+    meta: {
+      onViewFunnel,
     },
   })
 
