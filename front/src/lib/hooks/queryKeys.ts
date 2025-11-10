@@ -11,14 +11,14 @@ export const queryKeys = {
     all: ['insights'] as const,
     overview: {
       all: () => [...queryKeys.insights.all, 'overview'] as const,
-      devices: (siteKey, params) =>
+      devices: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.overview.all(),
           'devices',
           siteKey,
           params,
         ] as const,
-      devicesTimeSeries: (siteKey, params) =>
+      devicesTimeSeries: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.overview.all(),
           'devicesTimeSeries',
@@ -28,21 +28,21 @@ export const queryKeys = {
     },
     search: {
       all: () => [...queryKeys.insights.all, 'search'] as const,
-      summary: (siteKey, params) =>
+      summary: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.search.all(),
           'summary',
           siteKey,
           params,
         ] as const,
-      filtersUsage: (siteKey, params) =>
+      filtersUsage: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.search.all(),
           'filtersUsage',
           siteKey,
           params,
         ] as const,
-      topConvertingFilters: (siteKey, params) =>
+      topConvertingFilters: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.search.all(),
           'topConvertingFilters',
@@ -52,21 +52,21 @@ export const queryKeys = {
     },
     property: {
       all: () => [...queryKeys.insights.all, 'property'] as const,
-      popular: (siteKey, params) =>
+      popular: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.property.all(),
           'popular',
           siteKey,
           params,
         ] as const,
-      engagement: (siteKey, params) =>
+      engagement: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.property.all(),
           'engagement',
           siteKey,
           params,
         ] as const,
-      funnel: (siteKey, propertyCode, params) =>
+      funnel: (siteKey: string, propertyCode: string, params?: any) =>
         [
           ...queryKeys.insights.property.all(),
           'funnel',
@@ -77,21 +77,21 @@ export const queryKeys = {
     },
     conversion: {
       all: () => [...queryKeys.insights.all, 'conversion'] as const,
-      summary: (siteKey, params) =>
+      summary: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.conversion.all(),
           'summary',
           siteKey,
           params,
         ] as const,
-      sources: (siteKey, params) =>
+      sources: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.conversion.all(),
           'sources',
           siteKey,
           params,
         ] as const,
-      leadProfile: (siteKey, params) =>
+      leadProfile: (siteKey: string, params?: any) =>
         [
           ...queryKeys.insights.conversion.all(),
           'leadProfile',
