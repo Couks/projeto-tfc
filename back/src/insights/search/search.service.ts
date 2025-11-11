@@ -828,7 +828,11 @@ export class SearchService {
             CASE WHEN properties->'area' IS NOT NULL AND (properties->'area'->>'min') IS NOT NULL AND (properties->'area'->>'min') != '0' THEN 'area' END,
             CASE WHEN (properties->>'mobiliado')::BOOLEAN = true THEN 'mobiliado' END,
             CASE WHEN (properties->>'promocao')::BOOLEAN = true THEN 'promocao' END,
-            CASE WHEN (properties->>'pet_friendly')::BOOLEAN = true THEN 'pet_friendly' END
+            CASE WHEN (properties->>'pet_friendly')::BOOLEAN = true THEN 'pet_friendly' END,
+            CASE WHEN properties->>'codigo' IS NOT NULL AND properties->>'codigo' != '' THEN '@search/codigo' END,
+            CASE WHEN properties->>'@search' IS NOT NULL AND properties->>'@search' != '' THEN '@search' END,
+            CASE WHEN properties->>'search' IS NOT NULL AND properties->>'search' != '' THEN 'search' END,
+            CASE WHEN properties->>'query' IS NOT NULL AND properties->>'query' != '' THEN 'query' END
           ]) as filter_field
         FROM "Event"
         WHERE "siteKey" = ${siteKey}
@@ -866,14 +870,15 @@ export class SearchService {
           properties,
           ARRAY_REMOVE(ARRAY[
             CASE WHEN properties->>'finalidade' IS NOT NULL THEN 'Finalidade: ' || (properties->>'finalidade') END,
-            CASE WHEN jsonb_array_length(COALESCE(properties->'tipos', '[]'::jsonb)) > 0 THEN 'Tipo: ' || jsonb_array_elements_text(properties->'tipos') END,
-            CASE WHEN jsonb_array_length(COALESCE(properties->'cidades', '[]'::jsonb)) > 0 THEN 'Cidade: ' || jsonb_array_elements_text(properties->'cidades') END,
-            CASE WHEN jsonb_array_length(COALESCE(properties->'quartos', '[]'::jsonb)) > 0 THEN 'Quartos: ' || jsonb_array_elements_text(properties->'quartos') END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'tipos', '[]'::jsonb)) > 0 THEN 'Tipo: ' || COALESCE(properties->'tipos'->>0, '') END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'cidades', '[]'::jsonb)) > 0 THEN 'Cidade: ' || COALESCE(properties->'cidades'->>0, '') END,
+            CASE WHEN jsonb_array_length(COALESCE(properties->'quartos', '[]'::jsonb)) > 0 THEN 'Quartos: ' || COALESCE(properties->'quartos'->>0, '') END,
             CASE WHEN properties->'preco_venda' IS NOT NULL AND (properties->'preco_venda'->>'min') IS NOT NULL AND (properties->'preco_venda'->>'min') != '0' THEN 'Preço Venda' END,
             CASE WHEN properties->'preco_aluguel' IS NOT NULL AND (properties->'preco_aluguel'->>'min') IS NOT NULL AND (properties->'preco_aluguel'->>'min') != '0' THEN 'Preço Aluguel' END,
             CASE WHEN (properties->>'mobiliado')::BOOLEAN = true THEN 'Mobiliado' END,
             CASE WHEN (properties->>'promocao')::BOOLEAN = true THEN 'Promoção' END,
-            CASE WHEN (properties->>'pet_friendly')::BOOLEAN = true THEN 'Pet Friendly' END
+            CASE WHEN (properties->>'pet_friendly')::BOOLEAN = true THEN 'Pet Friendly' END,
+            CASE WHEN properties->>'codigo' IS NOT NULL AND properties->>'codigo' != '' THEN 'Busca: Código' END
           ], NULL) as filter_array
         FROM "Event"
         WHERE "siteKey" = ${siteKey}
