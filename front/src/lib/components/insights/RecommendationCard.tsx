@@ -1,5 +1,11 @@
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import {
@@ -10,7 +16,7 @@ import {
   Smartphone,
   ArrowRight,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react'
 import type { CampaignRecommendation } from '@/lib/hooks/useCampaignRecommendations'
 
@@ -51,11 +57,15 @@ const actionLinks = {
   'Ver filtros que convertem': '/admin/insights/search',
 }
 
-export function RecommendationCard({ recommendation }: RecommendationCardProps) {
+export function RecommendationCard({
+  recommendation,
+}: RecommendationCardProps) {
   const TypeIcon = typeIcons[recommendation.type]
   const priorityInfo = priorityConfig[recommendation.priority]
   const PriorityIcon = priorityInfo.icon
-  const actionLink = recommendation.action ? actionLinks[recommendation.action as keyof typeof actionLinks] : undefined
+  const actionLink = recommendation.action
+    ? actionLinks[recommendation.action as keyof typeof actionLinks]
+    : undefined
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -72,7 +82,10 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
               </CardDescription>
             </div>
           </div>
-          <Badge variant={priorityInfo.variant} className="flex items-center gap-1 shrink-0">
+          <Badge
+            variant={priorityInfo.variant}
+            className="flex items-center gap-1 shrink-0"
+          >
             <PriorityIcon className="h-3 w-3" />
             <span className="text-xs">{priorityInfo.label}</span>
           </Badge>
@@ -80,7 +93,12 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
       </CardHeader>
       {recommendation.action && actionLink && (
         <CardContent>
-          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+          >
             <Link href={actionLink}>
               {recommendation.action}
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -91,4 +109,3 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
     </Card>
   )
 }
-

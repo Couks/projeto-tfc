@@ -1,11 +1,7 @@
 'use client'
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@ui/chart'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@ui/chart'
 import { Spinner } from '@ui/spinner'
 import type { ConversionRateResponse } from '@/lib/types/insights'
 
@@ -84,5 +80,3 @@ export function ConversionDistributionChart({
     </ChartContainer>
   )
 }
-
-

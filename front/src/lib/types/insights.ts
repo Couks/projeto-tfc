@@ -237,4 +237,3 @@ export interface DevicesTimeSeriesResponse {
     end: string
   }
 }
-

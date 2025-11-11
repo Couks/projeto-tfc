@@ -104,5 +104,3 @@ export function TopCidadesChart({ data, isLoading }: TopCidadesChartProps) {
     </ChartContainer>
   )
 }
-
-

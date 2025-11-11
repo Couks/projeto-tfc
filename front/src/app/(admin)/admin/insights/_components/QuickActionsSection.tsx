@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { Button } from '@ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 import {
-  Search,
-  Building2,
-  TrendingUp,
-  ArrowRight
-} from 'lucide-react'
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ui/card'
+import { Search, Building2, TrendingUp, ArrowRight } from 'lucide-react'
 
 export function QuickActionsSection() {
   return (
@@ -86,4 +87,3 @@ export function QuickActionsSection() {
     </Card>
   )
 }
-

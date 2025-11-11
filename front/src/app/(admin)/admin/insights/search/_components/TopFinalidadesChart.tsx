@@ -102,5 +102,3 @@ export function TopFinalidadesChart({
     </ChartContainer>
   )
 }
-
-

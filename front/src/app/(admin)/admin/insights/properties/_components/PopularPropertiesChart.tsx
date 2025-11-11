@@ -1,11 +1,14 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@ui/chart'
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from 'recharts'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@ui/chart'
 import { Spinner } from '@ui/spinner'
 import type { PopularPropertiesResponse } from '@/lib/types/insights'
 
@@ -66,5 +69,3 @@ export function PopularPropertiesChart({
     </ChartContainer>
   )
 }
-
-

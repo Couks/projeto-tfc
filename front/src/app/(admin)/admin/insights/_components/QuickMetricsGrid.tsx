@@ -7,7 +7,7 @@ import {
   Smartphone,
   ArrowUpRight,
   ArrowDownRight,
-  Minus
+  Minus,
 } from 'lucide-react'
 
 interface MetricCardProps {
@@ -20,7 +20,15 @@ interface MetricCardProps {
   trendValue?: string
 }
 
-function MetricCard({ title, value, subtitle, icon: Icon, isLoading, trend, trendValue }: MetricCardProps) {
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  isLoading,
+  trend,
+  trendValue,
+}: MetricCardProps) {
   const trendIcons = {
     up: ArrowUpRight,
     down: ArrowDownRight,
@@ -55,7 +63,9 @@ function MetricCard({ title, value, subtitle, icon: Icon, isLoading, trend, tren
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
             {trend && trendValue && TrendIcon && (
-              <div className={`flex items-center gap-1 mt-2 text-xs ${trendColors[trend]}`}>
+              <div
+                className={`flex items-center gap-1 mt-2 text-xs ${trendColors[trend]}`}
+              >
                 <TrendIcon className="h-3 w-3" />
                 <span>{trendValue}</span>
               </div>
@@ -103,8 +113,20 @@ export function QuickMetricsGrid({
         subtitle="Visitantes que se tornaram leads"
         icon={TrendingUp}
         isLoading={isLoadingConversion}
-        trend={conversionRate && conversionRate > 2 ? 'up' : conversionRate && conversionRate < 1 ? 'down' : 'neutral'}
-        trendValue={conversionRate && conversionRate > 2 ? 'Acima da média' : conversionRate && conversionRate < 1 ? 'Abaixo da média' : 'Na média'}
+        trend={
+          conversionRate && conversionRate > 2
+            ? 'up'
+            : conversionRate && conversionRate < 1
+              ? 'down'
+              : 'neutral'
+        }
+        trendValue={
+          conversionRate && conversionRate > 2
+            ? 'Acima da média'
+            : conversionRate && conversionRate < 1
+              ? 'Abaixo da média'
+              : 'Na média'
+        }
       />
       <MetricCard
         title="Imóvel Mais Visto"
@@ -123,4 +145,3 @@ export function QuickMetricsGrid({
     </div>
   )
 }
-

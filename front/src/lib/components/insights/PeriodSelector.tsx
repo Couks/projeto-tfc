@@ -140,4 +140,3 @@ export function PeriodSelector({ onPeriodChange }: PeriodSelectorProps) {
     </div>
   )
 }
-

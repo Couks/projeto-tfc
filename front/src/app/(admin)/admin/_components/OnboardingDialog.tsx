@@ -1,23 +1,23 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@ui/dialog"
-import { Button } from "@ui/button"
+} from '@ui/dialog'
+import { Button } from '@ui/button'
 import {
   Lightbulb,
   Code2,
   BarChart3,
   Target,
   ArrowRight,
-  CheckCircle2
-} from "lucide-react"
+  CheckCircle2,
+} from 'lucide-react'
 
 interface OnboardingDialogProps {
   open: boolean
@@ -26,47 +26,51 @@ interface OnboardingDialogProps {
 
 const steps = [
   {
-    title: "Bem-vindo ao InsightHouse",
-    description: "A plataforma de analytics para imobiliárias que transforma dados em campanhas de sucesso.",
+    title: 'Bem-vindo ao InsightHouse',
+    description:
+      'A plataforma de analytics para imobiliárias que transforma dados em campanhas de sucesso.',
     icon: Lightbulb,
     content: [
-      "Rastreie o comportamento dos visitantes no seu site",
-      "Entenda quais filtros e imóveis geram mais conversões",
-      "Receba recomendações de campanhas baseadas em dados reais",
-    ]
+      'Rastreie o comportamento dos visitantes no seu site',
+      'Entenda quais filtros e imóveis geram mais conversões',
+      'Receba recomendações de campanhas baseadas em dados reais',
+    ],
   },
   {
-    title: "Configure seu Site",
-    description: "Adicione o script de rastreamento ao seu site para começar a coletar dados.",
+    title: 'Configure seu Site',
+    description:
+      'Adicione o script de rastreamento ao seu site para começar a coletar dados.',
     icon: Code2,
     content: [
-      "Vá em Sites e cadastre seu domínio",
-      "Copie o código do script fornecido",
-      "Cole no <head> do seu site",
-      "Pronto! Os dados começarão a ser coletados automaticamente",
-    ]
+      'Vá em Sites e cadastre seu domínio',
+      'Copie o código do script fornecido',
+      'Cole no <head> do seu site',
+      'Pronto! Os dados começarão a ser coletados automaticamente',
+    ],
   },
   {
-    title: "Analise os Insights",
-    description: "Acesse a visão geral consolidada e análises avançadas segmentadas por categoria.",
+    title: 'Analise os Insights',
+    description:
+      'Acesse a visão geral consolidada e análises avançadas segmentadas por categoria.',
     icon: BarChart3,
     content: [
-      "Visão Geral: Dashboard com métricas principais",
-      "Análise de Buscas: Entenda o que os visitantes procuram",
-      "Análise de Imóveis: Veja quais imóveis geram mais interesse",
-      "Análise de Conversões: Acompanhe leads e conversões",
-    ]
+      'Visão Geral: Dashboard com métricas principais',
+      'Análise de Buscas: Entenda o que os visitantes procuram',
+      'Análise de Imóveis: Veja quais imóveis geram mais interesse',
+      'Análise de Conversões: Acompanhe leads e conversões',
+    ],
   },
   {
-    title: "Receba Recomendações",
-    description: "Nossa IA analisa seus dados e sugere ações para melhorar suas campanhas.",
+    title: 'Receba Recomendações',
+    description:
+      'Nossa IA analisa seus dados e sugere ações para melhorar suas campanhas.',
     icon: Target,
     content: [
-      "Recomendações personalizadas baseadas no seu público",
-      "Identifique oportunidades de otimização",
-      "Priorize ações que geram mais resultados",
-      "Melhore continuamente suas estratégias de marketing",
-    ]
+      'Recomendações personalizadas baseadas no seu público',
+      'Identifique oportunidades de otimização',
+      'Priorize ações que geram mais resultados',
+      'Melhore continuamente suas estratégias de marketing',
+    ],
   },
 ]
 
@@ -132,8 +136,8 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
                   index === currentStep
                     ? 'bg-primary'
                     : index < currentStep
-                    ? 'bg-primary/40'
-                    : 'bg-muted'
+                      ? 'bg-primary/40'
+                      : 'bg-muted'
                 }`}
               />
             ))}
@@ -144,29 +148,18 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
 
           <div className="flex items-center gap-2">
             {currentStep > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePrevious}
-              >
+              <Button variant="ghost" size="sm" onClick={handlePrevious}>
                 Voltar
               </Button>
             )}
 
             {!isLastStep && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSkip}
-              >
+              <Button variant="ghost" size="sm" onClick={handleSkip}>
                 Pular
               </Button>
             )}
 
-            <Button
-              onClick={handleNext}
-              size="sm"
-            >
+            <Button onClick={handleNext} size="sm">
               {isLastStep ? 'Começar' : 'Próximo'}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -176,4 +169,3 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
     </Dialog>
   )
 }
-

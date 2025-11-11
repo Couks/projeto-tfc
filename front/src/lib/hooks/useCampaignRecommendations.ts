@@ -32,7 +32,10 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
     // Search-based recommendations
     if (input.searchData) {
       // Top city recommendation
-      if (input.searchData.topCidades && input.searchData.topCidades.length > 0) {
+      if (
+        input.searchData.topCidades &&
+        input.searchData.topCidades.length > 0
+      ) {
         const topCity = input.searchData.topCidades[0]
         recs.push({
           id: 'top-city',
@@ -46,7 +49,10 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
       }
 
       // Top purpose recommendation
-      if (input.searchData.topFinalidades && input.searchData.topFinalidades.length > 0) {
+      if (
+        input.searchData.topFinalidades &&
+        input.searchData.topFinalidades.length > 0
+      ) {
         const topPurpose = input.searchData.topFinalidades[0]
         recs.push({
           id: 'top-purpose',
@@ -87,7 +93,10 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
       }
 
       // Top conversion type
-      if (input.conversionData.conversionsByType && input.conversionData.conversionsByType.length > 0) {
+      if (
+        input.conversionData.conversionsByType &&
+        input.conversionData.conversionsByType.length > 0
+      ) {
         const topType = input.conversionData.conversionsByType[0]
         recs.push({
           id: 'top-conversion-type',
@@ -103,11 +112,15 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
 
     // Property-based recommendations
     if (input.propertiesData) {
-      if (input.propertiesData.properties && input.propertiesData.properties.length > 0) {
+      if (
+        input.propertiesData.properties &&
+        input.propertiesData.properties.length > 0
+      ) {
         const topProperty = input.propertiesData.properties[0]
-        const viewToFavoriteRatio = topProperty.favorites > 0
-          ? topProperty.views / topProperty.favorites
-          : 0
+        const viewToFavoriteRatio =
+          topProperty.favorites > 0
+            ? topProperty.views / topProperty.favorites
+            : 0
 
         if (viewToFavoriteRatio > 20) {
           recs.push({
@@ -117,7 +130,11 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
             title: `Imóvel ${topProperty.codigo} tem baixo engajamento`,
             description: `Apesar de ${topProperty.views} visualizações, tem apenas ${topProperty.favorites} favoritos. Melhore fotos e descrição.`,
             action: 'Ver análise de imóveis',
-            data: { code: topProperty.codigo, views: topProperty.views, favorites: topProperty.favorites },
+            data: {
+              code: topProperty.codigo,
+              views: topProperty.views,
+              favorites: topProperty.favorites,
+            },
           })
         }
       }
@@ -125,13 +142,22 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
 
     // Device-based recommendations
     if (input.devicesData) {
-      const mobileDevices = input.devicesData.devices?.filter(d =>
-        d.deviceType.toLowerCase() === 'mobile'
-      ) || []
+      const mobileDevices =
+        input.devicesData.devices?.filter(
+          (d) => d.deviceType.toLowerCase() === 'mobile'
+        ) || []
 
-      const totalDevices = input.devicesData.devices?.reduce((sum, d) => sum + (d.count || 0), 0) || 0
-      const mobileCount = mobileDevices.reduce((sum, d) => sum + (d.count || 0), 0)
-      const mobilePercent = totalDevices > 0 ? (mobileCount / totalDevices) * 100 : 0
+      const totalDevices =
+        input.devicesData.devices?.reduce(
+          (sum, d) => sum + (d.count || 0),
+          0
+        ) || 0
+      const mobileCount = mobileDevices.reduce(
+        (sum, d) => sum + (d.count || 0),
+        0
+      )
+      const mobilePercent =
+        totalDevices > 0 ? (mobileCount / totalDevices) * 100 : 0
 
       if (mobilePercent > 60) {
         recs.push({
@@ -148,7 +174,10 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
 
     // Top converting filters recommendation
     if (input.topFiltersData) {
-      if (input.topFiltersData.filters && input.topFiltersData.filters.length > 0) {
+      if (
+        input.topFiltersData.filters &&
+        input.topFiltersData.filters.length > 0
+      ) {
         const topFilter = input.topFiltersData.filters[0]
         recs.push({
           id: 'top-converting-filter',
@@ -157,16 +186,20 @@ export function useCampaignRecommendations(input: RecommendationsInput) {
           title: `Combinação de filtros com alta conversão`,
           description: `Esta combinação gerou ${topFilter.conversions} conversões. Destaque imóveis que atendem estes critérios.`,
           action: 'Ver filtros que convertem',
-          data: { filters: topFilter.combination, conversions: topFilter.conversions },
+          data: {
+            filters: topFilter.combination,
+            conversions: topFilter.conversions,
+          },
         })
       }
     }
 
     // Sort by priority
     const priorityOrder = { high: 0, medium: 1, low: 2 }
-    return recs.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+    return recs.sort(
+      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+    )
   }, [input])
 
   return recommendations
 }
-
