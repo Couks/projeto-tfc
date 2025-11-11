@@ -15,11 +15,9 @@ import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   usePopularProperties,
   usePropertyEngagement,
-  usePropertyFunnel,
 } from '@/lib/hooks/useInsights'
 import { PopularPropertiesTable } from './_components/PopularPropertiesTable'
 import { PopularPropertiesChart } from './_components/PopularPropertiesChart'
-import { PropertyFunnelModal } from './_components/PropertyFunnelModal'
 import {
   DetailsModal,
   type DetailsDataItem,
@@ -31,10 +29,6 @@ import type { InsightsQuery } from '@/lib/types/insights'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
-  const [selectedPropertyCode, setSelectedPropertyCode] = useState<
-    string | null
-  >(null)
-  const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false)
   const [dateQuery, setDateQuery] = useState<InsightsQuery>({})
 
   const handlePeriodChange = (start: Date, end: Date) => {
@@ -51,11 +45,6 @@ export default function PropertiesAnalyticsPage() {
   )
   const { data: engagementData, isLoading: engagementLoading } =
     usePropertyEngagement(selectedSiteKey || '', dateQuery)
-  const { data: funnelData, isLoading: funnelLoading } = usePropertyFunnel(
-    selectedSiteKey || '',
-    selectedPropertyCode || '',
-    dateQuery
-  )
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -79,11 +68,6 @@ export default function PropertiesAnalyticsPage() {
   ) => {
     setModalData({ title, description, data, visualization, recommendations })
     setModalOpen(true)
-  }
-
-  const handleViewFunnel = (propertyCode: string) => {
-    setSelectedPropertyCode(propertyCode)
-    setIsFunnelModalOpen(true)
   }
 
   if (!selectedSiteKey) {
@@ -123,133 +107,136 @@ export default function PropertiesAnalyticsPage() {
         <PeriodSelector onPeriodChange={handlePeriodChange} />
       </div>
 
-      {/* Quick Metrics Grid */}
+      {/* Metrics and Chart Grid */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-layer-5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Visualizações
-            </CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <div className="flex items-center justify-center h-20">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {totalViews.toLocaleString()}
+        {/* Left Column: Metrics Cards */}
+        <div className="space-y-4 col-span-1">
+          <Card className="shadow-layer-5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total de Visualizações
+              </CardTitle>
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {engagementLoading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Spinner className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Visualizações realizadas
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {totalViews.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Visualizações realizadas
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-layer-4">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Favoritos
-            </CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {engagementLoading ? (
-              <div className="flex items-center justify-center h-20">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {totalFavorites.toLocaleString()}
+          <Card className="shadow-layer-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total de Favoritos
+              </CardTitle>
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {engagementLoading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Spinner className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Favoritos salvos
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {totalFavorites.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Favoritos salvos
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-layer-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Taxa de Favoritos
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-layer-3">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Taxa de Favoritos
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {engagementLoading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Spinner className="h-6 w-6" />
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{favoriteRate}%</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Favoritos por visualização
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Top Properties Chart */}
+        <Card className="shadow-inner-5 col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Top 5 Imóveis Mais Populares</CardTitle>
+              <CardDescription>
+                Imóveis com maior pontuação de engajamento
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const properties = popularData?.properties || []
+                openDetailsModal(
+                  'Todos os Imóveis Populares',
+                  properties.map((p) => ({
+                    label: `Imóvel #${p.codigo}`,
+                    value: p.views,
+                    subValue: p.url
+                      ? `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)}`
+                      : `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)} • URL não disponível`,
+                    link: p.url || undefined,
+                  })),
+                  'Ranking completo de imóveis por engajamento',
+                  [
+                    'Priorize os imóveis do topo em suas campanhas',
+                    'Analise imóveis com alta visualização mas baixos favoritos',
+                    'Use o funil de conversão para entender o comportamento',
+                  ],
+                  'list'
+                )
+              }}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent>
-            {engagementLoading ? (
-              <div className="flex items-center justify-center h-20">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{favoriteRate}%</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Favoritos por visualização
-                </p>
-              </>
-            )}
+            <PopularPropertiesChart
+              data={popularData}
+              isLoading={popularLoading}
+            />
           </CardContent>
         </Card>
       </div>
-
-      {/* Top Properties Chart */}
-      <Card className="shadow-inner-5">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Top 5 Imóveis Mais Populares</CardTitle>
-            <CardDescription>
-              Imóveis com maior pontuação de engajamento
-            </CardDescription>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const properties = popularData?.properties || []
-              openDetailsModal(
-                'Todos os Imóveis Populares',
-                properties.map((p) => ({
-                  label: `Imóvel #${p.codigo}`,
-                  value: p.views,
-                  subValue: p.url
-                    ? `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)}`
-                    : `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)} • URL não disponível`,
-                  link: p.url || undefined,
-                })),
-                'Ranking completo de imóveis por engajamento',
-                [
-                  'Priorize os imóveis do topo em suas campanhas',
-                  'Analise imóveis com alta visualização mas baixos favoritos',
-                  'Use o funil de conversão para entender o comportamento',
-                ],
-                'list'
-              )
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <PopularPropertiesChart
-            data={popularData}
-            isLoading={popularLoading}
-          />
-        </CardContent>
-      </Card>
 
       {/* Properties Table with Funnel */}
       <Card className="shadow-inner-5">
         <CardHeader>
           <CardTitle>Lista Completa de Imóveis</CardTitle>
           <CardDescription>
-            Visualize o funil de conversão individual de cada imóvel
+            Lista completa de imóveis com métricas de engajamento e leads
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -260,10 +247,7 @@ export default function PropertiesAnalyticsPage() {
               ))}
             </div>
           ) : popularData?.properties && popularData.properties.length > 0 ? (
-            <PopularPropertiesTable
-              data={popularData.properties}
-              onViewFunnel={handleViewFunnel}
-            />
+            <PopularPropertiesTable data={popularData.properties} />
           ) : (
             <p className="text-center text-muted-foreground py-8">
               Nenhum dado disponível
@@ -271,15 +255,6 @@ export default function PropertiesAnalyticsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Property Funnel Modal */}
-      <PropertyFunnelModal
-        open={isFunnelModalOpen}
-        onOpenChange={setIsFunnelModalOpen}
-        propertyCode={selectedPropertyCode || ''}
-        data={funnelData}
-        isLoading={funnelLoading}
-      />
 
       {/* Details Modal */}
       <DetailsModal

@@ -1,10 +1,11 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, LabelList } from 'recharts'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig,
 } from '@ui/chart'
 import { Spinner } from '@ui/spinner'
 import type { SearchAnalyticsResponse } from '@/lib/types/insights'
@@ -17,9 +18,20 @@ interface TopFinalidadesChartProps {
 const chartConfig = {
   count: {
     label: 'Buscas',
+  },
+  venda: {
+    label: 'Venda',
     color: 'hsl(var(--chart-1))',
   },
-}
+  aluguel: {
+    label: 'Aluguel',
+    color: 'hsl(var(--chart-2))',
+  },
+  lancamento: {
+    label: 'Lançamento',
+    color: 'hsl(var(--chart-3))',
+  },
+} satisfies ChartConfig
 
 export function TopFinalidadesChart({
   data,
@@ -41,29 +53,52 @@ export function TopFinalidadesChart({
     )
   }
 
-  const chartData = data.topFinalidades.slice(0, 5).map((item) => ({
-    finalidade: item.finalidade,
-    count: item.count,
-  }))
+  // Normalize finalidade names to match chartConfig keys
+  const normalizeFinalidade = (finalidade: string): string => {
+    const normalized = finalidade.toLowerCase().trim()
+    if (normalized.includes('venda')) return 'venda'
+    if (normalized.includes('aluguel')) return 'aluguel'
+    if (
+      normalized.includes('lançamento') ||
+      normalized.includes('lancamento')
+    ) {
+      return 'lancamento'
+    }
+    // Fallback to first available color if unknown
+    return 'venda'
+  }
+
+  // Map finalidades to chart data with proper colors
+  const chartData = data.topFinalidades.map((item) => {
+    const normalized = normalizeFinalidade(item.finalidade)
+    return {
+      finalidade: normalized,
+      count: item.count,
+      fill: `var(--color-${normalized})`,
+    }
+  })
 
   return (
-    <ChartContainer config={chartConfig} className="h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="finalidade" />
-          <YAxis />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar
-            dataKey="count"
-            fill="hsl(var(--chart-1))"
-            radius={[4, 4, 0, 0]}
+    <ChartContainer
+      config={chartConfig}
+      className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[300px]"
+    >
+      <PieChart>
+        <ChartTooltip
+          content={<ChartTooltipContent nameKey="count" hideLabel />}
+        />
+        <Pie data={chartData} dataKey="count" nameKey="finalidade" stroke="0">
+          <LabelList
+            dataKey="finalidade"
+            className="fill-background"
+            stroke="none"
+            fontSize={12}
+            formatter={(value: keyof typeof chartConfig) =>
+              chartConfig[value]?.label
+            }
           />
-        </BarChart>
-      </ResponsiveContainer>
+        </Pie>
+      </PieChart>
     </ChartContainer>
   )
 }

@@ -7,11 +7,29 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown, BarChart3, ExternalLink } from 'lucide-react'
+import {
+  ArrowUpDown,
+  ExternalLink,
+  Info,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react'
 import { Button } from '@ui/button'
+import { Input } from '@ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@ui/tooltip'
 import {
   Table,
   TableBody,
@@ -26,24 +44,15 @@ interface Property {
   url: string
   views: number
   favorites: number
+  leads: number
   engagementScore: number
 }
 
 interface PopularPropertiesTableProps {
   data: Property[]
-  onViewFunnel?: (propertyCode: string) => void
 }
 
 const columns: ColumnDef<Property>[] = [
-  {
-    id: 'rank',
-    header: '#',
-    cell: ({ row }) => (
-      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
-        {row.index + 1}
-      </div>
-    ),
-  },
   {
     accessorKey: 'codigo',
     header: ({ column }) => {
@@ -62,17 +71,17 @@ const columns: ColumnDef<Property>[] = [
       const url = row.original.url
 
       return (
-        <div className="space-y-1">
-          <div className="font-medium">#{codigo}</div>
+        <div className="space-y-1.5">
+          <div className="font-semibold text-base">#{codigo}</div>
           {url ? (
             <a
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline flex items-center gap-1"
+              className="text-xs text-primary hover:underline flex items-center gap-1.5 transition-colors"
             >
               <span className="truncate max-w-xs">{url}</span>
-              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
             </a>
           ) : (
             <span className="text-xs text-muted-foreground">
@@ -92,7 +101,7 @@ const columns: ColumnDef<Property>[] = [
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            Views
+            Visualizações
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -100,7 +109,9 @@ const columns: ColumnDef<Property>[] = [
     },
     cell: ({ row }) => (
       <div className="text-right">
-        {row.getValue<number>('views').toLocaleString()}
+        <span className="font-medium">
+          {row.getValue<number>('views').toLocaleString()}
+        </span>
       </div>
     ),
   },
@@ -113,7 +124,7 @@ const columns: ColumnDef<Property>[] = [
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            Favorites
+            Favoritos
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -121,7 +132,9 @@ const columns: ColumnDef<Property>[] = [
     },
     cell: ({ row }) => (
       <div className="text-right">
-        {row.getValue<number>('favorites').toLocaleString()}
+        <span className="font-medium">
+          {row.getValue<number>('favorites').toLocaleString()}
+        </span>
       </div>
     ),
   },
@@ -130,13 +143,29 @@ const columns: ColumnDef<Property>[] = [
     header: ({ column }) => {
       return (
         <div className="text-right">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Engagement Score
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    column.toggleSorting(column.getIsSorted() === 'asc')
+                  }
+                  className="gap-2"
+                >
+                  Score de Engajamento
+                  <Info className="h-3 w-3" />
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>
+                  Métrica ponderada que combina visualizações (peso 1) e
+                  favoritos (peso 3) para medir o engajamento do imóvel.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     },
@@ -149,48 +178,52 @@ const columns: ColumnDef<Property>[] = [
     ),
   },
   {
-    id: 'actions',
-    header: 'Ações',
-    cell: ({ row, table }) => {
-      const meta = table.options.meta as {
-        onViewFunnel?: (propertyCode: string) => void
-      }
+    accessorKey: 'leads',
+    header: ({ column }) => {
       return (
         <div className="text-right">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => {
-              const propertyCode = row.getValue('codigo') as string
-              meta?.onViewFunnel?.(propertyCode)
-            }}
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Ver Funil
+            Leads
+            <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )
     },
+    cell: ({ row }) => (
+      <div className="text-right">
+        <span className="font-semibold">
+          {row.getValue<number>('leads').toLocaleString()}
+        </span>
+      </div>
+    ),
   },
 ]
 
-export function PopularPropertiesTable({
-  data,
-  onViewFunnel,
-}: PopularPropertiesTableProps) {
+export function PopularPropertiesTable({ data }: PopularPropertiesTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = React.useState('')
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     state: {
       sorting,
-    },
-    meta: {
-      onViewFunnel,
+      globalFilter,
+      pagination,
     },
   })
 
@@ -198,45 +231,170 @@ export function PopularPropertiesTable({
     return (
       <div className="rounded-md border">
         <div className="p-8 text-center text-muted-foreground">
-          No data available
+          Nenhum dado disponível
         </div>
       </div>
     )
   }
 
+  const pageStart = pagination.pageIndex * pagination.pageSize + 1
+  const pageEnd = Math.min(
+    (pagination.pageIndex + 1) * pagination.pageSize,
+    table.getFilteredRowModel().rows.length
+  )
+  const totalResults = table.getFilteredRowModel().rows.length
+  const currentPage = pagination.pageIndex + 1
+  const totalPages = table.getPageCount()
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+    <div className="space-y-6">
+      {/* Filtro Global */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Buscar em todas as colunas..."
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+        {globalFilter && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setGlobalFilter('')}
+            className="h-10"
+          >
+            Limpar
+          </Button>
+        )}
+      </div>
+
+      {/* Tabela */}
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="border-b">
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="h-12 px-6 font-semibold"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    )
+                  })}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-32 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <p className="text-muted-foreground font-medium">
+                        Nenhum resultado encontrado
+                      </p>
+                      {globalFilter && (
+                        <p className="text-xs text-muted-foreground">
+                          Tente ajustar os filtros de busca
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-b transition-colors hover:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-6 py-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Controles de Paginação */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
+        <div className="text-sm text-muted-foreground">
+          Mostrando{' '}
+          <span className="font-medium text-foreground">{pageStart}</span> -{' '}
+          <span className="font-medium text-foreground">{pageEnd}</span> de{' '}
+          <span className="font-medium text-foreground">{totalResults}</span>{' '}
+          resultados
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.firstPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="h-9"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+            <span className="sr-only">Primeira página</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="h-9"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Página anterior</span>
+          </Button>
+          <div className="flex items-center gap-1 px-3 text-sm font-medium">
+            <span>Página</span>
+            <span className="text-foreground">{currentPage}</span>
+            <span>de</span>
+            <span className="text-foreground">{totalPages}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="h-9"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Próxima página</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.lastPage()}
+            disabled={!table.getCanNextPage()}
+            className="h-9"
+          >
+            <ChevronsRight className="h-4 w-4" />
+            <span className="sr-only">Última página</span>
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
