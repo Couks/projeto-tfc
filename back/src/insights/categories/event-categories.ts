@@ -24,7 +24,6 @@ export const EVENT_CATEGORY_MAP: Record<string, EventCategory> = {
 
   // Engajamento com imóvel (favoritos)
   favorite_toggle: EventCategory.PROPERTY,
-  property_favorite_toggle: EventCategory.PROPERTY,
 
   // Conversão
   conversion_whatsapp_click: EventCategory.CONVERSION,

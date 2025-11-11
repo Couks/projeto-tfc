@@ -600,7 +600,7 @@ class InsightHouseAnalytics {
         'click',
         () => {
           const isFavorited = !!favBtn?.classList?.contains('favorited');
-          this.capture('property_favorite_toggle', {
+          this.capture('favorite_toggle', {
             codigo: propertyCode,
             action: isFavorited ? 'remove' : 'add',
           });

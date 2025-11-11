@@ -124,7 +124,7 @@ export class PropertyService {
         properties->>'codigo' as property_code,
         COALESCE(pu.property_url, '') as property_url,
         COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
-        COUNT(CASE WHEN name = 'property_favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites
+        COUNT(CASE WHEN name = 'favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites
       FROM "Event"
       LEFT JOIN property_urls pu ON properties->>'codigo' = pu.property_code
       WHERE "siteKey" = ${siteKey}
@@ -132,7 +132,7 @@ export class PropertyService {
         AND ts <= ${dateRange.end}
         AND properties->>'codigo' IS NOT NULL
         AND properties->>'codigo' != ''
-        AND name IN ('property_page_view', 'property_favorite_toggle')
+        AND name IN ('property_page_view', 'favorite_toggle')
       GROUP BY properties->>'codigo', pu.property_url
       ORDER BY views DESC
       LIMIT ${queryDto.limit || 10}
@@ -190,12 +190,12 @@ export class PropertyService {
     >`
       SELECT
         COUNT(*) FILTER (WHERE name = 'property_page_view') as total_views,
-        COUNT(*) FILTER (WHERE name = 'property_favorite_toggle' AND properties->>'action' = 'add') as total_favorites
+        COUNT(*) FILTER (WHERE name = 'favorite_toggle' AND properties->>'action' = 'add') as total_favorites
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
-        AND name IN ('property_page_view', 'property_favorite_toggle')
+        AND name IN ('property_page_view', 'favorite_toggle')
     `;
 
     const data = engagement[0] || {
@@ -241,7 +241,7 @@ export class PropertyService {
     >`
       SELECT
         COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
-        COUNT(CASE WHEN name = 'property_favorite_toggle' AND (properties->>'action' = 'add') THEN 1 END) as favorites,
+        COUNT(CASE WHEN name = 'favorite_toggle' AND (properties->>'action' = 'add') THEN 1 END) as favorites,
         COUNT(CASE WHEN name IN ('conversion_whatsapp_click', 'thank_you_view') THEN 1 END) as leads
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
