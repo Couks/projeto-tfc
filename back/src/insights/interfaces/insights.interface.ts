@@ -2,8 +2,6 @@
 export interface DevicesResponse {
   devices: Array<{
     deviceType: string; // tipo de dispositivo
-    os: string; // sistema operacional
-    browser: string; // navegador
     count: number; // quantidade de acessos
   }>;
 }

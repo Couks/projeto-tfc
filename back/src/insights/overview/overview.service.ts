@@ -107,63 +107,36 @@ export class OverviewService {
       queryDto.endDate,
     );
 
-    // Consulta agregada extraindo device_type, os e browser do userAgent no context
-    // Usa regex (~*) para melhor performance e precisão
+    // Consulta agregada agrupando apenas por tipo de dispositivo
     const devices = await this.prisma.$queryRaw<
       Array<{
         device_type: string;
-        os: string;
-        browser: string;
         count: bigint;
       }>
     >`
       SELECT
         CASE
-          WHEN context->>'userAgent' ~* '(bot|crawler|spider|facebookexternalhit|Slackbot|WhatsApp)'
-            THEN 'bot'
           WHEN (context->>'userAgent' ~* '(iPhone|IEMobile|Windows Phone|Mobi|Mobile)')
              OR (context->>'userAgent' ~* 'Android' AND context->>'userAgent' ~* 'Mobile')
              OR (context->>'userAgent' ~* '(iPad|Tablet)')
             THEN 'mobile'
           ELSE 'desktop'
         END as device_type,
-        CASE
-          WHEN context->>'userAgent' ~* 'Android[ /]([0-9][0-9\.]*)' THEN 'Android'
-          WHEN context->>'userAgent' ~* '(iPhone|iPad|iPod).*OS [0-9_]+' THEN 'iOS'
-          WHEN context->>'userAgent' ~* 'Windows NT [0-9]' THEN 'Windows'
-          WHEN context->>'userAgent' ~* 'Mac OS X' OR context->>'userAgent' ~* 'Macintosh' THEN 'macOS'
-          WHEN context->>'userAgent' ~* 'Linux' THEN 'Linux'
-          ELSE 'Unknown'
-        END as os,
-        CASE
-          WHEN context->>'userAgent' ~* 'EdgA?/[0-9]' THEN 'Edge'
-          WHEN context->>'userAgent' ~* '(OPR|Opera)/[0-9]' THEN 'Opera'
-          WHEN context->>'userAgent' ~* 'SamsungBrowser/[0-9]' THEN 'Samsung Internet'
-          WHEN context->>'userAgent' ~* 'FxiOS/[0-9]' THEN 'Firefox iOS'
-          WHEN context->>'userAgent' ~* 'Firefox/[0-9]' THEN 'Firefox'
-          WHEN context->>'userAgent' ~* 'CriOS/[0-9]' THEN 'Chrome iOS'
-          WHEN context->>'userAgent' ~* 'Chrome/[0-9]' AND context->>'userAgent' !~* 'Edg|OPR|SamsungBrowser' THEN 'Chrome'
-          WHEN context->>'userAgent' ~* 'Version/[0-9].*Safari' THEN 'Safari'
-          WHEN context->>'userAgent' ~* 'Safari/[0-9]' THEN 'Safari'
-          ELSE 'Unknown'
-        END as browser,
         COUNT(*) as count
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
         AND context->>'userAgent' IS NOT NULL
-      GROUP BY device_type, os, browser
+        AND context->>'userAgent' !~* '(bot|crawler|spider|facebookexternalhit|Slackbot|WhatsApp)'
+      GROUP BY device_type
       ORDER BY count DESC
-      LIMIT ${queryDto.limit || 10}
     `;
 
-    // Retorna os dados já transformados
+    // Retorna os dados consolidados apenas em mobile e desktop
     return {
       devices: devices.map((d) => ({
         deviceType: d.device_type,
-        os: d.os,
-        browser: d.browser,
         count: Number(d.count),
       })),
     };
