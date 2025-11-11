@@ -107,7 +107,8 @@ export class OverviewService {
       queryDto.endDate,
     );
 
-    // Consulta agregada para tipos de dispositivos, sistemas operacionais e navegadores
+    // Consulta agregada extraindo device_type, os e browser do userAgent no context
+    // Usa regex (~*) para melhor performance e precisão
     const devices = await this.prisma.$queryRaw<
       Array<{
         device_type: string;
@@ -117,18 +118,42 @@ export class OverviewService {
       }>
     >`
       SELECT
-        properties->>'device_type' as device_type,
-        properties->>'os' as os,
-        properties->>'browser' as browser,
+        CASE
+          WHEN context->>'userAgent' ~* '(bot|crawler|spider|facebookexternalhit|Slackbot|WhatsApp)'
+            THEN 'bot'
+          WHEN (context->>'userAgent' ~* '(iPhone|IEMobile|Windows Phone|Mobi|Mobile)')
+             OR (context->>'userAgent' ~* 'Android' AND context->>'userAgent' ~* 'Mobile')
+             OR (context->>'userAgent' ~* '(iPad|Tablet)')
+            THEN 'mobile'
+          ELSE 'desktop'
+        END as device_type,
+        CASE
+          WHEN context->>'userAgent' ~* 'Android[ /]([0-9][0-9\.]*)' THEN 'Android'
+          WHEN context->>'userAgent' ~* '(iPhone|iPad|iPod).*OS [0-9_]+' THEN 'iOS'
+          WHEN context->>'userAgent' ~* 'Windows NT [0-9]' THEN 'Windows'
+          WHEN context->>'userAgent' ~* 'Mac OS X' OR context->>'userAgent' ~* 'Macintosh' THEN 'macOS'
+          WHEN context->>'userAgent' ~* 'Linux' THEN 'Linux'
+          ELSE 'Unknown'
+        END as os,
+        CASE
+          WHEN context->>'userAgent' ~* 'EdgA?/[0-9]' THEN 'Edge'
+          WHEN context->>'userAgent' ~* '(OPR|Opera)/[0-9]' THEN 'Opera'
+          WHEN context->>'userAgent' ~* 'SamsungBrowser/[0-9]' THEN 'Samsung Internet'
+          WHEN context->>'userAgent' ~* 'FxiOS/[0-9]' THEN 'Firefox iOS'
+          WHEN context->>'userAgent' ~* 'Firefox/[0-9]' THEN 'Firefox'
+          WHEN context->>'userAgent' ~* 'CriOS/[0-9]' THEN 'Chrome iOS'
+          WHEN context->>'userAgent' ~* 'Chrome/[0-9]' AND context->>'userAgent' !~* 'Edg|OPR|SamsungBrowser' THEN 'Chrome'
+          WHEN context->>'userAgent' ~* 'Version/[0-9].*Safari' THEN 'Safari'
+          WHEN context->>'userAgent' ~* 'Safari/[0-9]' THEN 'Safari'
+          ELSE 'Unknown'
+        END as browser,
         COUNT(*) as count
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
-        AND properties->>'device_type' IS NOT NULL
-        AND properties->>'os' IS NOT NULL
-        AND properties->>'browser' IS NOT NULL
-      GROUP BY properties->>'device_type', properties->>'os', properties->>'browser'
+        AND context->>'userAgent' IS NOT NULL
+      GROUP BY device_type, os, browser
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -169,36 +194,43 @@ export class OverviewService {
       queryDto.endDate,
     );
 
-    // Consulta agregada para dispositivos mobile/desktop por dia
-    const dailyData = await this.prisma.$queryRaw<
+    const timeSeries = await this.prisma.$queryRaw<
       Array<{
-        bucket_date: Date;
+        date: Date;
         device_type: string;
         count: bigint;
       }>
     >`
       SELECT
-        DATE(ts) as bucket_date,
-        properties->>'device_type' as device_type,
+        DATE(ts) as date,
+        CASE
+          WHEN (context->>'userAgent' ~* '(iPhone|IEMobile|Windows Phone|Mobi|Mobile)')
+             OR (context->>'userAgent' ~* 'Android' AND context->>'userAgent' ~* 'Mobile')
+             OR (context->>'userAgent' ~* '(iPad|Tablet)')
+            THEN 'mobile'
+          ELSE 'desktop'
+        END as device_type,
         COUNT(*) as count
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
-        AND properties->>'device_type' IN ('mobile', 'desktop')
-      GROUP BY DATE(ts), properties->>'device_type'
-      ORDER BY bucket_date ASC
+        AND context->>'userAgent' IS NOT NULL
+        AND context->>'userAgent' !~* '(bot|crawler|spider|facebookexternalhit|Slackbot|WhatsApp)'
+      GROUP BY DATE(ts), device_type
+      ORDER BY date ASC, device_type
     `;
 
     // Mapa para agrupar os resultados por data
     const dataMap = new Map<string, { mobile: number; desktop: number }>();
 
-    dailyData.forEach((row) => {
-      const dateKey = row.bucket_date.toISOString().split('T')[0];
+    timeSeries.forEach((row) => {
+      const dateKey = row.date.toISOString().split('T')[0];
       if (!dataMap.has(dateKey)) {
         dataMap.set(dateKey, { mobile: 0, desktop: 0 });
       }
       const entry = dataMap.get(dateKey)!;
+      // Agrupa mobile e tablet como mobile, exclui bots (já filtrados no WHERE)
       if (row.device_type === 'mobile') {
         entry.mobile = Number(row.count);
       } else if (row.device_type === 'desktop') {
