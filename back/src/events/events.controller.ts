@@ -29,19 +29,23 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   /**
-   * Gets events for a specific site with filtering and pagination
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters for filtering
-   * @returns Paginated events list
+   * Retorna eventos filtrados e paginados para um site
+   * @param siteKey Chave do site vinda do guard do tenant
+   * @param queryDto Parâmetros de filtro e paginação
+   * @returns Lista de eventos paginados
    */
   @Get()
   @ApiOperation({
-    summary: 'Get events for a site with filtering and pagination',
+    summary: 'Obter eventos do site',
+    description: 'Retorna eventos de um site com filtros e paginação.',
   })
-  @ApiResponse({ status: 200, description: 'Return paginated events list.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 req/min
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de eventos retornada com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 requisições por minuto
   async getEvents(
     @SiteKey() siteKey: string,
     @Query() queryDto: GetEventsDto,
@@ -50,15 +54,25 @@ export class EventsController {
   }
 
   /**
-   * Tracks a single event
-   * @param siteKey Site key from tenant guard
-   * @param req Request object
-   * @param trackEventDto Event data
-   * @returns Ingestion result
+   * Registra um evento único
+   * @param siteKey Chave do site vinda do guard do tenant
+   * @param req Objeto da requisição
+   * @param trackEventDto Dados do evento
+   * @returns Resultado do registro
    */
   @Post('track')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 1000, ttl: 60000 } }) // 1000 req/min per site
+  @ApiOperation({
+    summary: 'Rastrear evento único',
+    description: 'Registra um único evento de analytics para o site.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Evento registrado com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @Throttle({ default: { limit: 1000, ttl: 60000 } }) // 1000 requisições por minuto por site
   async track(
     @SiteKey() siteKey: string,
     @Req() req: Request,
@@ -73,15 +87,26 @@ export class EventsController {
   }
 
   /**
-   * Tracks multiple events in batch
-   * @param siteKey Site key from tenant guard
-   * @param req Request object
-   * @param trackBatchDto Batch of events
-   * @returns Batch ingestion result
+   * Registra vários eventos em lote
+   * @param siteKey Chave do site vinda do guard do tenant
+   * @param req Objeto da requisição
+   * @param trackBatchDto Lote de eventos
+   * @returns Resultado do registro em lote
    */
   @Post('track/batch')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 req/min for batch
+  @ApiOperation({
+    summary: 'Rastrear múltiplos eventos em lote',
+    description:
+      'Registra múltiplos eventos de analytics em uma única requisição.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Eventos registrados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  @Throttle({ default: { limit: 100, ttl: 60000 } }) // 100 requisições por minuto para lote
   async trackBatch(
     @SiteKey() siteKey: string,
     @Req() req: Request,

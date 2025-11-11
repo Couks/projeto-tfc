@@ -19,32 +19,32 @@ export class SitesService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Creates a new site with initial domain
-   * @param userId Owner user ID
-   * @param createSiteDto Site creation data
-   * @returns Created site
+   * Cria um novo site com domínio inicial
+   * @param userId ID do usuário dono
+   * @param createSiteDto Dados para criar o site
+   * @returns Site criado
    */
   async create(userId: string, createSiteDto: CreateSiteDto) {
     const { name, domain } = createSiteDto;
 
-    // Validate FQDN
+    // Valida o FQDN do domínio
     if (!isValidFqdn(domain)) {
-      throw new BadRequestException('Invalid domain format');
+      throw new BadRequestException('Formato de domínio inválido');
     }
 
-    // Check if domain already exists
+    // Verifica se o domínio já existe
     const existingDomain = await this.prisma.domain.findFirst({
       where: { host: domain },
     });
 
     if (existingDomain) {
-      throw new ConflictException('Domain already registered');
+      throw new ConflictException('Domínio já cadastrado');
     }
 
-    // Generate unique site key
+    // Gera chave única para o site
     const siteKey = generateSiteKey();
 
-    // Create site with domain
+    // Cria o site com o domínio
     const site = await this.prisma.site.create({
       data: {
         userId,
@@ -63,15 +63,15 @@ export class SitesService {
       },
     });
 
-    this.logger.log(`Site created: ${site.id} for user: ${userId}`);
+    this.logger.log(`Site criado: ${site.id} para usuário: ${userId}`);
 
     return site;
   }
 
   /**
-   * Retrieves all sites for a user
-   * @param userId Owner user ID
-   * @returns Array of sites
+   * Busca todos os sites de um usuário
+   * @param userId ID do usuário dono
+   * @returns Array de sites
    */
   async findAll(userId: string) {
     return this.prisma.site.findMany({
@@ -95,10 +95,10 @@ export class SitesService {
   }
 
   /**
-   * Retrieves a single site by ID
-   * @param id Site ID
-   * @param userId Owner user ID
-   * @returns Site data
+   * Busca um site pelo ID
+   * @param id ID do site
+   * @param userId ID do usuário dono
+   * @returns Dados do site
    */
   async findOne(id: string, userId: string) {
     const site = await this.prisma.site.findUnique({
@@ -110,21 +110,21 @@ export class SitesService {
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
-    // Check ownership
+    // Verifica se pertence ao usuário
     if (site.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException('Acesso negado');
     }
 
     return site;
   }
 
   /**
-   * Finds a site by site key
-   * @param siteKey Site key
-   * @returns Site data
+   * Busca site pela chave do site
+   * @param siteKey Chave do site
+   * @returns Dados do site
    */
   async findBySiteKey(siteKey: string) {
     const site = await this.prisma.site.findUnique({
@@ -139,21 +139,21 @@ export class SitesService {
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     return site;
   }
 
   /**
-   * Updates a site
-   * @param id Site ID
-   * @param userId Owner user ID
-   * @param updateSiteDto Update data
-   * @returns Updated site
+   * Atualiza um site
+   * @param id ID do site
+   * @param userId ID do usuário dono
+   * @param updateSiteDto Dados de atualização
+   * @returns Site atualizado
    */
   async update(id: string, userId: string, updateSiteDto: UpdateSiteDto) {
-    // Verify ownership
+    // Verifica se pertence ao usuário
     await this.findOne(id, userId);
 
     const site = await this.prisma.site.update({
@@ -165,35 +165,35 @@ export class SitesService {
       },
     });
 
-    this.logger.log(`Site updated: ${id}`);
+    this.logger.log(`Site atualizado: ${id}`);
 
     return site;
   }
 
   /**
-   * Deletes a site
-   * @param id Site ID
-   * @param userId Owner user ID
+   * Remove um site
+   * @param id ID do site
+   * @param userId ID do usuário dono
    */
   async remove(id: string, userId: string) {
-    // Verify ownership
+    // Verifica se pertence ao usuário
     await this.findOne(id, userId);
 
     await this.prisma.site.delete({
       where: { id },
     });
 
-    this.logger.log(`Site deleted: ${id}`);
+    this.logger.log(`Site removido: ${id}`);
   }
 
   /**
-   * Retrieves domains for a site
-   * @param siteId Site ID
-   * @param userId Owner user ID
-   * @returns Array of domains
+   * Busca domínios de um site
+   * @param siteId ID do site
+   * @param userId ID do usuário dono
+   * @returns Array de domínios
    */
   async getDomains(siteId: string, userId: string) {
-    // Verify ownership
+    // Verifica se pertence ao usuário
     await this.findOne(siteId, userId);
 
     return this.prisma.domain.findMany({
@@ -203,11 +203,11 @@ export class SitesService {
   }
 
   /**
-   * Adds a domain to a site
-   * @param siteId Site ID
-   * @param userId Owner user ID
-   * @param createDomainDto Domain data
-   * @returns Created domain
+   * Adiciona um domínio ao site
+   * @param siteId ID do site
+   * @param userId ID do usuário dono
+   * @param createDomainDto Dados do domínio
+   * @returns Domínio criado
    */
   async addDomain(
     siteId: string,
@@ -216,15 +216,15 @@ export class SitesService {
   ) {
     const { host, isPrimary } = createDomainDto;
 
-    // Verify ownership
+    // Verifica se pertence ao usuário
     await this.findOne(siteId, userId);
 
-    // Validate FQDN
+    // Valida o FQDN do domínio
     if (!isValidFqdn(host)) {
-      throw new BadRequestException('Invalid domain format');
+      throw new BadRequestException('Formato de domínio inválido');
     }
 
-    // Check if domain already exists
+    // Verifica se o domínio já existe
     const existingDomain = await this.prisma.domain.findFirst({
       where: {
         OR: [{ host }, { siteId, host }],
@@ -232,10 +232,10 @@ export class SitesService {
     });
 
     if (existingDomain) {
-      throw new ConflictException('Domain already registered');
+      throw new ConflictException('Domínio já cadastrado');
     }
 
-    // If setting as primary, unset other primary domains
+    // Se for primário, remove status primário de outros domínios
     if (isPrimary) {
       await this.prisma.domain.updateMany({
         where: { siteId, isPrimary: true },
@@ -251,19 +251,19 @@ export class SitesService {
       },
     });
 
-    this.logger.log(`Domain added: ${host} to site: ${siteId}`);
+    this.logger.log(`Domínio adicionado: ${host} ao site: ${siteId}`);
 
     return domain;
   }
 
   /**
-   * Removes a domain from a site
-   * @param siteId Site ID
-   * @param domainId Domain ID
-   * @param userId Owner user ID
+   * Remove um domínio do site
+   * @param siteId ID do site
+   * @param domainId ID do domínio
+   * @param userId ID do usuário dono
    */
   async removeDomain(siteId: string, domainId: string, userId: string) {
-    // Verify ownership
+    // Verifica se pertence ao usuário
     await this.findOne(siteId, userId);
 
     const domain = await this.prisma.domain.findUnique({
@@ -271,22 +271,22 @@ export class SitesService {
     });
 
     if (!domain || domain.siteId !== siteId) {
-      throw new NotFoundException('Domain not found');
+      throw new NotFoundException('Domínio não encontrado');
     }
 
-    // Prevent deleting the last domain
+    // Não permite deletar o último domínio
     const domainCount = await this.prisma.domain.count({
       where: { siteId },
     });
 
     if (domainCount <= 1) {
-      throw new BadRequestException('Cannot delete the last domain');
+      throw new BadRequestException('Não pode remover o último domínio');
     }
 
     await this.prisma.domain.delete({
       where: { id: domainId },
     });
 
-    this.logger.log(`Domain deleted: ${domainId} from site: ${siteId}`);
+    this.logger.log(`Domínio removido: ${domainId} do site: ${siteId}`);
   }
 }

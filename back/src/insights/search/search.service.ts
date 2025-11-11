@@ -67,7 +67,7 @@ export class SearchService {
       return { start, end };
     }
 
-    // Default: last 30 days
+    // Padrão: últimos 30 dias
     const start = new Date(now);
     start.setDate(now.getDate() - 30);
     start.setHours(0, 0, 0, 0);
@@ -80,14 +80,14 @@ export class SearchService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<SearchAnalyticsResponse> {
-    // Verify site exists
+    // Verificar se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -96,7 +96,7 @@ export class SearchService {
       queryDto.endDate,
     );
 
-    // Get total searches
+    // Buscar o total de buscas
     const totalResult = await this.prisma.$queryRaw<Array<{ total: bigint }>>`
       SELECT COUNT(*) as total
       FROM "Event"
@@ -108,7 +108,7 @@ export class SearchService {
 
     const totalSearches = Number(totalResult[0]?.total || 0);
 
-    // Get top finalidades
+    // Buscar as principais finalidades
     const finalidades = await this.prisma.$queryRaw<
       Array<{ finalidade: string; count: bigint }>
     >`
@@ -126,7 +126,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top tipos from search_submit events
+    // Buscar os principais tipos
     const tipos = await this.prisma.$queryRaw<
       Array<{ tipo: string; count: bigint }>
     >`
@@ -144,7 +144,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top cidades from search_submit events
+    // Buscar as principais cidades
     const cidades = await this.prisma.$queryRaw<
       Array<{ cidade: string; count: bigint }>
     >`
@@ -162,7 +162,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top bairros from search_submit events
+    // Buscar os principais bairros
     const bairros = await this.prisma.$queryRaw<
       Array<{ bairro: string; count: bigint }>
     >`
@@ -180,7 +180,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top quartos from search_submit events
+    // Buscar os principais números de quartos
     const quartos = await this.prisma.$queryRaw<
       Array<{ quartos: string; count: bigint }>
     >`
@@ -198,7 +198,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top suites from search_submit events
+    // Buscar os principais números de suítes
     const suites = await this.prisma.$queryRaw<
       Array<{ suites: string; count: bigint }>
     >`
@@ -216,7 +216,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top banheiros from search_submit events
+    // Buscar os principais números de banheiros
     const banheiros = await this.prisma.$queryRaw<
       Array<{ banheiros: string; count: bigint }>
     >`
@@ -234,7 +234,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top vagas from search_submit events
+    // Buscar os principais números de vagas
     const vagas = await this.prisma.$queryRaw<
       Array<{ vagas: string; count: bigint }>
     >`
@@ -252,7 +252,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top salas from search_submit events (comercial)
+    // Buscar as principais salas (comercial)
     const salas = await this.prisma.$queryRaw<
       Array<{ salas: string; count: bigint }>
     >`
@@ -270,7 +270,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top galpoes from search_submit events (comercial)
+    // Buscar os principais galpões (comercial)
     const galpoes = await this.prisma.$queryRaw<
       Array<{ galpoes: string; count: bigint }>
     >`
@@ -288,7 +288,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get price ranges for venda
+    // Buscar as faixas de preço para venda
     const priceRangesVenda = await this.prisma.$queryRaw<
       Array<{ range: string; count: bigint }>
     >`
@@ -316,7 +316,7 @@ export class SearchService {
       ORDER BY count DESC
     `;
 
-    // Get price ranges for aluguel
+    // Buscar as faixas de preço para aluguel
     const priceRangesAluguel = await this.prisma.$queryRaw<
       Array<{ range: string; count: bigint }>
     >`
@@ -344,7 +344,7 @@ export class SearchService {
       ORDER BY count DESC
     `;
 
-    // Get area ranges
+    // Buscar as faixas de área
     const areaRanges = await this.prisma.$queryRaw<
       Array<{ range: string; count: bigint }>
     >`
@@ -372,7 +372,7 @@ export class SearchService {
       ORDER BY count DESC
     `;
 
-    // Get top switches used (boolean filters)
+    // Buscar os switches mais usados (filtros booleanos)
     const switches = await this.prisma.$queryRaw<
       Array<{ switch: string; count: bigint }>
     >`
@@ -473,7 +473,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get total searches for percentage calculation
+    // Buscar total de buscas para cálculo do percentual
     const totalForPercentage = await this.prisma.$queryRaw<
       Array<{ total: bigint }>
     >`
@@ -487,7 +487,7 @@ export class SearchService {
 
     const totalCount = Number(totalForPercentage[0]?.total || 1);
 
-    // Get top comodidades
+    // Buscar as principais comodidades
     const comodidades = await this.prisma.$queryRaw<
       Array<{ comodidade: string; count: bigint }>
     >`
@@ -539,7 +539,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top lazer
+    // Buscar principais itens de lazer
     const lazer = await this.prisma.$queryRaw<
       Array<{ lazer: string; count: bigint }>
     >`
@@ -599,7 +599,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top seguranca
+    // Buscar itens principais de segurança
     const seguranca = await this.prisma.$queryRaw<
       Array<{ seguranca: string; count: bigint }>
     >`
@@ -643,7 +643,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Get top comodos (area_servico, varanda)
+    // Buscar comodos principais (área de serviço e varanda)
     const comodos = await this.prisma.$queryRaw<
       Array<{ comodo: string; count: bigint }>
     >`
@@ -671,7 +671,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Calculate average filters used per search
+    // Calcular a média de filtros usados por busca
     const avgFiltersResult = await this.prisma.$queryRaw<
       Array<{ avg_filters: number }>
     >`
@@ -776,14 +776,14 @@ export class SearchService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<FiltersUsageResponse> {
-    // Verify site exists
+    // Verificar se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -792,8 +792,8 @@ export class SearchService {
       queryDto.endDate,
     );
 
-    // Calculate total filter changes from search_submit events
-    // Each search_submit represents a filter usage
+    // Calcular total de alterações de filtro pelos eventos search_submit
+    // Cada search_submit representa um uso de filtro
     const totalResult = await this.prisma.$queryRaw<Array<{ total: bigint }>>`
       SELECT COUNT(*) as total
       FROM "Event"
@@ -805,8 +805,8 @@ export class SearchService {
 
     const totalFilterChanges = Number(totalResult[0]?.total || 0);
 
-    // Get filters by type from search_submit events
-    // Extract filter fields from properties JSONB and count each occurrence
+    // Buscar uso dos filtros por tipo
+    // Extrai os campos de filtro do JSONB e conta cada ocorrência
     const filtersByType = await this.prisma.$queryRaw<
       Array<{ filter_field: string; count: bigint }>
     >`
@@ -846,7 +846,7 @@ export class SearchService {
       LIMIT ${queryDto.limit || 10}
     `;
 
-    // Calculate percentages
+    // Calcular os percentuais dos filtros
     const filtersWithPercentage = filtersByType.map((f) => ({
       filterType: f.filter_field || 'unknown',
       count: Number(f.count),
@@ -856,7 +856,7 @@ export class SearchService {
           : 0,
     }));
 
-    // Get top filter combinations from search_submit events
+    // Buscar principais combinações de filtros
     const combinations = await this.prisma.$queryRaw<
       Array<{ combination_key: string; count: bigint; filters: any }>
     >`
@@ -921,7 +921,7 @@ export class SearchService {
       where: { siteKey },
       select: { id: true },
     });
-    if (!site) throw new NotFoundException('Site not found');
+    if (!site) throw new NotFoundException('Site não encontrado');
 
     const dateRange = this.getDateRange(
       queryDto.dateFilter,
@@ -929,8 +929,8 @@ export class SearchService {
       queryDto.endDate,
     );
 
-    // This is a complex query. It joins search_submit events with conversion events
-    // that happen in the same session.
+    // Essa consulta faz um join entre eventos de search_submit e conversões
+    // no mesmo sessionId
     const results = await this.prisma.$queryRaw<
       Array<{ combination: Prisma.JsonValue; conversions: bigint }>
     >`
@@ -948,9 +948,9 @@ export class SearchService {
           jsonb_strip_nulls(
             jsonb_build_object(
               'finalidade', properties->>'finalidade',
-              'cidade', properties->'cidades'->>0, -- Assuming single city for simplicity
-              'tipo', properties->'tipos'->>0, -- Assuming single type
-              'quartos', properties->'quartos'->>0 -- Assuming single bedroom count
+              'cidade', properties->'cidades'->>0, -- Considerando apenas uma cidade como exemplo
+              'tipo', properties->'tipos'->>0,     -- Considerando apenas um tipo
+              'quartos', properties->'quartos'->>0 -- Considerando apenas um número de quartos
             )
           ) as combination
         FROM "Event"
@@ -964,7 +964,7 @@ export class SearchService {
         combination,
         COUNT(*) as conversions
       FROM SearchFilters
-      WHERE jsonb_build_object() != combination -- Filter out empty combinations
+      WHERE jsonb_build_object() != combination -- Ignorar combinações vazias
       GROUP BY combination
       ORDER BY conversions DESC
       LIMIT ${queryDto.limit || 10}

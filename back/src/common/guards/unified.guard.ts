@@ -1,31 +1,31 @@
 /**
- * UnifiedGuard - Guard Unificado de Autenticação e Multi-Tenancy
+ * Guard unificado para autenticação (JWT) e multi-tenancy (site)
  *
- * Valida JWT do cookie e resolve siteId do header X-Site-Key quando aplicável.
- * Substitui AuthGuard e TenantGuard em um único guard flexível.
+ * Valida o cookie com JWT e resolve o siteId pelo header X-Site-Key quando necessário.
+ * Substitui os guards AuthGuard e TenantGuard em um só.
  *
  * Como funciona:
- * 1. Valida JWT do cookie 'admin_session' (se presente)
- * 2. Extrai e valida 'X-Site-Key' do header (se presente)
- * 3. Anexa authSession ao request quando JWT válido
- * 4. Anexa tenant ao request quando siteKey válido
- * 5. Suporta rotas que precisam só de auth, só de tenant, ou ambos
+ * 1. Valida JWT do cookie 'admin_session' (se existir)
+ * 2. Pega e valida o 'X-Site-Key' do header (se existir)
+ * 3. Adiciona authSession no request se JWT for válido
+ * 4. Adiciona tenant no request se siteKey for válido
+ * 5. Funciona para rotas que precisam só de auth, só de tenant, ou dos dois
  *
  * Usado em:
- * - SitesController: Requer auth apenas
- * - EventsController: Requer tenant apenas
- * - OverviewController, SearchController, PropertyController, ConversionController: Requer tenant apenas
- * - AuthController: Requer auth apenas (pode usar este guard também)
+ * - SitesController: precisa só de auth
+ * - EventsController: precisa só de tenant
+ * - OverviewController, SearchController, PropertyController, ConversionController: precisam só de tenant
+ * - AuthController: pode usar esse guard também para só auth
  *
- * Dependências:
- * - JwtService: Para validar tokens JWT
- * - PrismaService: Para buscar site e domínios no banco
+ * Depende de:
+ * - JwtService: para validar JWT
+ * - PrismaService: para buscar site no banco
  *
  * Segurança:
- * - JWT stateless (não requer sessão no servidor)
- * - Cookie HttpOnly (não acessível via JavaScript)
- * - SiteKey único e imprevisível (não pode ser forjado)
- * - Apenas sites ativos podem processar eventos
+ * - JWT sem estado (não precisa de sessão no servidor)
+ * - Cookie HttpOnly (não pode ser acessado no JS)
+ * - SiteKey único e difícil de adivinhar
+ * - Só sites ativos podem processar eventos
  */
 
 import {
@@ -41,7 +41,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 
-// Interfaces dos dados anexados ao request
+// Tipos dos dados anexados ao request
 export interface SessionData {
   userId: string;
 }
@@ -52,9 +52,8 @@ export interface TenantInfo {
   allowedDomains: string[];
 }
 
-// Interface unificada do request
-// Extends Express Request with auth and tenant data
-export interface RequestWithAuthAndTenant {
+// Interface do request com auth e tenant
+export interface RequestComAuthETenant {
   cookies?: Record<string, string>;
   headers: Record<string, string | string[] | undefined>;
   query: Record<string, string | undefined>;
@@ -63,7 +62,7 @@ export interface RequestWithAuthAndTenant {
   tenant?: TenantInfo;
 }
 
-// Metadata keys para controlar requisitos
+// Metadados para requisitos por rota
 export const REQUIRE_AUTH_KEY = 'requireAuth';
 export const REQUIRE_TENANT_KEY = 'requireTenant';
 
@@ -78,9 +77,9 @@ export class UnifiedGuard implements CanActivate {
   ) {}
 
   /**
-   * Valida JWT do cookie admin_session
-   * @param token JWT token string
-   * @returns SessionData se válido, null se inválido
+   * Valida o JWT do cookie admin_session
+   * @param token token JWT
+   * @returns SessionData se ok, null se inválido
    */
   private verifyJwt(token: string): SessionData | null {
     if (!token) return null;
@@ -90,7 +89,7 @@ export class UnifiedGuard implements CanActivate {
         token,
       );
 
-      // Valida que payload tem userId
+      // Checa se existe userId no payload
       if (!payload?.userId || typeof payload.userId !== 'string') {
         return null;
       }
@@ -99,21 +98,21 @@ export class UnifiedGuard implements CanActivate {
         userId: payload.userId,
       };
     } catch {
-      // JWT inválido, expirado, ou assinatura incorreta
+      // JWT inválido, expirado ou assinatura errada
       return null;
     }
   }
 
   /**
-   * Valida e resolve tenant do siteKey
-   * @param siteKey Site key do header ou query
-   * @returns TenantInfo se válido, null se inválido
+   * Valida e resolve tenant a partir do siteKey
+   * @param siteKey chave do site pelo header ou query
+   * @returns TenantInfo se ok, null se inválido
    */
   private async resolveTenant(siteKey: string): Promise<TenantInfo | null> {
     if (!siteKey) return null;
 
     try {
-      // Busca o site no banco de dados pelo siteKey
+      // Busca o site pelo siteKey no banco
       const site = await this.prisma.site.findUnique({
         where: { siteKey },
         include: {
@@ -124,13 +123,13 @@ export class UnifiedGuard implements CanActivate {
       });
 
       if (!site) {
-        this.logger.warn(`Invalid site key attempted: ${siteKey}`);
+        this.logger.warn(`Site key inválido: ${siteKey}`);
         return null;
       }
 
-      // Verifica se o site está ativo
+      // Checa se o site está ativo
       if (site.status !== 'active') {
-        this.logger.warn(`Inactive site accessed: ${siteKey}`);
+        this.logger.warn(`Site inativo tentou acessar: ${siteKey}`);
         return null;
       }
 
@@ -145,45 +144,40 @@ export class UnifiedGuard implements CanActivate {
   }
 
   /**
-   * Método principal do guard
-   * Valida JWT e/ou tenant conforme necessário
+   * Método principal, faz a validação do JWT e do tenant conforme a rota pedir
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<RequestWithAuthAndTenant>();
-
-    // Verifica requisitos da rota via metadata
+    const request = context.switchToHttp().getRequest<RequestComAuthETenant>();
+    // Pega requisitos da rota
     const requireAuth = this.reflector.getAllAndOverride<boolean>(
       REQUIRE_AUTH_KEY,
       [context.getHandler(), context.getClass()],
     );
-
     const requireTenant = this.reflector.getAllAndOverride<boolean>(
       REQUIRE_TENANT_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    // Valida JWT se cookie presente ou se auth é requerido
+    // Valida JWT se cookie estiver presente ou for obrigatório
     const cookies = request.cookies;
     const sessionCookie = cookies?.['admin_session'];
 
     if (sessionCookie || requireAuth) {
       if (!sessionCookie) {
-        throw new UnauthorizedException('No session cookie found');
+        throw new UnauthorizedException('Sem cookie de sessão');
       }
 
       const session = this.verifyJwt(sessionCookie);
 
       if (!session) {
-        this.logger.warn('Invalid JWT token');
-        throw new UnauthorizedException('Invalid session');
+        this.logger.warn('JWT inválido');
+        throw new UnauthorizedException('Sessão inválida');
       }
 
       request.authSession = session;
     }
 
-    // Valida tenant se header presente ou se tenant é requerido
+    // Valida tenant se header ou query ou for obrigatório
     const headerValue = request.headers['x-site-key'];
     const queryValue = request.query.site;
 
@@ -196,13 +190,13 @@ export class UnifiedGuard implements CanActivate {
 
     if (siteKey || requireTenant) {
       if (!siteKey) {
-        throw new BadRequestException('Missing site key');
+        throw new BadRequestException('Faltando site key');
       }
 
       const tenant = await this.resolveTenant(siteKey);
 
       if (!tenant) {
-        throw new ForbiddenException('Invalid or inactive site key');
+        throw new ForbiddenException('Site key inválido ou site inativo');
       }
 
       request.tenant = tenant;

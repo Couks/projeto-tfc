@@ -23,19 +23,26 @@ export class SdkController {
   constructor(private readonly sdkService: SdkService) {}
 
   /**
-   * Returns site configuration for SDK
-   * @param site Site key
-   * @param res Express response
-   * @returns Site configuration object
+   * Retorna configuração do site para o SDK
+   * @param site Chave do site
+   * @param res Resposta Express
+   * @returns Objeto de configuração do site
    */
   @Get('site-config')
-  @ApiOperation({ summary: 'Get site configuration for SDK' })
-  @ApiResponse({ status: 200, description: 'Return site configuration.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiOperation({
+    summary: 'Obter configuração do site para SDK',
+    description:
+      'Retorna a configuração do site necessária para inicializar o SDK JavaScript.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Configuração do site retornada com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
   async getSiteConfig(@Query('site') site: string, @Res() res: Response) {
     const config = await this.sdkService.getSiteConfig(site);
 
-    // Set CORS headers for cross-origin requests
+    // Define cabeçalhos CORS para requisições de outros domínios
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -45,28 +52,35 @@ export class SdkController {
   }
 
   /**
-   * Returns SDK loader JavaScript
-   * @param site Site key
-   * @param res Express response
+   * Retorna o JavaScript loader do SDK
+   * @param site Chave do site
+   * @param res Resposta Express
    */
   @Get('loader')
-  @ApiOperation({ summary: 'Get SDK loader JavaScript' })
-  @ApiResponse({ status: 200, description: 'Return SDK loader script.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiOperation({
+    summary: 'Obter script de carregamento do SDK',
+    description:
+      'Retorna o script JavaScript de carregamento do SDK para o site especificado.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Script de carregamento do SDK retornado com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
   async getLoader(@Query('site') site: string, @Res() res: Response) {
     const script = await this.sdkService.getLoader(site);
 
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Permite qualquer origem para o SDK
+    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Permite qualquer origem
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.status(HttpStatus.OK).send(script);
   }
 
   /**
-   * Handle OPTIONS requests for CORS preflight
-   * @param res Express response
+   * Responde às requisições OPTIONS para pré-vérificação CORS do loader
+   * @param res Resposta Express
    */
   @Options('loader')
   @ApiExcludeEndpoint()
@@ -78,8 +92,8 @@ export class SdkController {
   }
 
   /**
-   * Handle OPTIONS requests for site-config CORS preflight
-   * @param res Express response
+   * Responde às requisições OPTIONS para pré-vérificação CORS do site-config
+   * @param res Resposta Express
    */
   @Options('site-config')
   @ApiExcludeEndpoint()
@@ -91,16 +105,23 @@ export class SdkController {
   }
 
   /**
-   * Serve the capture-filters.js file directly
-   * @param res Express response
+   * Serve o arquivo capture-filters.js diretamente
+   * @param res Resposta Express
    */
   @Get('capture-filters.js')
-  @ApiOperation({ summary: 'Serve capture-filters.js file' })
-  @ApiResponse({ status: 200, description: 'Return capture-filters.js file.' })
-  @ApiResponse({ status: 404, description: 'File not found.' })
+  @ApiOperation({
+    summary: 'Servir arquivo capture-filters.js',
+    description:
+      'Retorna o arquivo JavaScript capture-filters.js para rastreamento de eventos.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Arquivo capture-filters.js retornado com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Arquivo não encontrado.' })
   serveCaptureFilters(@Res() res: Response) {
     try {
-      // Try multiple possible paths
+      // Tenta encontrar o arquivo em caminhos diferentes
       const possiblePaths = [
         join(__dirname, '..', '..', 'public', 'static', 'capture-filters.js'),
         join(
@@ -125,20 +146,20 @@ export class SdkController {
           found = true;
           break;
         } catch {
-          // Try next path
+          // Tenta o próximo caminho
         }
       }
 
       if (!found) {
         res.status(HttpStatus.NOT_FOUND).json({
-          error: 'File not found',
+          error: 'Arquivo não encontrado',
           triedPaths: possiblePaths,
         });
         return;
       }
 
       res.setHeader('Content-Type', 'application/javascript');
-      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -146,13 +167,13 @@ export class SdkController {
     } catch {
       res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: 'Internal server error' });
+        .json({ error: 'Erro interno no servidor' });
     }
   }
 
   /**
-   * Handle OPTIONS requests for capture-filters.js
-   * @param res Express response
+   * Responde às requisições OPTIONS para capture-filters.js
+   * @param res Resposta Express
    */
   @Options('capture-filters.js')
   @ApiExcludeEndpoint()

@@ -1,9 +1,9 @@
 /**
- * Response interfaces for categorized insights endpoints
+ * Interfaces de resposta para os endpoints de insights categorizados
  */
 
 // =====================
-// SEARCH & FILTERS
+// BUSCA E FILTROS
 // =====================
 
 export interface SearchAnalyticsResponse {
@@ -119,7 +119,7 @@ export interface TopConvertingFiltersResponse {
 }
 
 // =====================
-// CONVERSION
+// CONVERSÃO
 // =====================
 
 export interface ConversionRateResponse {
@@ -175,12 +175,13 @@ export interface LeadProfileResponse {
 }
 
 // =====================
-// PROPERTIES
+// IMÓVEIS
 // =====================
 
 export interface PopularPropertiesResponse {
   properties: Array<{
     codigo: string;
+    url: string;
     views: number;
     favorites: number;
     engagementScore: number;

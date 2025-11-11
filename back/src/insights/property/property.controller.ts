@@ -19,10 +19,17 @@ export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 
   @Get('popular')
-  @ApiOperation({ summary: 'Get popular properties' })
-  @ApiResponse({ status: 200, description: 'Return popular properties.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter imóveis populares',
+    description:
+      'Retorna os imóveis mais populares com base em visualizações e favoritos.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Imóveis populares retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getPopularProperties(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -31,13 +38,17 @@ export class PropertyController {
   }
 
   @Get('engagement')
-  @ApiOperation({ summary: 'Get property engagement analytics' })
+  @ApiOperation({
+    summary: 'Obter analytics de engajamento de imóveis',
+    description:
+      'Retorna métricas gerais de engajamento (visualizações e favoritos) de imóveis.',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Return property engagement analytics.',
+    description: 'Analytics de engajamento retornados com sucesso.',
   })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getPropertyEngagement(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -46,10 +57,17 @@ export class PropertyController {
   }
 
   @Get(':propertyCode/funnel')
-  @ApiOperation({ summary: 'Get conversion funnel for a specific property' })
-  @ApiResponse({ status: 200, description: 'Return property funnel data.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter funil de conversão de imóvel',
+    description:
+      'Retorna o funil de conversão (visualizações → favoritos → leads) para um imóvel específico.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dados do funil de conversão retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getPropertyFunnel(
     @SiteKey() siteKey: string,
     @Param('propertyCode') propertyCode: string,

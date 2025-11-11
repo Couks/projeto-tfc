@@ -19,10 +19,16 @@ export class ConversionController {
   constructor(private readonly conversionService: ConversionService) {}
 
   @Get('summary')
-  @ApiOperation({ summary: 'Get conversion rate analytics' })
-  @ApiResponse({ status: 200, description: 'Return conversion rate.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter analytics de taxa de conversão',
+    description: 'Retorna taxa de conversão geral e conversões por tipo.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics de taxa de conversão retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getConversionRate(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -31,10 +37,17 @@ export class ConversionController {
   }
 
   @Get('sources')
-  @ApiOperation({ summary: 'Get conversion sources analytics' })
-  @ApiResponse({ status: 200, description: 'Return conversion sources.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter analytics de fontes de conversão',
+    description:
+      'Retorna analytics sobre as fontes de conversão (WhatsApp, formulário, etc.).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics de fontes de conversão retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getConversionSources(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -43,10 +56,17 @@ export class ConversionController {
   }
 
   @Get('lead-profile')
-  @ApiOperation({ summary: 'Get an aggregated profile of converting leads' })
-  @ApiResponse({ status: 200, description: 'Return lead profile data.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter perfil agregado de leads que convertem',
+    description:
+      'Retorna perfil agregado dos leads que realizaram conversões, incluindo interesses, categorias e valores médios.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dados do perfil de leads retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getLeadProfile(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,

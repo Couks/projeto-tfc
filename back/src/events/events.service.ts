@@ -12,11 +12,11 @@ export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Ingests a single event
-   * @param siteKey Site key from tenant guard
-   * @param eventDto Event data
-   * @param metadata Server-side metadata (IP, userAgent, etc.)
-   * @returns Created event
+   * Ingere um único evento
+   * @param siteKey Chave do site (tenant)
+   * @param eventDto Dados do evento
+   * @param metadata Metadados do servidor (IP, userAgent, etc)
+   * @returns Evento criado
    */
   async ingest(
     siteKey: string,
@@ -25,12 +25,12 @@ export class EventsService {
   ) {
     const { name, userId, sessionId, ts, properties, context } = eventDto;
 
-    // Validate event name
+    // Valida o nome do evento
     if (!name || name.length === 0) {
-      throw new BadRequestException('Event name is required');
+      throw new BadRequestException('Nome do evento é obrigatório');
     }
 
-    // Enrich context with server-side data
+    // Adiciona informações do servidor no contexto
     const enrichedContext = {
       ...context,
       serverTs: new Date().toISOString(),
@@ -38,7 +38,7 @@ export class EventsService {
       userAgent: metadata.userAgent,
     };
 
-    // Create event
+    // Cria o evento
     const event = await this.prisma.event.create({
       data: {
         siteKey,
@@ -51,7 +51,7 @@ export class EventsService {
       },
     });
 
-    this.logger.log(`Event ingested: ${name} for site: ${siteKey}`);
+    this.logger.log(`Evento ingerido: ${name} para site: ${siteKey}`);
 
     return {
       id: event.id.toString(),
@@ -60,23 +60,25 @@ export class EventsService {
   }
 
   /**
-   * Ingests multiple events in batch
-   * @param siteKey Site key from tenant guard
-   * @param events Array of events
-   * @param metadata Server-side metadata
-   * @returns Batch result
+   * Ingere vários eventos em lote
+   * @param siteKey Chave do site (tenant)
+   * @param events Array de eventos
+   * @param metadata Metadados do servidor
+   * @returns Resultado do lote
    */
   async ingestBatch(
     siteKey: string,
     events: TrackEventDto[],
     metadata: { ip?: string; userAgent?: string },
   ) {
+    // Valida se o array de eventos foi enviado
     if (!events || events.length === 0) {
-      throw new BadRequestException('Events array is required');
+      throw new BadRequestException('O array de eventos é obrigatório');
     }
 
+    // Limita o tamanho máximo do lote
     if (events.length > 500) {
-      throw new BadRequestException('Maximum 500 events per batch');
+      throw new BadRequestException('Máximo de 500 eventos por lote');
     }
 
     const enrichedContext = {
@@ -85,7 +87,7 @@ export class EventsService {
       userAgent: metadata.userAgent,
     };
 
-    // Prepare events for batch insert
+    // Prepara os eventos para o insert em lote
     const eventsData = events.map((event) => ({
       siteKey,
       name: event.name,
@@ -99,7 +101,7 @@ export class EventsService {
       },
     }));
 
-    // Batch insert with chunking for very large batches
+    // Insere em lotes menores se a quantidade for muito grande
     const chunkSize = 100;
     let totalInserted = 0;
 
@@ -113,7 +115,7 @@ export class EventsService {
     }
 
     this.logger.log(
-      `Batch ingested: ${totalInserted} events for site: ${siteKey}`,
+      `Lote ingerido: ${totalInserted} eventos para site: ${siteKey}`,
     );
 
     return {
@@ -123,10 +125,10 @@ export class EventsService {
   }
 
   /**
-   * Gets events for a specific site with filtering and pagination
-   * @param siteKey Site key from tenant guard
-   * @param queryDto Query parameters for filtering
-   * @returns Paginated events list
+   * Busca eventos para um site com filtros e paginação
+   * @param siteKey Chave do site (tenant)
+   * @param queryDto Parâmetros de filtro
+   * @returns Lista paginada de eventos
    */
   async getEvents(
     siteKey: string,
@@ -146,12 +148,12 @@ export class EventsService {
         order = 'desc',
       } = queryDto;
 
-      // Build where clause
+      // Monta o filtro (where)
       const where: Prisma.EventWhereInput = {
         siteKey,
       };
 
-      // Filter by event name
+      // Filtro por nome do evento
       if (name) {
         where.name = {
           contains: name,
@@ -159,17 +161,17 @@ export class EventsService {
         };
       }
 
-      // Filter by user ID
+      // Filtro por ID do usuário
       if (userId) {
         where.userId = userId;
       }
 
-      // Filter by session ID
+      // Filtro por ID da sessão
       if (sessionId) {
         where.sessionId = sessionId;
       }
 
-      // Apply date filters
+      // Aplica filtros de data
       const dateRange = this.getDateRange(dateFilter, startDate, endDate);
       if (dateRange.start && dateRange.end) {
         where.ts = {
@@ -178,11 +180,11 @@ export class EventsService {
         };
       }
 
-      // Build orderBy clause
+      // Monta critério de ordenação
       const orderByClause: Prisma.EventOrderByWithRelationInput = {};
       orderByClause[orderBy] = order;
 
-      // Execute query with pagination
+      // Executa consulta com paginação
       const [events, totalCount] = await Promise.all([
         this.prisma.event.findMany({
           where,
@@ -204,7 +206,7 @@ export class EventsService {
       ]);
 
       this.logger.log(
-        `Retrieved ${events.length} events for site: ${siteKey} (total: ${totalCount})`,
+        `Recuperados ${events.length} eventos para site: ${siteKey} (total: ${totalCount})`,
       );
 
       return {
@@ -227,19 +229,19 @@ export class EventsService {
       };
     } catch (error) {
       this.logger.error(
-        `Error retrieving events for site ${siteKey}:`,
-        error instanceof Error ? error.stack : 'Unknown error',
+        `Erro ao recuperar eventos do site ${siteKey}:`,
+        error instanceof Error ? error.stack : 'Erro desconhecido',
       );
       throw error;
     }
   }
 
   /**
-   * Gets date range based on filter type
-   * @param dateFilter Filter type
-   * @param startDate Custom start date
-   * @param endDate Custom end date
-   * @returns Date range object
+   * Retorna o intervalo de datas baseado no tipo do filtro
+   * @param dateFilter Tipo do filtro de data
+   * @param startDate Data inicial personalizada
+   * @param endDate Data final personalizada
+   * @returns Objeto com o intervalo de datas
    */
   private getDateRange(
     dateFilter?: DateFilter,
@@ -265,7 +267,7 @@ export class EventsService {
 
     if (dateFilter === DateFilter.WEEK) {
       const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      start.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
       start.setHours(0, 0, 0, 0);
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
@@ -293,7 +295,7 @@ export class EventsService {
       return { start, end };
     }
 
-    // Default: last 30 days
+    // Padrão: últimos 30 dias
     const start = new Date(now);
     start.setDate(now.getDate() - 30);
     start.setHours(0, 0, 0, 0);
@@ -303,17 +305,17 @@ export class EventsService {
   }
 
   /**
-   * Anonymizes IP address for LGPD/GDPR compliance
-   * @param ip IP address
-   * @returns Anonymized IP
+   * Anonimiza endereço IP para LGPD/GDPR
+   * @param ip Endereço IP
+   * @returns IP anonimizado
    */
   private anonymizeIp(ip: string): string {
     const parts = ip.split('.');
     if (parts.length === 4) {
-      // IPv4: Replace last octet with 0
+      // IPv4: troca o último octeto por 0
       return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
     }
-    // IPv6: Keep first 48 bits
+    // IPv6: mantêm só os primeiros 48 bits
     const ipv6Parts = ip.split(':');
     if (ipv6Parts.length >= 3) {
       return `${ipv6Parts[0]}:${ipv6Parts[1]}:${ipv6Parts[2]}::`;

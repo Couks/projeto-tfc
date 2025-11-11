@@ -1,17 +1,18 @@
 import * as crypto from 'crypto';
 
 /**
- * Hashes a password using scrypt
- * @param plain Plain text password
- * @returns Hashed password string
+ * Gera hash da senha usando scrypt
+ * @param plain Senha em texto simples
+ * @returns Hash da senha como string
  */
 export async function hashPassword(plain: string): Promise<string> {
-  const salt = crypto.randomBytes(16);
+  const salt = crypto.randomBytes(16); // Gera um salt aleatório
   const N = 16384;
   const r = 8;
   const p = 1;
   const keylen = 64;
 
+  // Deriva o hash da senha com scrypt
   const derived = await new Promise<Buffer>((resolve, reject) => {
     crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
       if (err) reject(err);
@@ -19,23 +20,25 @@ export async function hashPassword(plain: string): Promise<string> {
     });
   });
 
+  // Retorna os parâmetros e o hash como string
   return `scrypt$${N}$${r}$${p}$${salt.toString('base64')}$${derived.toString('base64')}`;
 }
 
 /**
- * Verifies a password against a stored hash
- * @param plain Plain text password
- * @param stored Stored hash
- * @returns True if password matches
+ * Verifica se a senha está correta comparando com o hash salvo
+ * @param plain Senha em texto simples
+ * @param stored Hash salvo
+ * @returns True se a senha for igual
  */
 export async function verifyPassword(
   plain: string,
   stored: string,
 ): Promise<boolean> {
   try {
+    // Extrai os parâmetros do hash salvo
     const [scheme, sN, sr, sp, sSalt, sHash] = stored.split('$');
 
-    if (scheme !== 'scrypt') return false;
+    if (scheme !== 'scrypt') return false; // Verifica se é o esquema esperado
 
     const N = parseInt(sN, 10);
     const r = parseInt(sr, 10);
@@ -44,6 +47,7 @@ export async function verifyPassword(
     const expected = Buffer.from(sHash, 'base64');
     const keylen = expected.length;
 
+    // Deriva o hash da senha digitada
     const derived = await new Promise<Buffer>((resolve, reject) => {
       crypto.scrypt(plain, salt, keylen, { N, r, p }, (err, buf) => {
         if (err) reject(err);
@@ -51,8 +55,10 @@ export async function verifyPassword(
       });
     });
 
+    // Compara o hash calculado com o salvo
     return crypto.timingSafeEqual(derived, expected);
   } catch {
+    // Retorna falso se ocorrer algum erro
     return false;
   }
 }

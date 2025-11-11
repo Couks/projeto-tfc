@@ -18,10 +18,17 @@ export class OverviewController {
   constructor(private readonly overviewService: OverviewService) {}
 
   @Get('devices')
-  @ApiOperation({ summary: 'Get device analytics for a site' })
-  @ApiResponse({ status: 200, description: 'Return device analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter analytics de dispositivos',
+    description:
+      'Retorna analytics de dispositivos (mobile, desktop, etc.) para um site.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics de dispositivos retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getDevices(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -30,10 +37,17 @@ export class OverviewController {
   }
 
   @Get('devices/timeseries')
-  @ApiOperation({ summary: 'Get device analytics time series' })
-  @ApiResponse({ status: 200, description: 'Return device time series.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter série temporal de dispositivos',
+    description:
+      'Retorna série temporal de analytics de dispositivos ao longo do tempo.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Série temporal de dispositivos retornada com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getDevicesTimeSeries(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,

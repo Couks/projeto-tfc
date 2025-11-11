@@ -1,21 +1,21 @@
 /**
- * main.ts - Ponto de Entrada da Aplicação
+ * main.ts - Início da aplicação
  *
- * Este arquivo é responsável por:
- * - Inicializar a aplicação NestJS
- * - Configurar middlewares de segurança (Helmet)
- * - Configurar compressão e parsing de cookies
- * - Configurar validação global de DTOs
- * - Configurar documentação Swagger/OpenAPI
- * - Configurar logging global de requisições
+ * Responsável por:
+ * - Iniciar o NestJS
+ * - Configurar Helmet (segurança)
+ * - Configurar compressão e leitura de cookies
+ * - Ativar validação global dos DTOs
+ * - Ativar documentação Swagger/OpenAPI
+ * - Ativar logging global das requisições
  *
- * Ordem de inicialização:
- * 1. Criar aplicação NestJS
- * 2. Obter configurações do ambiente
+ * Passos:
+ * 1. Criar app NestJS
+ * 2. Ler as configs do ambiente
  * 3. Aplicar middlewares de segurança
- * 4. Aplicar validação global
+ * 4. Ativar validação global
  * 5. Configurar Swagger
- * 6. Iniciar servidor HTTP
+ * 6. Subir o servidor HTTP
  */
 
 import { NestFactory } from '@nestjs/core';
@@ -31,61 +31,25 @@ import { AppModule } from './app.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 /**
- * Função bootstrap - Inicializa e configura a aplicação
+ * Função para iniciar e configurar a aplicação
  */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   try {
-    // Cria a aplicação NestJS com todos os níveis de log habilitados
-    // Usa NestExpressApplication para servir arquivos estáticos
+    // Cria app NestJS com todos logs habilitados e Express para arquivos estáticos
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
-    // Obtém o serviço de configuração para acessar variáveis de ambiente
+    // Busca configs do ambiente (variáveis)
     const configService = app.get(ConfigService);
     const port = configService.get<number>('port') || 3001;
-    const nodeEnv = configService.get<string>('nodeEnv');
-    const databaseUrl = configService.get<string>('database.url');
-    const directUrl = configService.get<string>('database.directUrl');
-    const nextauthSecret = configService.get<string>('auth.secret');
-    const apiBaseUrl = configService.get<string>('api.baseUrl');
 
-    // Log environment variables loaded via ConfigService
-    logger.log(`[ConfigService] PORT: ${port}`);
-    logger.log(`[ConfigService] NODE_ENV: ${nodeEnv || 'undefined'}`);
-    try {
-      logger.log(
-        `[ConfigService] DATABASE_URL: ${databaseUrl ? `${new URL(databaseUrl).protocol}//${new URL(databaseUrl).host}` : 'undefined'}`,
-      );
-    } catch {
-      logger.log(
-        `[ConfigService] DATABASE_URL: ${databaseUrl ? 'invalid format' : 'undefined'}`,
-      );
-    }
-    try {
-      logger.log(
-        `[ConfigService] DIRECT_URL: ${directUrl ? `${new URL(directUrl).protocol}//${new URL(directUrl).host}` : 'undefined'}`,
-      );
-    } catch {
-      logger.log(
-        `[ConfigService] DIRECT_URL: ${directUrl ? 'invalid format' : 'undefined'}`,
-      );
-    }
-    logger.log(
-      `[ConfigService] NEXTAUTH_SECRET: ${nextauthSecret ? `${nextauthSecret.substring(0, 4)}***${nextauthSecret.substring(nextauthSecret.length - 4)} (length: ${nextauthSecret.length})` : 'undefined'}`,
-    );
-    logger.log(`[ConfigService] API_BASE_URL: ${apiBaseUrl || 'undefined'}`);
-
-    // ============================================
-    // MIDDLEWARE DE SEGURANÇA - HELMET
-    // ============================================
-    // Helmet adiciona headers HTTP de segurança automaticamente
-    // Configuração personalizada para permitir SDK em qualquer site
+    // Middleware de segurança Helmet, libera SDK para qualquer site
     app.use(
       helmet({
-        // Desabilita CSP para endpoints do SDK (permite execução em qualquer site)
+        // CSP liberado para execução em qualquer site
         contentSecurityPolicy: {
           directives: {
             defaultSrc: ["'self'"],
@@ -99,40 +63,26 @@ async function bootstrap() {
             frameSrc: ["'self'", '*'],
           },
         },
-        // Permite que o SDK seja carregado em frames de outros sites
+        // SDK pode ser carregado em frames de outros sites
         frameguard: false,
-        // Permite carregamento de recursos de qualquer origem para o SDK
+        // SDK pode buscar recursos de qualquer origem
         crossOriginEmbedderPolicy: false,
         crossOriginOpenerPolicy: false,
         crossOriginResourcePolicy: { policy: 'cross-origin' },
       }),
     );
 
-    // ============================================
-    // MIDDLEWARE DE COMPRESSÃO
-    // ============================================
-    // Comprime as respostas HTTP usando gzip para reduzir o tamanho dos dados transmitidos
+    // Middleware de compressão gzip nas respostas HTTP
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     app.use(compression());
 
-    // ============================================
-    // MIDDLEWARE DE PARSING DE COOKIES
-    // ============================================
-    // Parseia cookies HTTP para torná-los acessíveis via request.cookies
-    // Usado para ler o cookie de sessão 'admin_session'
+    // Middleware de leitura de cookies HTTP (req.cookies)
     app.use(cookieParser());
 
-    // ============================================
-    // CONFIGURAÇÃO DE CORS
-    // ============================================
-    // Permite requisições cross-origin para produção
-    // Para endpoints do SDK (events, sdk), permite qualquer origem
-    // Isso permite que o SDK seja usado em qualquer site
-    // A validação de segurança é feita via UnifiedGuard e siteKey
+    // Config CORS: Libera qualquer origem para endpoints do SDK
+    // (e permite origens não informadas, tipo apps mobile)
     app.enableCors({
       origin: (origin, callback) => {
-        // Permite qualquer origem para endpoints do SDK
-        // Se não há origin (ex: requisições same-origin, mobile apps), permite
         callback(null, true);
       },
       credentials: true,
@@ -140,27 +90,21 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Site-Key'],
     });
 
-    // ============================================
-    // VALIDAÇÃO GLOBAL DE DTOs
-    // ============================================
-    // ValidationPipe aplica validação automática em todos os DTOs
-    // whitelist: remove propriedades não definidas nos DTOs
-    // forbidNonWhitelisted: lança erro se propriedades extras forem enviadas
-    // transform: converte automaticamente tipos (ex: string '123' para number 123)
+    // Validação de todos os DTOs nas rotas
     app.useGlobalPipes(
       new ValidationPipe({
-        whitelist: true, // Remove campos não definidos no DTO
-        forbidNonWhitelisted: false, // Permite campos extras (não bloqueia payloads do SDK)
+        whitelist: true, // Remove o que não está no DTO
+        forbidNonWhitelisted: false, // Permite extras (SDKs não quebram)
         transform: true, // Converte tipos automaticamente
         transformOptions: {
-          enableImplicitConversion: true, // Conversão implícita de tipos
+          enableImplicitConversion: true, // string pra number etc
         },
         validationError: {
-          target: false, // não incluir o objeto alvo nos erros
-          value: false, // não incluir o valor inválido para evitar logs sensíveis
+          target: false, // não mostra objeto original no erro
+          value: false, // não mostra valor inválido (evita expor dados sensíveis)
         },
         exceptionFactory: (errors) => {
-          // Retorna um corpo detalhado para facilitar o debug de payloads inválidos
+          // Formata os erros para facilitar debug
           const formatted = errors.map((e) => ({
             property: e.property,
             constraints: e.constraints,
@@ -177,99 +121,89 @@ async function bootstrap() {
       }),
     );
 
-    // ============================================
-    // ARQUIVOS ESTÁTICOS (ANTES DO PREFIXO GLOBAL)
-    // ============================================
-    // Serve arquivos estáticos da pasta public/
-    // Permite servir o SDK JavaScript diretamente do backend
+    // Servir arquivos estáticos da pasta public/
+    // (Ex: SDK JS direto do backend)
     app.useStaticAssets(join(__dirname, 'public'), {
-      prefix: '/static/', // URLs: /static/capture-filters.js
+      prefix: '/static/', // /static/arquivo.js
     });
 
-    // ============================================
-    // PREFIXO GLOBAL DE ROTAS
-    // ============================================
-    // Todas as rotas terão o prefixo /api
-    // Exemplo: AuthController /auth vira /api/auth
+    // Todas rotas começam com /api (ex: /api/auth)
     app.setGlobalPrefix('api');
 
-    // ============================================
-    // INTERCEPTOR GLOBAL DE LOGGING
-    // ============================================
-    // Registra todas as requisições e respostas com duração
+    // Ativa interceptor de log global (log de toda request/response)
     app.useGlobalInterceptors(new LoggingInterceptor());
 
-    // ============================================
-    // DOCUMENTAÇÃO SWAGGER/OPENAPI
-    // ============================================
-    // Configuração da documentação interativa da API
+    // Configuração da documentação Swagger/OpenAPI
     const swaggerConfig = new DocumentBuilder()
       .setTitle('InsightHouse Analytics API')
       .setDescription(
-        'Complete API for web analytics and event tracking with multi-tenant support. ' +
-          'Track user behavior, conversions, and generate insights from your data.',
+        'API de analytics web e rastreamento de eventos com multi-clientes. ' +
+          'Monitore usuários, conversões e veja insights.',
       )
       .setVersion('1.0.0')
       .setContact(
-        'InsightHouse Team',
+        'Equipe InsightHouse',
         'https://github.com/Couks',
         'matheuscastroks@gmail.com',
       )
       .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-      // Tags para organizar endpoints na documentação
-      .addTag('Authentication', 'User authentication and session management')
-      .addTag('Sites', 'Site management and multi-tenant configuration')
-      .addTag('Events', 'Event tracking and data ingestion')
-      .addTag('Insights', 'Analytics queries and data visualization')
-      .addTag('SDK', 'SDK loader and client configuration')
-      .addTag('Health', 'Health check and system status endpoints')
-      // Esquema de autenticação: Cookie para sessões de admin
+      // Tags para organização da docs
+      .addTag('Authentication', 'Login de usuário e sessões')
+      .addTag('Sites', 'Gerenciar sites e multi-tenant')
+      .addTag('Events', 'Rastreamento e ingestão de eventos')
+      .addTag('Insights - Overview', 'Visão geral dos dados e métricas')
+      .addTag('Insights - Search', 'Busca e filtros')
+      .addTag('Insights - Property', 'Analytics detalhado dos imóveis')
+      .addTag('Insights - Conversion', 'Conversões, origens e leads')
+      .addTag('SDK', 'SDK e configuração do cliente')
+      .addTag('Health', 'Status da API e healthcheck')
+      // Auth por cookie (admin) na documentação
       .addCookieAuth(
         'admin_session',
         {
           type: 'apiKey',
           in: 'cookie',
           name: 'admin_session',
-          description: 'Session cookie for authenticated requests',
+          description: 'Cookie da sessão admin',
         },
         'session-auth',
       )
-      // Esquema de autenticação: Header para multi-tenancy
+      // Auth por header para multi-tenant
       .addApiKey(
         {
           type: 'apiKey',
           name: 'X-Site-Key',
           in: 'header',
           description:
-            'Site key for multi-tenant operations and event tracking',
+            'Chave do site para identificar cliente/multi-tenant e rastrear eventos',
         },
         'site-key',
       )
-      // Servidores disponíveis
-      .addServer('https://api.matheuscastroks.com.br', 'Production')
+      // Servidor principal da API
+      .addServer('https://api.matheuscastroks.com.br')
       .build();
 
-    // Gera o documento OpenAPI com IDs de operação únicos
+    // Cria o documento OpenAPI (IDs de operação únicos)
     const document = SwaggerModule.createDocument(app, swaggerConfig, {
       operationIdFactory: (controllerKey: string, methodKey: string) =>
         `${controllerKey}_${methodKey}`,
     });
 
-    // Configura a interface Swagger UI em /api/docs
+    // Ativa a interface Swagger UI em /api/docs
     SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {
-        persistAuthorization: true, // Mantém autenticação entre reloads
-        docExpansion: 'none', // Começa com tudo fechado
-        filter: true, // Habilita busca de endpoints
-        showRequestDuration: true, // Mostra tempo de resposta
+        persistAuthorization: true, // Mantém login entre reloads
+        docExpansion: 'none', // Tudo fechado por padrão
+        filter: true, // Buscar endpoints
+        showRequestDuration: true, // Tempo da request
         syntaxHighlight: {
-          theme: 'monokai', // Tema de código
+          theme: 'monokai', // Tema escuro
         },
-        tryItOutEnabled: true, // Habilita teste direto dos endpoints
+        tryItOutEnabled: true, // Permite testar endpoints direto
       },
-      customSiteTitle: 'InsightHouse API Documentation',
+      customSiteTitle: 'API InsightHouse Docs',
       customfavIcon: '/favicon.ico',
-      // CSS customizado para interface mais limpa
+      // CSS para visual mais limpo
       customCss: `
         .swagger-ui .topbar { display: none }
         .swagger-ui .info { margin: 50px 0 }
@@ -277,25 +211,25 @@ async function bootstrap() {
       `,
     });
 
-    // Inicia o servidor HTTP na porta configurada
+    // Sobe o servidor HTTP na porta configurada
     await app.listen(port);
 
-    logger.log(`Environment: ${configService.get<string>('nodeEnv')}`);
+    logger.log(`Env: ${configService.get<string>('nodeEnv')}`);
     logger.log(
       `Swagger JSON: https://api.matheuscastroks.com.br/api/docs-json`,
     );
   } catch (error) {
-    // Em caso de erro na inicialização, loga o erro e encerra o processo
+    // Se der erro na inicialização, mostra o erro e encerra
     logger.error(
-      'Error starting the application:',
+      'Erro ao iniciar aplicação:',
       error instanceof Error ? error.stack : String(error),
     );
     process.exit(1);
   }
 }
 
-// Executa a função bootstrap e captura erros fatais
+// Inicia a função bootstrap e trata erro fatal
 bootstrap().catch((error) => {
-  console.error('Fatal error during bootstrap:', error);
+  console.error('Erro fatal no bootstrap:', error);
   process.exit(1);
 });

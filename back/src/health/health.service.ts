@@ -8,12 +8,11 @@ export class HealthService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Performs basic health check
-   * @returns Health status object
+   * Faz uma checagem básica de saúde
+   * @returns Objeto com status de saúde
    */
   check() {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    this.logger.log(`[ENV] NODE_ENV in health check: ${nodeEnv}`);
 
     return {
       status: 'ok',
@@ -24,8 +23,8 @@ export class HealthService {
   }
 
   /**
-   * Checks database connection health
-   * @returns Database health status
+   * Verifica a conexão com o banco de dados
+   * @returns Status da conexão com o banco de dados
    */
   async checkDatabase() {
     try {
@@ -36,9 +35,9 @@ export class HealthService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error('Database health check failed', error);
+      this.logger.error('A checagem do banco de dados falhou', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : 'Erro desconhecido';
       return {
         status: 'error',
         database: 'disconnected',

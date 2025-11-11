@@ -66,7 +66,7 @@ export class ConversionService {
       return { start, end };
     }
 
-    // Default: last 30 days
+    // Padrão: últimos 30 dias
     const start = new Date(now);
     start.setDate(now.getDate() - 30);
     start.setHours(0, 0, 0, 0);
@@ -79,14 +79,14 @@ export class ConversionService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<ConversionRateResponse> {
-    // Verify site exists
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -95,7 +95,7 @@ export class ConversionService {
       queryDto.endDate,
     );
 
-    // Get total conversions
+    // Busca total de conversões
     const conversionsResult = await this.prisma.$queryRaw<
       Array<{ total: bigint }>
     >`
@@ -109,7 +109,7 @@ export class ConversionService {
 
     const totalConversions = Number(conversionsResult[0]?.total || 0);
 
-    // Get total sessions
+    // Busca total de sessões
     const sessionsResult = await this.prisma.$queryRaw<
       Array<{ total: bigint }>
     >`
@@ -122,7 +122,7 @@ export class ConversionService {
 
     const totalSessions = Number(sessionsResult[0]?.total || 0);
 
-    // Get conversions by type
+    // Busca conversões por tipo
     const conversionsByTypeResult = await this.prisma.$queryRaw<
       Array<{ conversion_type: string | null; count: bigint }>
     >`
@@ -172,14 +172,14 @@ export class ConversionService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<ConversionSourcesResponse> {
-    // Verify site exists
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -188,7 +188,7 @@ export class ConversionService {
       queryDto.endDate,
     );
 
-    // Get conversion sources
+    // Busca fontes das conversões
     const sourcesResult = await this.prisma.$queryRaw<
       Array<{ source: string; count: bigint }>
     >`
@@ -233,13 +233,14 @@ export class ConversionService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<LeadProfileResponse> {
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -248,6 +249,7 @@ export class ConversionService {
       queryDto.endDate,
     );
 
+    // Busca interesses principais dos leads
     const interests = this.prisma.$queryRaw<
       Array<{ interest: string; count: bigint }>
     >`
@@ -257,6 +259,7 @@ export class ConversionService {
       GROUP BY interest ORDER BY count DESC LIMIT 5
     `;
 
+    // Busca as principais categorias
     const categories = this.prisma.$queryRaw<
       Array<{ category: string; count: bigint }>
     >`
@@ -266,6 +269,7 @@ export class ConversionService {
       GROUP BY category ORDER BY count DESC LIMIT 5
     `;
 
+    // Busca os principais tipos de imóvel
     const propertyTypes = this.prisma.$queryRaw<
       Array<{ type: string; count: bigint }>
     >`
@@ -275,6 +279,7 @@ export class ConversionService {
       GROUP BY type ORDER BY count DESC LIMIT 5
     `;
 
+    // Busca as principais cidades
     const cities = this.prisma.$queryRaw<
       Array<{ city: string; count: bigint }>
     >`
@@ -284,12 +289,14 @@ export class ConversionService {
       GROUP BY city ORDER BY count DESC LIMIT 5
     `;
 
+    // Busca valor médio de venda
     const avgSale = this.prisma.$queryRaw<Array<{ avg_sale: number }>>`
       SELECT AVG((properties->>'valor_venda')::numeric) as avg_sale
       FROM "Event"
       WHERE "siteKey" = ${siteKey} AND name = 'thank_you_view' AND ts >= ${dateRange.start} AND ts <= ${dateRange.end} AND (properties->>'valor_venda')::numeric > 0
     `;
 
+    // Busca valor médio de aluguel
     const avgRental = this.prisma.$queryRaw<Array<{ avg_rental: number }>>`
       SELECT AVG((properties->>'valor_aluguel')::numeric) as avg_rental
       FROM "Event"

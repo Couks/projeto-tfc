@@ -44,13 +44,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'User login',
+    summary: 'Login de usuário',
     description:
-      'Authenticate user with email and password. Returns a session cookie on success.',
+      'Autentica usuário com email e senha. Retorna um cookie de sessão em caso de sucesso.',
   })
   @ApiBody({ type: LoginDto })
   @ApiOkResponse({
-    description: 'Successfully logged in, session cookie set',
+    description: 'Login realizado com sucesso, cookie de sessão definido',
     schema: {
       type: 'object',
       properties: {
@@ -59,7 +59,7 @@ export class AuthController {
     },
   })
   @ApiUnauthorizedResponse({
-    description: 'Invalid credentials',
+    description: 'Credenciais inválidas',
     schema: {
       type: 'object',
       properties: {
@@ -68,15 +68,13 @@ export class AuthController {
       },
     },
   })
-  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  @ApiBadRequestResponse({ description: 'Corpo da requisição inválido' })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const nodeEnv = process.env.NODE_ENV;
     const isProduction = nodeEnv === 'production';
-    this.logger.log(`[ENV] NODE_ENV in login: ${nodeEnv}`);
-    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
 
     const signedSession = await this.authService.login(loginDto);
 
@@ -103,13 +101,13 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'User registration',
+    summary: 'Registro de usuário',
     description:
-      'Create a new user account with email and password. Returns a session cookie on success.',
+      'Cria uma nova conta de usuário com email e senha. Retorna um cookie de sessão em caso de sucesso.',
   })
   @ApiBody({ type: RegisterDto })
   @ApiCreatedResponse({
-    description: 'Successfully registered, session cookie set',
+    description: 'Registro realizado com sucesso, cookie de sessão definido',
     schema: {
       type: 'object',
       properties: {
@@ -117,9 +115,9 @@ export class AuthController {
       },
     },
   })
-  @ApiBadRequestResponse({ description: 'Invalid registration data' })
+  @ApiBadRequestResponse({ description: 'Dados de registro inválidos' })
   @ApiConflictResponse({
-    description: 'Email already exists',
+    description: 'E-mail já cadastrado',
     schema: {
       type: 'object',
       properties: {
@@ -134,8 +132,6 @@ export class AuthController {
   ) {
     const nodeEnv = process.env.NODE_ENV;
     const isProduction = nodeEnv === 'production';
-    this.logger.log(`[ENV] NODE_ENV in register: ${nodeEnv}`);
-    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
 
     const signedSession = await this.authService.register(registerDto);
 
@@ -161,12 +157,12 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'User logout',
-    description: 'Destroy current session and clear session cookie.',
+    summary: 'Logout de usuário',
+    description: 'Destrói a sessão atual e limpa o cookie de sessão.',
   })
   @ApiCookieAuth('session-auth')
   @ApiOkResponse({
-    description: 'Successfully logged out',
+    description: 'Logout realizado com sucesso',
     schema: {
       type: 'object',
       properties: {
@@ -177,8 +173,6 @@ export class AuthController {
   logout(@Res({ passthrough: true }) res: Response) {
     const nodeEnv = process.env.NODE_ENV;
     const isProduction = nodeEnv === 'production';
-    this.logger.log(`[ENV] NODE_ENV in logout: ${nodeEnv}`);
-    this.logger.log(`[ENV] Cookie secure flag: ${isProduction}`);
 
     const cookieOptions = {
       httpOnly: true,
@@ -201,25 +195,25 @@ export class AuthController {
   @UseGuards(UnifiedGuard)
   @RequireAuth()
   @ApiOperation({
-    summary: 'Get current user',
+    summary: 'Obter usuário atual',
     description:
-      'Get authenticated user information from session. Requires valid session cookie.',
+      'Obtém informações do usuário autenticado a partir da sessão. Requer cookie de sessão válido.',
   })
   @ApiCookieAuth('session-auth')
   @ApiOkResponse({
-    description: 'Returns current user data',
+    description: 'Retorna dados do usuário atual',
     schema: {
       type: 'object',
       properties: {
         id: { type: 'string', example: 'clx123abc' },
         email: { type: 'string', example: 'user@example.com' },
-        name: { type: 'string', example: 'John Doe', nullable: true },
+        name: { type: 'string', example: 'João Silva', nullable: true },
         createdAt: { type: 'string', format: 'date-time' },
       },
     },
   })
   @ApiUnauthorizedResponse({
-    description: 'Not authenticated or invalid session',
+    description: 'Não autenticado ou sessão inválida',
   })
   async me(@CurrentUser() userId: string) {
     return this.authService.me(userId);

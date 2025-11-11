@@ -19,10 +19,17 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get('summary')
-  @ApiOperation({ summary: 'Get search analytics summary' })
-  @ApiResponse({ status: 200, description: 'Return search analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter resumo de analytics de buscas',
+    description:
+      'Retorna resumo completo de analytics de buscas e filtros utilizados.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resumo de analytics de buscas retornado com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getSearchAnalytics(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -31,10 +38,17 @@ export class SearchController {
   }
 
   @Get('filters-usage')
-  @ApiOperation({ summary: 'Get filters usage analytics' })
-  @ApiResponse({ status: 200, description: 'Return filters usage analytics.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiOperation({
+    summary: 'Obter analytics de uso de filtros',
+    description:
+      'Retorna analytics sobre como os filtros de busca são utilizados.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics de uso de filtros retornados com sucesso.',
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getFiltersUsage(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,
@@ -44,14 +58,16 @@ export class SearchController {
 
   @Get('top-converting-filters')
   @ApiOperation({
-    summary: 'Get the top converting search filter combinations',
+    summary: 'Obter filtros que mais convertem',
+    description:
+      'Retorna as combinações de filtros de busca com maior taxa de conversão.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Return top converting filter combinations.',
+    description: 'Filtros que mais convertem retornados com sucesso.',
   })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 400, description: 'Requisição inválida.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
   async getTopConvertingFilters(
     @SiteKey() siteKey: string,
     @Query() queryDto: InsightsQueryDto,

@@ -20,16 +20,16 @@ export class AuthService {
   ) {}
 
   /**
-   * Authenticates a user with email and password
-   * @param loginDto Login credentials
-   * @returns Signed session cookie value
+   * Autentica um usuário usando email e senha
+   * @param loginDto Credenciais de login
+   * @returns Valor do cookie de sessão assinado
    */
   async login(loginDto: LoginDto): Promise<string> {
     const { email, password } = loginDto;
 
     this.logger.log(`Login attempt for email: ${email}`);
 
-    // Find user by email
+    // Procurar usuário pelo email
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -44,7 +44,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
+    // Verificar se a senha está correta
     const isValid = await verifyPassword(password, user.passwordHash);
 
     if (!isValid) {
@@ -52,7 +52,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Update last login timestamp
+    // Atualizar o timestamp do último login
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
@@ -60,7 +60,7 @@ export class AuthService {
 
     this.logger.log(`Successful login for user: ${user.id}`);
 
-    // Generate JWT token
+    // Gerar token JWT
     return this.jwtService.sign({
       userId: user.id,
       sub: user.id,
@@ -68,16 +68,16 @@ export class AuthService {
   }
 
   /**
-   * Registers a new user
-   * @param registerDto Registration data
-   * @returns Signed session cookie value
+   * Registra um novo usuário
+   * @param registerDto Dados de registro
+   * @returns Valor do cookie de sessão assinado
    */
   async register(registerDto: RegisterDto): Promise<string> {
     const { email, password, name } = registerDto;
 
     this.logger.log(`Registration attempt for email: ${email}`);
 
-    // Check if user already exists
+    // Verifica se já existe usuário com o email
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -87,10 +87,10 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    // Hash password
+    // Gera hash da senha
     const passwordHash = await hashPassword(password);
 
-    // Create user
+    // Cria novo usuário
     const user = await this.prisma.user.create({
       data: {
         email,
@@ -105,7 +105,7 @@ export class AuthService {
 
     this.logger.log(`User registered successfully: ${user.id}`);
 
-    // Generate JWT token
+    // Gerar token JWT
     return this.jwtService.sign({
       userId: user.id,
       sub: user.id,
@@ -113,9 +113,9 @@ export class AuthService {
   }
 
   /**
-   * Retrieves current user information
-   * @param userId User ID from session
-   * @returns User data
+   * Pega as informações do usuário logado
+   * @param userId ID do usuário da sessão
+   * @returns Dados do usuário
    */
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({

@@ -12,9 +12,9 @@ export class SdkService {
   ) {}
 
   /**
-   * Retrieves site configuration for SDK
-   * @param siteKey Site key
-   * @returns Site configuration
+   * Busca a configuração do site para o SDK
+   * @param siteKey Chave do site
+   * @returns Configuração do site
    */
   async getSiteConfig(siteKey: string) {
     const site = await this.prisma.site.findUnique({
@@ -30,17 +30,17 @@ export class SdkService {
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     if (site.status !== 'active') {
-      throw new NotFoundException('Site is not active');
+      throw new NotFoundException('Site não está ativo');
     }
 
-    // Get API host from config
+    // Pega o host da API da config
     const apiHost = this.configService.get<string>('api.baseUrl');
 
-    // Convert settings array to object
+    // Converte array de configurações em objeto
     const settingsObj = site.settings.reduce(
       (acc, setting) => {
         acc[setting.key] = setting.value;
@@ -59,28 +59,28 @@ export class SdkService {
   }
 
   /**
-   * Generates SDK loader script
-   * @param siteKey Site key
-   * @returns JavaScript loader code
+   * Gera o script loader do SDK
+   * @param siteKey Chave do site
+   * @returns Código JavaScript do loader
    */
   async getLoader(siteKey: string) {
-    // Verify site exists
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true, status: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     if (site.status !== 'active') {
-      throw new NotFoundException('Site is not active');
+      throw new NotFoundException('Site não está ativo');
     }
 
     const apiHost = this.configService.get<string>('api.baseUrl');
 
-    // Generate loader script
+    // Gera o script do loader
     const loaderScript = `
 (function() {
   'use strict';
@@ -88,56 +88,56 @@ export class SdkService {
   var SITE_KEY = '${siteKey}';
   var API_URL = '${apiHost}';
 
-  // Check if already loaded
+  // Verifica se já está carregado
   if (window.__INSIGHTHOUSE_LOADED__) {
-    console.warn('InsightHouse SDK already loaded');
+    console.warn('InsightHouse SDK já carregado');
     return;
   }
   window.__INSIGHTHOUSE_LOADED__ = true;
 
-  // Set global variables for the SDK script
+  // Define variáveis globais para o script do SDK
   window.IH_SITE_KEY = SITE_KEY;
   window.IH_API_URL = API_URL;
 
-  // Fetch site configuration
+  // Busca a configuração do site
   fetch(API_URL + '/api/sdk/site-config?site=' + SITE_KEY)
     .then(function(res) {
-      if (!res.ok) throw new Error('Failed to load site config');
+      if (!res.ok) throw new Error('Falha ao carregar config do site');
       return res.json();
     })
     .then(function(config) {
-      // Validate domain
+      // Valida o domínio
       var currentHost = window.location.hostname.toLowerCase();
       var allowed = config.allowedDomains.map(function(d) { return d.toLowerCase(); });
 
       if (allowed.indexOf(currentHost) === -1) {
-        console.warn('InsightHouse: Domain not allowed:', currentHost);
+        console.warn('InsightHouse: Domínio não permitido:', currentHost);
         return;
       }
 
-      // Store config globally
+      // Salva a config globalmente
       window.__INSIGHTHOUSE_CONFIG__ = config;
 
-      // Load main SDK script from backend API endpoint
-      // O arquivo capture-filters.js é servido através do endpoint /api/sdk/capture-filters.js
+      // Carrega o script principal do SDK do endpoint na API backend
+      // O arquivo capture-filters.js é servido pelo endpoint /api/sdk/capture-filters.js
       var script = document.createElement('script');
       script.src = API_URL + '/api/sdk/capture-filters.js';
       script.async = true;
       script.onload = function() {
-        console.log('InsightHouse SDK loaded successfully');
+        console.log('InsightHouse SDK carregado com sucesso');
       };
       script.onerror = function() {
-        console.error('Failed to load InsightHouse SDK');
+        console.error('Falha ao carregar o InsightHouse SDK');
       };
       document.head.appendChild(script);
     })
     .catch(function(err) {
-      console.error('InsightHouse initialization error:', err);
+      console.error('Erro na inicialização do InsightHouse:', err);
     });
 })();
 `;
 
-    this.logger.log(`Loader generated for site: ${siteKey}`);
+    this.logger.log(`Loader gerado para o site: ${siteKey}`);
 
     return loaderScript;
   }

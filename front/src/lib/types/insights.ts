@@ -186,6 +186,7 @@ export interface LeadProfileResponse {
 export interface PopularPropertiesResponse {
   properties: Array<{
     codigo: string
+    url: string
     views: number
     favorites: number
     engagementScore: number

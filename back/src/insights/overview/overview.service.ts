@@ -13,6 +13,9 @@ export class OverviewService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Calcula o intervalo de datas baseado no filtro selecionado.
+   */
   private getDateRange(
     dateFilter?: DateFilter,
     startDate?: string,
@@ -20,6 +23,7 @@ export class OverviewService {
   ) {
     const now = new Date();
 
+    // Se o filtro for personalizado, usa as datas fornecidas
     if (dateFilter === DateFilter.CUSTOM && startDate && endDate) {
       return {
         start: new Date(startDate),
@@ -27,6 +31,7 @@ export class OverviewService {
       };
     }
 
+    // Filtro para o dia atual
     if (dateFilter === DateFilter.DAY) {
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
@@ -35,9 +40,10 @@ export class OverviewService {
       return { start, end };
     }
 
+    // Filtro para semana atual (de domingo até sábado)
     if (dateFilter === DateFilter.WEEK) {
       const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      start.setDate(now.getDate() - now.getDay()); // Início da semana (domingo)
       start.setHours(0, 0, 0, 0);
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
@@ -45,6 +51,7 @@ export class OverviewService {
       return { start, end };
     }
 
+    // Filtro para o mês atual
     if (dateFilter === DateFilter.MONTH) {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(
@@ -59,13 +66,14 @@ export class OverviewService {
       return { start, end };
     }
 
+    // Filtro para o ano atual
     if (dateFilter === DateFilter.YEAR) {
       const start = new Date(now.getFullYear(), 0, 1);
       const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       return { start, end };
     }
 
-    // Default: last 30 days
+    // Padrão: últimos 30 dias
     const start = new Date(now);
     start.setDate(now.getDate() - 30);
     start.setHours(0, 0, 0, 0);
@@ -74,25 +82,32 @@ export class OverviewService {
     return { start, end };
   }
 
+  /**
+   * Retorna a lista de dispositivos agrupados por tipo, sistema, e navegador.
+   */
   async getDevices(
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<DevicesResponse> {
+    // Busca o site pelo siteKey
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
+    // Se o site não existir, lança exceção
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
+    // Pega o intervalo de datas filtrado
     const dateRange = this.getDateRange(
       queryDto.dateFilter,
       queryDto.startDate,
       queryDto.endDate,
     );
 
+    // Consulta agregada para tipos de dispositivos, sistemas operacionais e navegadores
     const devices = await this.prisma.$queryRaw<
       Array<{
         device_type: string;
@@ -118,6 +133,7 @@ export class OverviewService {
       LIMIT ${queryDto.limit || 10}
     `;
 
+    // Retorna os dados já transformados
     return {
       devices: devices.map((d) => ({
         deviceType: d.device_type,
@@ -128,25 +144,32 @@ export class OverviewService {
     };
   }
 
+  /**
+   * Retorna a série temporal diária de dispositivos (mobile/desktop)
+   */
   async getDevicesTimeSeries(
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<DevicesTimeSeriesResponse> {
+    // Busca o site pelo siteKey
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
+    // Se o site não existir, lança exceção
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
+    // Pega o intervalo de datas filtrado
     const dateRange = this.getDateRange(
       queryDto.dateFilter,
       queryDto.startDate,
       queryDto.endDate,
     );
 
+    // Consulta agregada para dispositivos mobile/desktop por dia
     const dailyData = await this.prisma.$queryRaw<
       Array<{
         bucket_date: Date;
@@ -167,6 +190,7 @@ export class OverviewService {
       ORDER BY bucket_date ASC
     `;
 
+    // Mapa para agrupar os resultados por data
     const dataMap = new Map<string, { mobile: number; desktop: number }>();
 
     dailyData.forEach((row) => {
@@ -182,6 +206,7 @@ export class OverviewService {
       }
     });
 
+    // Transforma o mapa em array ordenada por data
     const data = Array.from(dataMap.entries())
       .map(([date, counts]) => ({
         date,
@@ -190,6 +215,7 @@ export class OverviewService {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    // Retorna série temporal e período usado
     return {
       data,
       period: {

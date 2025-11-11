@@ -1,13 +1,16 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { RequestWithAuthAndTenant } from '../guards/unified.guard';
+// Corrigido: use o tipo correto já exportado do unified.guard
+import type { RequestComAuthETenant } from '../guards/unified.guard';
 
 /**
- * Decorator to extract current user ID from request
- * The UnifiedGuard with @RequireAuth() ensures authSession exists
+ * Decorator para extrair o ID do usuário atual da requisição.
+ * O UnifiedGuard com @RequireAuth() garante que authSession existe.
  */
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest<RequestWithAuthAndTenant>();
+    // Pega o request já tipado com auth e tenant
+    const request = ctx.switchToHttp().getRequest<RequestComAuthETenant>();
+    // Retorna o ID do usuário da sessão autenticada
     return request.authSession!.userId;
   },
 );

@@ -22,6 +22,7 @@ export class PropertyService {
     const now = new Date();
 
     if (dateFilter === DateFilter.CUSTOM && startDate && endDate) {
+      // Filtro customizado com datas fornecidas
       return {
         start: new Date(startDate),
         end: new Date(endDate),
@@ -29,6 +30,7 @@ export class PropertyService {
     }
 
     if (dateFilter === DateFilter.DAY) {
+      // Filtro por dia atual
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
       const end = new Date(now);
@@ -37,6 +39,7 @@ export class PropertyService {
     }
 
     if (dateFilter === DateFilter.WEEK) {
+      // Filtro por semana atual
       const start = new Date(now);
       start.setDate(now.getDate() - now.getDay());
       start.setHours(0, 0, 0, 0);
@@ -47,6 +50,7 @@ export class PropertyService {
     }
 
     if (dateFilter === DateFilter.MONTH) {
+      // Filtro por mês atual
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(
         now.getFullYear(),
@@ -61,12 +65,13 @@ export class PropertyService {
     }
 
     if (dateFilter === DateFilter.YEAR) {
+      // Filtro por ano atual
       const start = new Date(now.getFullYear(), 0, 1);
       const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       return { start, end };
     }
 
-    // Default: last 30 days
+    // Padrão: últimos 30 dias
     const start = new Date(now);
     start.setDate(now.getDate() - 30);
     start.setHours(0, 0, 0, 0);
@@ -79,14 +84,14 @@ export class PropertyService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<PopularPropertiesResponse> {
-    // Verify site exists
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -95,26 +100,40 @@ export class PropertyService {
       queryDto.endDate,
     );
 
-    // Get popular properties with engagement metrics
+    // Busca imóveis populares com métricas de engajamento e URL
     const properties = await this.prisma.$queryRaw<
       Array<{
         property_code: string;
+        property_url: string;
         views: bigint;
         favorites: bigint;
       }>
     >`
+      WITH property_urls AS (
+        SELECT DISTINCT ON (properties->>'codigo')
+          properties->>'codigo' as property_code,
+          properties->>'url' as property_url
+        FROM "Event"
+        WHERE "siteKey" = ${siteKey}
+          AND name = 'property_page_view'
+          AND properties->>'codigo' IS NOT NULL
+          AND properties->>'url' IS NOT NULL
+        ORDER BY properties->>'codigo', ts DESC
+      )
       SELECT
         properties->>'codigo' as property_code,
+        COALESCE(pu.property_url, '') as property_url,
         COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
         COUNT(CASE WHEN name = 'property_favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites
       FROM "Event"
+      LEFT JOIN property_urls pu ON properties->>'codigo' = pu.property_code
       WHERE "siteKey" = ${siteKey}
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
         AND properties->>'codigo' IS NOT NULL
         AND properties->>'codigo' != ''
         AND name IN ('property_page_view', 'property_favorite_toggle')
-      GROUP BY properties->>'codigo'
+      GROUP BY properties->>'codigo', pu.property_url
       ORDER BY views DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -124,11 +143,12 @@ export class PropertyService {
         const views = Number(p.views);
         const favorites = Number(p.favorites);
 
-        // Calculate engagement score (weighted)
+        // Calcula o score de engajamento (ponderado)
         const engagementScore = views * 1 + favorites * 3;
 
         return {
           codigo: p.property_code,
+          url: p.property_url,
           views,
           favorites,
           engagementScore,
@@ -145,14 +165,14 @@ export class PropertyService {
     siteKey: string,
     queryDto: InsightsQueryDto,
   ): Promise<PropertyEngagementResponse> {
-    // Verify site exists
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
 
     if (!site) {
-      throw new NotFoundException('Site not found');
+      throw new NotFoundException('Site não encontrado');
     }
 
     const dateRange = this.getDateRange(
@@ -161,7 +181,7 @@ export class PropertyService {
       queryDto.endDate,
     );
 
-    // Get overall property engagement metrics
+    // Busca métricas gerais de engajamento dos imóveis
     const engagement = await this.prisma.$queryRaw<
       Array<{
         total_views: bigint;
@@ -198,11 +218,12 @@ export class PropertyService {
     propertyCode: string,
     queryDto: InsightsQueryDto,
   ): Promise<PropertyFunnelResponse> {
+    // Verifica se o site existe
     const site = await this.prisma.site.findUnique({
       where: { siteKey },
       select: { id: true },
     });
-    if (!site) throw new NotFoundException('Site not found');
+    if (!site) throw new NotFoundException('Site não encontrado');
 
     const dateRange = this.getDateRange(
       queryDto.dateFilter,
@@ -210,6 +231,7 @@ export class PropertyService {
       queryDto.endDate,
     );
 
+    // Busca dados do funil do imóvel
     const funnelData = await this.prisma.$queryRaw<
       Array<{
         views: bigint;
@@ -236,6 +258,7 @@ export class PropertyService {
 
     const views = Number(data.views);
     const leads = Number(data.leads);
+    // Calcula a taxa de conversão de visualização para lead
     const viewToLeadRate =
       views > 0 ? Math.round((leads / views) * 100 * 100) / 100 : 0;
 

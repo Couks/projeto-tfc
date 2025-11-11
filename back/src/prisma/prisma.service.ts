@@ -52,12 +52,6 @@ export class PrismaService
         ? ['query', 'error', 'warn'] // Em dev: loga queries SQL
         : ['error'], // Em prod: loga apenas erros
     });
-
-    // Log após super() para poder usar this.logger
-    this.logger.log(`[ENV] NODE_ENV in PrismaService: ${nodeEnv}`);
-    this.logger.log(
-      `[ENV] Prisma log level: ${isDevelopment ? 'query, error, warn' : 'error only'}`,
-    );
   }
 
   /**
