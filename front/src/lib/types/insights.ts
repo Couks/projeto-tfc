@@ -189,6 +189,7 @@ export interface PopularPropertiesResponse {
     url: string
     views: number
     favorites: number
+    leads: number
     engagementScore: number
   }>
   period: {
@@ -221,8 +222,6 @@ export interface PropertyFunnelResponse {
 export interface DevicesResponse {
   devices: Array<{
     deviceType: string
-    os: string
-    browser: string
     count: number
   }>
 }
