@@ -107,6 +107,7 @@ export class PropertyService {
         property_url: string;
         views: bigint;
         favorites: bigint;
+        leads: bigint;
       }>
     >`
       WITH property_urls AS (
@@ -124,7 +125,8 @@ export class PropertyService {
         properties->>'codigo' as property_code,
         COALESCE(pu.property_url, '') as property_url,
         COUNT(CASE WHEN name = 'property_page_view' THEN 1 END) as views,
-        COUNT(CASE WHEN name = 'favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites
+        COUNT(CASE WHEN name = 'favorite_toggle' AND properties->>'action' = 'add' THEN 1 END) as favorites,
+        COUNT(CASE WHEN name IN ('conversion_whatsapp_click', 'thank_you_view') THEN 1 END) as leads
       FROM "Event"
       LEFT JOIN property_urls pu ON properties->>'codigo' = pu.property_code
       WHERE "siteKey" = ${siteKey}
@@ -132,7 +134,7 @@ export class PropertyService {
         AND ts <= ${dateRange.end}
         AND properties->>'codigo' IS NOT NULL
         AND properties->>'codigo' != ''
-        AND name IN ('property_page_view', 'favorite_toggle')
+        AND name IN ('property_page_view', 'favorite_toggle', 'conversion_whatsapp_click', 'thank_you_view')
       GROUP BY properties->>'codigo', pu.property_url
       ORDER BY views DESC
       LIMIT ${queryDto.limit || 10}
@@ -142,6 +144,7 @@ export class PropertyService {
       properties: properties.map((p) => {
         const views = Number(p.views);
         const favorites = Number(p.favorites);
+        const leads = Number(p.leads);
 
         // Calcula o score de engajamento (ponderado)
         const engagementScore = views * 1 + favorites * 3;
@@ -151,6 +154,7 @@ export class PropertyService {
           url: p.property_url,
           views,
           favorites,
+          leads,
           engagementScore,
         };
       }),

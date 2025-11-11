@@ -184,6 +184,7 @@ export interface PopularPropertiesResponse {
     url: string;
     views: number;
     favorites: number;
+    leads: number;
     engagementScore: number;
   }>;
   period: {
