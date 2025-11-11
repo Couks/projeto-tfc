@@ -24,6 +24,7 @@ import {
   DetailsModal,
   type DetailsDataItem,
 } from '@/lib/components/insights/DetailsModal'
+import { PeriodSelector } from '@/lib/components/insights/PeriodSelector'
 import {
   TrendingUp,
   Target,
@@ -32,24 +33,35 @@ import {
   MoreHorizontal,
 } from 'lucide-react'
 import Link from 'next/link'
+import type { InsightsQuery } from '@/lib/types/insights'
 
 export default function ConversionAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
+  const [dateQuery, setDateQuery] = useState<InsightsQuery>({})
+
+  const handlePeriodChange = (start: Date, end: Date) => {
+    setDateQuery({
+      dateFilter: 'CUSTOM',
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    })
+  }
+
   const {
     data: summaryData,
     isLoading: summaryLoading,
     error: summaryError,
-  } = useConversionSummary(selectedSiteKey || '')
+  } = useConversionSummary(selectedSiteKey || '', dateQuery)
   const {
     data: sourcesData,
     isLoading: sourcesLoading,
     error: sourcesError,
-  } = useConversionSources(selectedSiteKey || '')
+  } = useConversionSources(selectedSiteKey || '', dateQuery)
   const {
     data: leadProfileData,
     isLoading: leadProfileLoading,
     error: leadProfileError,
-  } = useLeadProfile(selectedSiteKey || '')
+  } = useLeadProfile(selectedSiteKey || '', dateQuery)
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -96,7 +108,7 @@ export default function ConversionAnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header with back button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <Button variant="ghost" size="sm" asChild className="mb-2">
             <Link href="/admin/insights">
@@ -111,6 +123,7 @@ export default function ConversionAnalyticsPage() {
             Acompanhe taxas de conversão, desempenho do funil e fontes de leads
           </p>
         </div>
+        <PeriodSelector onPeriodChange={handlePeriodChange} />
       </div>
 
       {/* Error Alert */}

@@ -34,20 +34,34 @@ import {
   DetailsModal,
   type DetailsDataItem,
 } from '@/lib/components/insights/DetailsModal'
+import { PeriodSelector } from '@/lib/components/insights/PeriodSelector'
 import Link from 'next/link'
+import type { InsightsQuery } from '@/lib/types/insights'
 
 export default function SearchAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
+  const [dateQuery, setDateQuery] = useState<InsightsQuery>({})
+
+  const handlePeriodChange = (start: Date, end: Date) => {
+    setDateQuery({
+      dateFilter: 'CUSTOM',
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    })
+  }
+
   const { data: searchData, isLoading: searchLoading } = useSearchSummary(
-    selectedSiteKey || ''
+    selectedSiteKey || '',
+    dateQuery
   )
   const { data: filtersData, isLoading: filtersLoading } = useFiltersUsage(
-    selectedSiteKey || ''
+    selectedSiteKey || '',
+    dateQuery
   )
   const {
     data: topConvertingFiltersData,
     isLoading: topConvertingFiltersLoading,
-  } = useTopConvertingFilters(selectedSiteKey || '')
+  } = useTopConvertingFilters(selectedSiteKey || '', dateQuery)
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -86,7 +100,7 @@ export default function SearchAnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header with back button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <Button variant="ghost" size="sm" asChild className="mb-2">
             <Link href="/admin/insights">
@@ -101,6 +115,7 @@ export default function SearchAnalyticsPage() {
             Entenda o que seus clientes procuram e otimize seu inventário
           </p>
         </div>
+        <PeriodSelector onPeriodChange={handlePeriodChange} />
       </div>
 
       {/* Quick Metrics Grid */}

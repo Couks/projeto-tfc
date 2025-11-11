@@ -2,13 +2,10 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
 import { Calendar } from '@ui/calendar'
 import {
   Select,
@@ -86,7 +83,11 @@ export function PeriodSelector({ onPeriodChange }: PeriodSelectorProps) {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {customStart ? format(customStart, 'PPP') : 'Data inicial'}
+                {customStart
+                  ? format(customStart, "dd 'de' MMMM 'de' yyyy", {
+                      locale: ptBR,
+                    })
+                  : 'Data inicial'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -95,6 +96,7 @@ export function PeriodSelector({ onPeriodChange }: PeriodSelectorProps) {
                 selected={customStart}
                 onSelect={setCustomStart}
                 initialFocus
+                locale={ptBR}
               />
             </PopoverContent>
           </Popover>
@@ -109,7 +111,11 @@ export function PeriodSelector({ onPeriodChange }: PeriodSelectorProps) {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {customEnd ? format(customEnd, 'PPP') : 'Data final'}
+                {customEnd
+                  ? format(customEnd, "dd 'de' MMMM 'de' yyyy", {
+                      locale: ptBR,
+                    })
+                  : 'Data final'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -118,6 +124,7 @@ export function PeriodSelector({ onPeriodChange }: PeriodSelectorProps) {
                 selected={customEnd}
                 onSelect={setCustomEnd}
                 initialFocus
+                locale={ptBR}
               />
             </PopoverContent>
           </Popover>

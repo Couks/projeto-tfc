@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useSiteContext } from '@/lib/providers/SiteProvider'
 import {
   useSearchSummary,
@@ -13,6 +14,7 @@ import { QuickMetricsGrid } from './_components/QuickMetricsGrid'
 import { InsightsSummaryCharts } from './_components/InsightsSummaryCharts'
 import { QuickActionsSection } from './_components/QuickActionsSection'
 import { RecommendationCard } from '@/lib/components/insights/RecommendationCard'
+import { PeriodSelector } from '@/lib/components/insights/PeriodSelector'
 import {
   Card,
   CardContent,
@@ -21,30 +23,40 @@ import {
   CardTitle,
 } from '@ui/card'
 import { Lightbulb } from 'lucide-react'
+import type { InsightsQuery } from '@/lib/types/insights'
 
 export default function InsightsOverviewPage() {
   const { selectedSiteKey } = useSiteContext()
+  const [dateQuery, setDateQuery] = useState<InsightsQuery>({})
 
-  // Fetch data from all categories
+  const handlePeriodChange = (start: Date, end: Date) => {
+    setDateQuery({
+      dateFilter: 'CUSTOM',
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    })
+  }
+
+  // Fetch data from all categories with date filter
   const { data: searchData, isLoading: isLoadingSearch } = useSearchSummary(
     selectedSiteKey || '',
-    { limit: 10 }
+    { limit: 10, ...dateQuery }
   )
 
   const { data: conversionData, isLoading: isLoadingConversion } =
-    useConversionSummary(selectedSiteKey || '')
+    useConversionSummary(selectedSiteKey || '', dateQuery)
 
   const { data: propertiesData, isLoading: isLoadingProperty } =
-    usePopularProperties(selectedSiteKey || '', { limit: 10 })
+    usePopularProperties(selectedSiteKey || '', { limit: 10, ...dateQuery })
 
   const { data: devicesData, isLoading: isLoadingDevices } = useDevices(
     selectedSiteKey || '',
-    { limit: 10 }
+    { limit: 10, ...dateQuery }
   )
 
   const { data: topFiltersData } = useTopConvertingFilters(
     selectedSiteKey || '',
-    { limit: 10 }
+    { limit: 10, ...dateQuery }
   )
 
   // Generate campaign recommendations
@@ -90,14 +102,17 @@ export default function InsightsOverviewPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Visão Geral - Insights
-        </h1>
-        <p className="text-muted-foreground text-lg mt-2">
-          Dashboard consolidado com métricas principais e recomendações de
-          campanhas
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Visão Geral - Insights
+          </h1>
+          <p className="text-muted-foreground text-lg mt-2">
+            Dashboard consolidado com métricas principais e recomendações de
+            campanhas
+          </p>
+        </div>
+        <PeriodSelector onPeriodChange={handlePeriodChange} />
       </div>
 
       {/* Quick Metrics Grid */}
@@ -158,8 +173,6 @@ export default function InsightsOverviewPage() {
 
       {/* Quick Actions */}
       <QuickActionsSection />
-
-
     </div>
   )
 }

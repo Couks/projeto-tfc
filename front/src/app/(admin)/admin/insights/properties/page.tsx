@@ -24,8 +24,10 @@ import {
   DetailsModal,
   type DetailsDataItem,
 } from '@/lib/components/insights/DetailsModal'
+import { PeriodSelector } from '@/lib/components/insights/PeriodSelector'
 import { Eye, Heart, TrendingUp, ArrowLeft, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
+import type { InsightsQuery } from '@/lib/types/insights'
 
 export default function PropertiesAnalyticsPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -33,16 +35,26 @@ export default function PropertiesAnalyticsPage() {
     string | null
   >(null)
   const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false)
+  const [dateQuery, setDateQuery] = useState<InsightsQuery>({})
+
+  const handlePeriodChange = (start: Date, end: Date) => {
+    setDateQuery({
+      dateFilter: 'CUSTOM',
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    })
+  }
 
   const { data: popularData, isLoading: popularLoading } = usePopularProperties(
-    selectedSiteKey || ''
+    selectedSiteKey || '',
+    dateQuery
   )
   const { data: engagementData, isLoading: engagementLoading } =
-    usePropertyEngagement(selectedSiteKey || '')
+    usePropertyEngagement(selectedSiteKey || '', dateQuery)
   const { data: funnelData, isLoading: funnelLoading } = usePropertyFunnel(
     selectedSiteKey || '',
     selectedPropertyCode || '',
-    undefined
+    dateQuery
   )
 
   // Modal state
@@ -93,7 +105,7 @@ export default function PropertiesAnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Header with back button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <Button variant="ghost" size="sm" asChild className="mb-2">
             <Link href="/admin/insights">
@@ -108,6 +120,7 @@ export default function PropertiesAnalyticsPage() {
             Descubra quais imóveis geram mais engajamento e oportunidades
           </p>
         </div>
+        <PeriodSelector onPeriodChange={handlePeriodChange} />
       </div>
 
       {/* Quick Metrics Grid */}
@@ -205,7 +218,10 @@ export default function PropertiesAnalyticsPage() {
                 properties.map((p) => ({
                   label: `Imóvel #${p.codigo}`,
                   value: p.views,
-                  subValue: `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)}`,
+                  subValue: p.url
+                    ? `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)}`
+                    : `${p.favorites} favoritos • Score: ${p.engagementScore.toFixed(1)} • URL não disponível`,
+                  link: p.url || undefined,
                 })),
                 'Ranking completo de imóveis por engajamento',
                 [

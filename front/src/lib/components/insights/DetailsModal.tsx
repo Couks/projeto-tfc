@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@ui/table'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react'
 
 export type DetailsDataItem = {
   label: string
@@ -24,6 +24,7 @@ export type DetailsDataItem = {
   trend?: 'up' | 'down' | 'neutral'
   trendValue?: string
   percentage?: number
+  link?: string
 }
 
 export type VisualizationType = 'table' | 'list' | 'chart-bars'
@@ -38,7 +39,13 @@ interface DetailsModalProps {
   recommendations?: string[]
 }
 
-function TrendIndicator({ trend, value }: { trend: 'up' | 'down' | 'neutral'; value?: string }) {
+function TrendIndicator({
+  trend,
+  value,
+}: {
+  trend: 'up' | 'down' | 'neutral'
+  value?: string
+}) {
   const icons = {
     up: TrendingUp,
     down: TrendingDown,
@@ -94,19 +101,36 @@ export function DetailsModal({
                   {data.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">
-                        {item.label}
-                        {item.subValue && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {item.subValue}
-                          </p>
-                        )}
+                        <div className="space-y-1">
+                          {item.link ? (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline flex items-center gap-1"
+                            >
+                              {item.label}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : (
+                            <span>{item.label}</span>
+                          )}
+                          {item.subValue && (
+                            <p className="text-xs text-muted-foreground">
+                              {item.subValue}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         {item.value}
                       </TableCell>
                       <TableCell className="text-right">
                         {item.trend && (
-                          <TrendIndicator trend={item.trend} value={item.trendValue} />
+                          <TrendIndicator
+                            trend={item.trend}
+                            value={item.trendValue}
+                          />
                         )}
                       </TableCell>
                     </TableRow>
@@ -122,10 +146,22 @@ export function DetailsModal({
                 <Card key={index}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.label}</p>
+                      <div className="flex-1 space-y-1">
+                        {item.link ? (
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {item.label}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <p className="font-medium">{item.label}</p>
+                        )}
                         {item.subValue && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-muted-foreground">
                             {item.subValue}
                           </p>
                         )}
@@ -134,7 +170,10 @@ export function DetailsModal({
                         <div className="text-right">
                           <p className="font-bold text-lg">{item.value}</p>
                           {item.trend && (
-                            <TrendIndicator trend={item.trend} value={item.trendValue} />
+                            <TrendIndicator
+                              trend={item.trend}
+                              value={item.trendValue}
+                            />
                           )}
                         </div>
                       </div>
@@ -148,14 +187,25 @@ export function DetailsModal({
           {visualization === 'chart-bars' && (
             <div className="space-y-3">
               {data.map((item, index) => {
-                const maxValue = Math.max(...data.map(d => {
-                  const val = typeof d.value === 'number' ? d.value : parseFloat(String(d.value))
-                  return isNaN(val) ? 0 : val
-                }))
-                const itemValue = typeof item.value === 'number' ? item.value : parseFloat(String(item.value))
-                const percentage = item.percentage !== undefined
-                  ? item.percentage
-                  : (maxValue > 0 && !isNaN(itemValue) ? (itemValue / maxValue) * 100 : 0)
+                const maxValue = Math.max(
+                  ...data.map((d) => {
+                    const val =
+                      typeof d.value === 'number'
+                        ? d.value
+                        : parseFloat(String(d.value))
+                    return isNaN(val) ? 0 : val
+                  })
+                )
+                const itemValue =
+                  typeof item.value === 'number'
+                    ? item.value
+                    : parseFloat(String(item.value))
+                const percentage =
+                  item.percentage !== undefined
+                    ? item.percentage
+                    : maxValue > 0 && !isNaN(itemValue)
+                      ? (itemValue / maxValue) * 100
+                      : 0
 
                 return (
                   <div key={index} className="space-y-2">
@@ -164,7 +214,10 @@ export function DetailsModal({
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold">{item.value}</span>
                         {item.trend && (
-                          <TrendIndicator trend={item.trend} value={item.trendValue} />
+                          <TrendIndicator
+                            trend={item.trend}
+                            value={item.trendValue}
+                          />
                         )}
                       </div>
                     </div>
@@ -175,7 +228,9 @@ export function DetailsModal({
                       />
                     </div>
                     {item.subValue && (
-                      <p className="text-xs text-muted-foreground">{item.subValue}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.subValue}
+                      </p>
                     )}
                   </div>
                 )

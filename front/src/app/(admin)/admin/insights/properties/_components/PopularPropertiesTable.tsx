@@ -10,7 +10,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown, BarChart3 } from 'lucide-react'
+import { ArrowUpDown, BarChart3, ExternalLink } from 'lucide-react'
 import { Button } from '@ui/button'
 import {
   Table,
@@ -23,6 +23,7 @@ import {
 
 interface Property {
   codigo: string
+  url: string
   views: number
   favorites: number
   engagementScore: number
@@ -51,14 +52,36 @@ const columns: ColumnDef<Property>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Property Code
+          Imóvel
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue('codigo')}</div>
-    ),
+    cell: ({ row }) => {
+      const codigo = row.getValue('codigo') as string
+      const url = row.original.url
+
+      return (
+        <div className="space-y-1">
+          <div className="font-medium">#{codigo}</div>
+          {url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              <span className="truncate max-w-xs">{url}</span>
+              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+            </a>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              URL não disponível
+            </span>
+          )}
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'views',
