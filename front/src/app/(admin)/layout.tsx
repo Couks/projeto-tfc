@@ -42,7 +42,6 @@ import {
   LayoutGrid,
   Building2,
   Settings,
-  Home,
   ExternalLink,
   Globe,
   HelpCircle,
@@ -61,6 +60,9 @@ import {
 } from '@ui/collapsible'
 import { useUser, useLogout } from '@/lib/hooks'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import logo from '@/assets/logo-insighthouse-fundo-preto.png'
+import favicon from '@/assets/favicon.png'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useUser()
@@ -83,9 +85,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <SidebarHeader>
             <div className="rounded-md">
               <SidebarMenuButton asChild tooltip="Home">
-                <Link href="/admin">
-                  <Home className="w-6 h-6" />
-                  <span className="text-md font-semibold">Insight House</span>
+                <Link href="/admin" className="flex items-center gap-2">
+                  <Image
+                    src={favicon}
+                    alt="Insighthouse"
+                    width={24}
+                    height={24}
+                    className="w-4 h-4 flex-shrink-0 dark:invert-0 invert"
+                  />
+                  <span className="text-md font-bold">Insight House</span>
                 </Link>
               </SidebarMenuButton>
             </div>
