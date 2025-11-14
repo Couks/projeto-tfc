@@ -6,24 +6,18 @@ import {
   useSearchSummary,
   useConversionSummary,
   usePopularProperties,
-  useDevices,
   useTopConvertingFilters,
+  useDevicesTimeSeries,
 } from '@/lib/hooks/useInsights'
 import { useCampaignRecommendations } from '@/lib/hooks/useCampaignRecommendations'
 import { QuickMetricsGrid } from './_components/QuickMetricsGrid'
-import { InsightsSummaryCharts } from './_components/InsightsSummaryCharts'
 import { QuickActionsSection } from './_components/QuickActionsSection'
 import { RecommendationCard } from '@/lib/components/insights/RecommendationCard'
 import { PeriodSelector } from '@/lib/components/insights/PeriodSelector'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@ui/card'
+
 import { Lightbulb } from 'lucide-react'
 import type { InsightsQuery } from '@/lib/types/insights'
+import { DevicesChart } from './search/_components/DevicesChart'
 
 export default function InsightsOverviewPage() {
   const { selectedSiteKey } = useSiteContext()
@@ -49,22 +43,19 @@ export default function InsightsOverviewPage() {
   const { data: propertiesData, isLoading: isLoadingProperty } =
     usePopularProperties(selectedSiteKey || '', { limit: 10, ...dateQuery })
 
-  const { data: devicesData, isLoading: isLoadingDevices } = useDevices(
-    selectedSiteKey || '',
-    { limit: 10, ...dateQuery }
-  )
-
   const { data: topFiltersData } = useTopConvertingFilters(
     selectedSiteKey || '',
     { limit: 10, ...dateQuery }
   )
+
+  const { data: devicesData, isLoading: isLoadingDevices } =
+    useDevicesTimeSeries(selectedSiteKey || '', dateQuery)
 
   // Generate campaign recommendations
   const recommendations = useCampaignRecommendations({
     searchData,
     conversionData,
     propertiesData,
-    devicesData,
     topFiltersData,
   })
 
@@ -80,12 +71,14 @@ export default function InsightsOverviewPage() {
     favorites: prop.favorites,
   }))
 
+  // Calculate mobile percentage from devices time series data
   const totalDevices =
-    devicesData?.devices?.reduce((sum, d) => sum + (d.count || 0), 0) || 0
+    devicesData?.data?.reduce(
+      (sum, item) => sum + (item.mobile || 0) + (item.desktop || 0),
+      0
+    ) || 0
   const mobileCount =
-    devicesData?.devices
-      ?.filter((d) => d.deviceType.toLowerCase() === 'mobile')
-      ?.reduce((sum, d) => sum + (d.count || 0), 0) || 0
+    devicesData?.data?.reduce((sum, item) => sum + (item.mobile || 0), 0) || 0
   const mobilePercent =
     totalDevices > 0 ? (mobileCount / totalDevices) * 100 : 0
 
@@ -127,6 +120,9 @@ export default function InsightsOverviewPage() {
         isLoadingDevices={isLoadingDevices}
       />
 
+      {/* Devices Chart */}
+      <DevicesChart data={devicesData} isLoading={isLoadingDevices} />
+
       {/* Campaign Recommendations */}
       {recommendations.length > 0 && (
         <div className="space-y-4">
@@ -150,26 +146,6 @@ export default function InsightsOverviewPage() {
           </div>
         </div>
       )}
-
-      {/* Summary Charts */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-semibold">Resumo das Análises</h2>
-          <p className="text-muted-foreground mt-1">
-            Visualização rápida dos dados principais de cada categoria
-          </p>
-        </div>
-        <InsightsSummaryCharts
-          topCities={searchData?.topCidades}
-          conversionsByType={conversionData?.conversionsByType}
-          topProperties={transformedProperties}
-          topDevices={devicesData?.devices}
-          isLoadingSearch={isLoadingSearch}
-          isLoadingConversion={isLoadingConversion}
-          isLoadingProperty={isLoadingProperty}
-          isLoadingDevices={isLoadingDevices}
-        />
-      </div>
 
       {/* Quick Actions */}
       <QuickActionsSection />

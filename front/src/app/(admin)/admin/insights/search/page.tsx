@@ -15,6 +15,7 @@ import {
   useSearchSummary,
   useFiltersUsage,
   useTopConvertingFilters,
+  useDevicesTimeSeries,
 } from '@/lib/hooks/useInsights'
 import {
   TrendingUp,
@@ -26,9 +27,12 @@ import {
   Maximize2,
   MoreHorizontal,
   ArrowLeft,
+  Smartphone,
 } from 'lucide-react'
 import { TopFinalidadesChart } from './_components/TopFinalidadesChart'
 import { TopCidadesChart } from './_components/TopCidadesChart'
+import { TopBairrosChart } from './_components/TopBairrosChart'
+import { DevicesChart } from './_components/DevicesChart'
 import { TopConvertingFiltersTable } from './_components/TopConvertingFiltersTable'
 import {
   DetailsModal,
@@ -62,6 +66,10 @@ export default function SearchAnalyticsPage() {
     data: topConvertingFiltersData,
     isLoading: topConvertingFiltersLoading,
   } = useTopConvertingFilters(selectedSiteKey || '', dateQuery)
+  const { data: devicesData, isLoading: devicesLoading } = useDevicesTimeSeries(
+    selectedSiteKey || '',
+    dateQuery
+  )
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -223,17 +231,13 @@ export default function SearchAnalyticsPage() {
 
       {/* Section: Location Analysis */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-semibold">Análise de Localização</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="shadow-inner-3">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="shadow-inner-5">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Cidades Mais Buscadas</CardTitle>
                 <CardDescription>
-                  Top 10 cidades com mais pesquisas
+                  Top 5 cidades com mais pesquisas
                 </CardDescription>
               </div>
               <Button
@@ -272,12 +276,12 @@ export default function SearchAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-inner-3">
+          <Card className="shadow-inner-5">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Bairros Mais Buscados</CardTitle>
                 <CardDescription>
-                  Top 10 bairros com mais interesse
+                  Top 5 bairros com mais interesse
                 </CardDescription>
               </div>
               <Button
@@ -305,90 +309,61 @@ export default function SearchAnalyticsPage() {
               </Button>
             </CardHeader>
             <CardContent>
+              <TopBairrosChart data={searchData} isLoading={searchLoading} />
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-inner-5">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <div>
+                  <CardTitle>Finalidades Mais Buscadas</CardTitle>
+                  <CardDescription>
+                    Distribuição entre venda e aluguel
+                  </CardDescription>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const finalidades = searchData?.topFinalidades || []
+                  openDetailsModal(
+                    'Finalidades Detalhadas',
+                    finalidades.map((f) => ({
+                      label: f.finalidade,
+                      value: f.count,
+                      percentage:
+                        (f.count / (searchData?.totalSearches || 1)) * 100,
+                    })),
+                    'Análise completa de todas as finalidades de busca',
+                    [
+                      `A finalidade predominante é ${finalidades[0]?.finalidade || 'N/A'}`,
+                      'Ajuste seu inventário para atender esta demanda',
+                      'Considere criar landing pages específicas por finalidade',
+                    ]
+                  )
+                }}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
               {searchLoading ? (
-                <div className="flex items-center justify-center h-48">
+                <div className="flex items-center justify-center h-64">
                   <Spinner className="h-8 w-8" />
                 </div>
-              ) : searchData?.topBairros && searchData.topBairros.length > 0 ? (
-                <div className="space-y-2">
-                  {searchData.topBairros.slice(0, 10).map((bairro, index) => {
-                    const maxCount = searchData.topBairros[0]?.count || 1
-                    const widthPercent = (bairro.count / maxCount) * 100
-                    return (
-                      <div key={index} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{bairro.bairro}</span>
-                          <span className="text-muted-foreground">
-                            {bairro.count.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all duration-500"
-                            style={{ width: `${widthPercent}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhum dado disponível
-                </p>
+                <TopFinalidadesChart data={searchData} />
               )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Section: Property Purpose */}
-      <Card className="shadow-inner-3">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            <div>
-              <CardTitle>Finalidades Mais Buscadas</CardTitle>
-              <CardDescription>
-                Distribuição entre venda, aluguel e outras finalidades
-              </CardDescription>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const finalidades = searchData?.topFinalidades || []
-              openDetailsModal(
-                'Finalidades Detalhadas',
-                finalidades.map((f) => ({
-                  label: f.finalidade,
-                  value: f.count,
-                  percentage:
-                    (f.count / (searchData?.totalSearches || 1)) * 100,
-                })),
-                'Análise completa de todas as finalidades de busca',
-                [
-                  `A finalidade predominante é ${finalidades[0]?.finalidade || 'N/A'}`,
-                  'Ajuste seu inventário para atender esta demanda',
-                  'Considere criar landing pages específicas por finalidade',
-                ]
-              )
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {searchLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Spinner className="h-8 w-8" />
-            </div>
-          ) : (
-            <TopFinalidadesChart data={searchData} />
-          )}
-        </CardContent>
-      </Card>
+      {/* Section: Devices */}
+      <DevicesChart data={devicesData} isLoading={devicesLoading} />
 
       {/* Section: Property Features */}
       <div className="space-y-4">
@@ -398,7 +373,7 @@ export default function SearchAnalyticsPage() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Quartos */}
-          <Card className="shadow-inner-2">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Quartos</CardTitle>
               <Button
@@ -440,7 +415,7 @@ export default function SearchAnalyticsPage() {
           </Card>
 
           {/* Suites */}
-          <Card className="shadow-inner-2">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Suítes</CardTitle>
               <Button
@@ -478,7 +453,7 @@ export default function SearchAnalyticsPage() {
           </Card>
 
           {/* Banheiros */}
-          <Card className="shadow-inner-2">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Banheiros</CardTitle>
               <Button
@@ -517,7 +492,7 @@ export default function SearchAnalyticsPage() {
           </Card>
 
           {/* Vagas */}
-          <Card className="shadow-inner-2">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Vagas</CardTitle>
               <Button
@@ -563,7 +538,7 @@ export default function SearchAnalyticsPage() {
           <h2 className="text-2xl font-semibold">Faixas de Preço e Área</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="shadow-inner-3">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Faixas de Preço</CardTitle>
@@ -638,7 +613,7 @@ export default function SearchAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-inner-3">
+          <Card className="shadow-layer-5">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Faixas de Área</CardTitle>
@@ -705,7 +680,7 @@ export default function SearchAnalyticsPage() {
       </div>
 
       {/* Section: Top Converting Filters */}
-      <Card className="shadow-inner-4">
+      <Card className="shadow-inner-5">
         <CardHeader>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />

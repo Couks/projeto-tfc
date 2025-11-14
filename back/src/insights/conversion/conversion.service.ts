@@ -14,6 +14,18 @@ export class ConversionService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Formats conversion type to a human-readable label
+   */
+  private formatConversionType(type: string): string {
+    const conversionTypeMap: Record<string, string> = {
+      thank_you_view: 'Formulário da página do imóvel',
+      conversion_whatsapp_click: 'Botão de WhatsApp',
+    };
+
+    return conversionTypeMap[type] || type;
+  }
+
   private getDateRange(
     dateFilter?: DateFilter,
     startDate?: string,
@@ -152,7 +164,7 @@ export class ConversionService {
       totalSessions,
       conversionRate,
       conversionsByType: conversionsByType.map((c) => ({
-        type: c.conversion_type || 'unknown',
+        type: this.formatConversionType(c.conversion_type || 'unknown'),
         count: Number(c.count || 0),
         percentage:
           totalConversions > 0
@@ -193,14 +205,14 @@ export class ConversionService {
       Array<{ source: string; count: bigint }>
     >`
       SELECT
-        COALESCE(properties->>'source', 'unknown') as source,
+        COALESCE(properties->>'source', 'Site') as source,
         COUNT(*) as count
       FROM "Event"
       WHERE "siteKey" = ${siteKey}
         AND name IN ('conversion_whatsapp_click', 'thank_you_view', 'conversion_generate_lead')
         AND ts >= ${dateRange.start}
         AND ts <= ${dateRange.end}
-      GROUP BY COALESCE(properties->>'source', 'unknown')
+      GROUP BY COALESCE(properties->>'source', 'Site')
       ORDER BY count DESC
       LIMIT ${queryDto.limit || 10}
     `;
@@ -213,7 +225,7 @@ export class ConversionService {
 
     return {
       sources: sources.map((s) => ({
-        source: s.source || 'unknown',
+        source: s.source || 'Site',
         conversions: Number(s.count || 0),
         percentage:
           totalConversions > 0

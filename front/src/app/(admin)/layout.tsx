@@ -243,7 +243,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="m-0 p-0">
-        <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b px-4 bg-sidebar backdrop-blur-sm">
+        <div className="sticky top-0 z-50 flex h-12 items-center justify-between border-b px-4 bg-sidebar">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
           </div>
