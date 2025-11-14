@@ -54,12 +54,13 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import logo from '@/assets/logo-insighthouse-fundo-preto.png'
 import favicon from '@/assets/favicon.png'
+import { SiteSelector } from '@/lib/components/SiteSelector'
 
 function AdminLayoutContent({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useUser()
   const logoutMutation = useLogout()
   const router = useRouter()
-  const { selectedSiteKey } = useSiteContext()
+  const { selectedSiteKey, setSelectedSiteKey } = useSiteContext()
   const { data: sites } = useSites()
 
   // Encontrar o site selecionado e obter o domínio
@@ -246,6 +247,13 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
         <div className="sticky top-0 z-50 flex h-12 items-center justify-between border-b px-4 bg-sidebar">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
+            {sites && sites.length > 1 && (
+              <SiteSelector
+                value={selectedSiteKey}
+                onValueChange={setSelectedSiteKey}
+                className="min-w-[250px] max-w-[350px]"
+              />
+            )}
           </div>
           <div className="flex items-center gap-1">
             <TooltipProvider>
