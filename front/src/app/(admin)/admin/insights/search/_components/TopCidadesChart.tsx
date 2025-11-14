@@ -81,7 +81,7 @@ export function TopCidadesChart({ data, isLoading }: TopCidadesChartProps) {
         data={chartData}
         layout="vertical"
         margin={{
-          left: 0,
+          left: 20,
         }}
       >
         <YAxis
